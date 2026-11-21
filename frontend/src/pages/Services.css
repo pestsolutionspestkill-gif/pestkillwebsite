@@ -1,0 +1,92 @@
+.services-page .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.services-page .service-card {
+  display: flex; flex-direction: column;
+  padding: 34px 32px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  transition: var(--transition);
+}
+.services-page .service-card:hover { transform: translateY(-6px); border-color: transparent; box-shadow: var(--shadow-lg); }
+.services-page .service-icon {
+  width: 60px; height: 60px;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  color: var(--emerald-400);
+  background: linear-gradient(145deg, var(--navy-800), var(--navy-950));
+}
+.services-page .service-icon svg { width: 28px; height: 28px; }
+.services-page .service-card h2 { font-size: 1.35rem; margin-bottom: 12px; }
+.services-page .service-desc { font-size: 0.94rem; color: var(--muted); line-height: 1.7; margin-bottom: 22px; }
+.services-page .service-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+.services-page .service-meta span {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.8rem; font-weight: 600;
+  color: var(--navy-800);
+  background: var(--surface);
+  border-radius: var(--radius-full);
+}
+.services-page .service-meta svg { margin: 0 !important; color: var(--emerald-600); }
+.services-page .service-features { list-style: none; display: flex; flex-direction: column; gap: 10px; padding-top: 22px; margin-bottom: 28px; border-top: 1px solid var(--line-soft); }
+.services-page .service-features li { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--ink-soft); }
+.services-page .service-features svg { margin: 0 !important; }
+.services-page .service-card .btn { margin-top: auto; width: 100%; }
+
+.services-page .form-section { background: var(--surface); }
+.services-page .form-card {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 52px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+.services-page .form-card h2 { text-align: center; margin-bottom: 8px; }
+.services-page .form-card > p { text-align: center; color: var(--muted); margin-bottom: 34px; }
+.services-page .form-card form { display: flex; flex-direction: column; gap: 14px; }
+.services-page .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.services-page .form-card .btn { width: 100%; margin-top: 6px; }
+.services-page .form-card form > p { color: var(--muted) !important; }
+
+.services-page .faq-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 1000px; margin: 0 auto; }
+.services-page .faq-item { padding: 28px 30px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.services-page .faq-item h3 { font-size: 1.05rem; margin-bottom: 10px; }
+.services-page .faq-item p { font-size: 0.94rem; color: var(--muted); line-height: 1.7; }
+
+@media (max-width: 1024px) { .services-page .services-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 680px) {
+  .services-page .services-grid, .services-page .faq-grid, .services-page .form-row { grid-template-columns: 1fr; }
+  .services-page .form-card { padding: 28px 22px; }
+}
+
+.services-page .service-card { position: relative; }
+.services-page .service-new { position: absolute; top: 28px; right: 28px; padding: 5px 12px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--navy-900); background: var(--emerald-400); border-radius: var(--radius-full); }
+.services-page .service-actions { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.services-page .service-actions .btn { width: 100%; padding: 13px 16px; }
+
+.services-page .industries-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.services-page .industry-card { padding: 28px 24px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); transition: var(--transition); }
+.services-page .industry-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.services-page .industry-card .icon-tile { margin-bottom: 20px; }
+.services-page .industry-card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+.services-page .industry-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+.services-page .amc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1080px; margin: 0 auto; }
+.services-page .amc-card { position: relative; display: flex; flex-direction: column; padding: 36px 32px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-xl); }
+.services-page .amc-card h3 { font-size: 1.3rem; }
+.services-page .amc-visits { margin: 6px 0 24px; font-size: 0.9rem; color: var(--muted); }
+.services-page .amc-card ul { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; }
+.services-page .amc-card li { display: flex; align-items: center; gap: 10px; font-size: 0.94rem; color: var(--ink-soft); }
+.services-page .amc-card li svg { color: var(--emerald-500); }
+.services-page .amc-card .btn { margin-top: auto; }
+.services-page .amc-card.popular { background: var(--navy-900); border-color: var(--navy-900); box-shadow: var(--shadow-lg); }
+.services-page .amc-card.popular h3 { color: var(--white); }
+.services-page .amc-card.popular .amc-visits, .services-page .amc-card.popular li { color: rgba(255,255,255,0.72); }
+.services-page .amc-card.popular li svg { color: var(--emerald-400); }
+.services-page .amc-badge { position: absolute; top: -12px; left: 32px; padding: 5px 12px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy-900); background: var(--emerald-400); border-radius: var(--radius-full); }
+
+@media (max-width: 1024px) { .services-page .industries-grid { grid-template-columns: repeat(2, 1fr); } .services-page .amc-grid { grid-template-columns: 1fr; max-width: 480px; } }
+@media (max-width: 600px) { .services-page .industries-grid { grid-template-columns: 1fr; } }

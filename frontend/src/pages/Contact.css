@@ -1,0 +1,47 @@
+.contact-page .contact-section { padding: 96px 0; }
+.contact-page .contact-grid { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 56px; align-items: start; }
+
+.contact-page .contact-info h2 { font-size: 2rem; margin-bottom: 12px; }
+.contact-page .contact-info > p { color: var(--muted); margin-bottom: 32px; }
+.contact-page .contact-methods { display: flex; flex-direction: column; gap: 12px; }
+.contact-page .contact-method {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  transition: var(--transition);
+}
+.contact-page .contact-method:hover { border-color: var(--navy-900); transform: translateX(4px); }
+.contact-page .contact-method > span {
+  width: 44px; height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--navy-900);
+  color: var(--emerald-400);
+}
+.contact-page .contact-method h4 { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.contact-page .contact-method a,
+.contact-page .contact-method p { font-size: 0.96rem; font-weight: 500; color: var(--navy-900); line-height: 1.5; word-break: break-word; }
+.contact-page .contact-method a:hover { color: var(--emerald-600); }
+
+.contact-page .contact-form-container {
+  padding: 48px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+.contact-page .contact-form h3 { font-size: 1.6rem; margin-bottom: 28px; }
+.contact-page .contact-form .btn { width: 100%; margin-top: 8px; }
+.contact-page .contact-form .btn svg { margin: 0 !important; }
+.contact-page .success-message h3 { font-size: 1.5rem; }
+.contact-page .success-message p { color: var(--muted); margin-bottom: 12px; }
+
+.contact-page > section:last-child { background: var(--surface) !important; padding: 96px 0 !important; }
+.contact-page > section:last-child h2 { font-size: clamp(1.8rem, 3vw, 2.4rem) !important; }
+.contact-page > section:last-child > .container > div { border-radius: var(--radius-xl) !important; border: 1px solid var(--line); box-shadow: var(--shadow-md) !important; }
+
+@media (max-width: 992px) { .contact-page .contact-grid { grid-template-columns: 1fr; gap: 40px; } }
+@media (max-width: 576px) { .contact-page .contact-form-container { padding: 28px 22px; } }
