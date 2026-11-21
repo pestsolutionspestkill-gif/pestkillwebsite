@@ -306,3 +306,23 @@
   .sd-page .sd-quote { padding: 32px 22px; }
   .sd-page .sd-quote-form { padding: 22px; }
 }
+.sd-page .sd-hero-panel {
+  padding: 36px;
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 40px 80px -30px rgba(0,0,0,0.6);
+}
+.sd-page .sd-hero-panel .icon-tile { margin-bottom: 18px; }
+.sd-page .sd-hero-panel h3 { margin-bottom: 16px; }
+.sd-page .sd-hero-panel ul { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px; }
+.sd-page .sd-hero-panel li { display: flex; align-items: center; gap: 10px; color: var(--ink); font-size: 0.96rem; }
+.sd-page .sd-hero-panel li svg { color: var(--emerald-500); }
+/* Photo credit caption (shared) */
+.sd-page .sd-hero-media { position: relative; margin: 0; }
+.sd-page .sd-hero-media figcaption, .photo-credit {
+  position: absolute; right: 12px; bottom: 12px;
+  padding: 4px 10px;
+  font-size: 0.7rem; color: rgba(255,255,255,0.85);
+  background: rgba(6,19,42,0.55);
+  border-radius: var(--radius-full);
+}

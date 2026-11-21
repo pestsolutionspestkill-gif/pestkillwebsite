@@ -1,0 +1,55 @@
+.pd { display: flex; flex-direction: column; gap: 22px; }
+.pd-svg { display: block; width: 100%; height: auto; font-family: 'Noto Sans Devanagari', 'Inter', 'Mangal', sans-serif; }
+.pd-card { position: relative; margin: 0; overflow: hidden; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); }
+.pd-card figcaption { display: flex; flex-direction: column; gap: 4px; padding: 18px 22px 22px; border-top: 1px solid var(--line-soft); }
+.pd-card figcaption strong { font-size: 1.05rem; color: var(--navy-900); line-height: 1.5; }
+.pd-card figcaption span { font-size: 0.9rem; color: var(--muted); }
+
+.pd-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.pd-tag { position: absolute; top: 14px; right: 14px; z-index: 1; padding: 6px 14px; font-size: 0.85rem; font-weight: 700; border-radius: var(--radius-full); }
+.pd-tag.bad { color: #fff; background: #D92D20; }
+.pd-tag.good { color: #fff; background: var(--emerald-500); }
+.pd-bad { border-top: 5px solid #D92D20; }
+.pd-good { border-top: 5px solid var(--emerald-500); }
+
+.pd-main { border-top: 5px solid var(--emerald-500); }
+.pd-legend { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 20px 22px 24px; border-top: 1px solid var(--line-soft); }
+.pd-legend li { display: flex; align-items: flex-start; gap: 10px; }
+.pd-legend-n { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 800; font-size: 0.9rem; color: #fff; background: var(--navy-900); border-radius: 50%; }
+.pd-legend-sw { width: 14px; height: 28px; flex-shrink: 0; border-radius: 4px; }
+.pd-legend strong { display: block; font-size: 0.98rem; color: var(--navy-900); line-height: 1.35; }
+.pd-legend small { display: block; margin-top: 2px; font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+
+.pd-steps { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: step; }
+.pd-step { position: relative; display: flex; flex-direction: column; padding: 14px 14px 20px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.pd-step + .pd-step::before { content: '→'; position: absolute; left: -15px; top: 70px; font-size: 1.3rem; font-weight: 700; color: var(--emerald-500); }
+.pd-step-n { position: absolute; top: 10px; left: 10px; z-index: 1; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; background: var(--emerald-500); border-radius: 50%; box-shadow: 0 0 0 4px var(--white); }
+.pd-step-svg { width: 100%; height: auto; border-radius: var(--radius-md); margin-bottom: 14px; }
+.pd-step strong { font-size: 1.15rem; color: var(--navy-900); }
+.pd-step-en { font-size: 0.88rem; font-weight: 600; color: var(--emerald-700); margin-bottom: 6px; }
+.pd-step small { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+/* Motion — chemical flowing, seeping, termites probing */
+@media (prefers-reduced-motion: no-preference) {
+  .pd-flow { animation: pdFlow 1.4s linear infinite; }
+  .pd-seep { animation: pdSeep 2.4s ease-in-out infinite; }
+  .pd-approach { animation: pdProbe 2.6s ease-in-out infinite; }
+  .pd-march { animation: pdProbe 3s ease-in-out infinite; }
+  .pd-zone { animation: pdGlow 3s ease-in-out infinite; }
+}
+@keyframes pdFlow { to { stroke-dashoffset: -40; } }
+@keyframes pdSeep { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@keyframes pdProbe { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes pdGlow { 0%, 100% { fill-opacity: 0.75; } 50% { fill-opacity: 1; } }
+
+@media (max-width: 1024px) {
+  .pd-legend { grid-template-columns: repeat(2, 1fr); }
+  .pd-steps { grid-template-columns: repeat(2, 1fr); }
+  .pd-step:nth-child(3)::before { display: none; }
+}
+@media (max-width: 720px) {
+  .pd-compare, .pd-legend, .pd-steps { grid-template-columns: 1fr; }
+  .pd-step::before { display: none; }
+  .pd-main { overflow-x: auto; }
+  .pd-main .pd-svg { min-width: 640px; }
+}

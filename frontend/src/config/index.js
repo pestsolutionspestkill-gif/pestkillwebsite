@@ -1,2 +1,3 @@
-export const API_URL = 'http://localhost:5000/api';
-export const IMAGE_URL = 'http://localhost:5000/images';
+// In development Vite proxies /api to the backend (see vite.config.js).
+// In production set VITE_API_URL if the API lives on a different domain.
+export const API_URL = import.meta.env.VITE_API_URL || '/api';

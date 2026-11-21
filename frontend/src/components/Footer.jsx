@@ -1,13 +1,18 @@
 import { Link } from 'react-router-dom';
 import businessConfig from '../data/businessConfig';
-import { Phone, MessageCircle, Mail, MapPin, Clock, ArrowRight, ShieldCheck, Award, Leaf } from 'lucide-react';
+import { Phone, MessageCircle, Mail, MapPin, Clock, ArrowRight, ShieldCheck, Award, Leaf, BadgeCheck } from 'lucide-react';
 import { Logo } from './Navbar';
+import { services as catalogServices } from '../data/catalog';
 import './Footer.css';
 
 const quickLinks = [
-  { label: 'Home', path: '/' },
-  { label: 'Services', path: '/services' },
+  { label: 'Book Online', path: '/book' },
+  { label: 'For Business', path: '/business' },
+  { label: 'Pest Library', path: '/pests' },
+  { label: 'Integrated Pest Management', path: '/integrated-pest-management' },
   { label: 'About Us', path: '/about' },
+  { label: 'Locations', path: '/locations' },
+  { label: 'Careers', path: '/careers' },
   { label: 'Blog', path: '/blog' },
   { label: 'Contact', path: '/contact' },
 ];
@@ -22,7 +27,7 @@ const cities = [
 ];
 
 const Footer = () => {
-  const { businessName, tagline, phoneNumber, whatsappNumber, email, officeAddress, workingHours, services, googleMapLink, brands } = businessConfig;
+  const { businessName, tagline, phoneNumber, whatsappNumber, email, officeAddress, workingHours, googleMapLink, brands, licenceNumber } = businessConfig;
   const wa = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`;
 
   return (
@@ -45,6 +50,7 @@ const Footer = () => {
             <Logo light />
             <p className="footer-tagline">{tagline}. Serving homes, hotels, hospitals and industries across Rajasthan, Delhi NCR and Uttar Pradesh.</p>
             <ul className="footer-trust">
+              <li><BadgeCheck size={16} /> Licensed pest control operator{licenceNumber ? ` · Lic. ${licenceNumber}` : ''}</li>
               <li><ShieldCheck size={16} /> Govt. approved chemicals</li>
               <li><Award size={16} /> Up to 10-year warranty</li>
               <li><Leaf size={16} /> Family & pet safe methods</li>
@@ -52,7 +58,7 @@ const Footer = () => {
           </div>
 
           <div className="footer-col">
-            <h4 className="footer-heading">Company</h4>
+            <h4 className="footer-heading">Explore</h4>
             <ul>
               {quickLinks.map(item => <li key={item.path}><Link to={item.path}>{item.label}</Link></li>)}
             </ul>
@@ -61,7 +67,7 @@ const Footer = () => {
           <div className="footer-col">
             <h4 className="footer-heading">Services</h4>
             <ul>
-              {services.map(s => <li key={s.slug}><Link to={`/services/${s.slug}`}>{s.name}</Link></li>)}
+              {catalogServices.slice(0, 9).map(s => <li key={s.slug}><Link to={s.path}>{s.short}</Link></li>)}
             </ul>
           </div>
 

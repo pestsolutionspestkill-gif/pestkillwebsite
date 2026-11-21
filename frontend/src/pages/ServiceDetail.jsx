@@ -2,12 +2,15 @@ import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
 import businessConfig from '../data/businessConfig';
 import { AlertTriangle, CheckCircle, Phone, MessageCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { extraServices } from '../data/extraServices';
+import { getService } from '../data/catalog';
+import { serviceMedia, creditLine } from '../data/media';
+import { submitLead } from '../lib/api';
 import './ServiceDetail.css';
 
-const services = {
+const baseServices = {
   'termite-control': {
     name: 'Termite Treatment',
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
     title: 'Complete Termite Control & Prevention',
     desc: 'Protect your home with government-certified termite treatment. Up to 10-year warranty.',
     problemTitle: 'What is Termite Problem?',
@@ -43,7 +46,6 @@ const services = {
   },
   'cockroach-control': {
     name: 'Cockroach Control',
-    image: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=800',
     title: 'Professional Cockroach Elimination',
     desc: 'Complete cockroach control using gel baiting and spray treatment. Safe for children and pets.',
     problemTitle: 'What is Cockroach Problem?',
@@ -80,7 +82,6 @@ const services = {
   },
   'rodent-control': {
     name: 'Rodent Control',
-    image: 'https://images.unsplash.com/photo-1574156322687-4c89f40de6ed?w=800',
     title: 'Rat & Mouse Control Solutions',
     desc: 'Permanent rat control solutions with proper proofing and monitoring. 1-year warranty.',
     problemTitle: 'What is Rodent Problem?',
@@ -118,7 +119,6 @@ const services = {
   },
   'bed-bugs': {
     name: 'Bed Bug Treatment',
-    image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=800',
     title: 'Bed Bug Extermination Service',
     desc: 'Heat treatment combined with chemical application. Complete elimination with follow-up.',
     problemTitle: 'What is Bed Bug Problem?',
@@ -155,7 +155,6 @@ const services = {
   },
   'general-pest-control': {
     name: 'General Pest Control',
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
     title: 'Annual Pest Control Contract',
     desc: 'Complete annual protection for all common pests. Regular maintenance and emergency support.',
     problemTitle: 'What is General Pest Problem?',
@@ -193,13 +192,20 @@ const services = {
 };
 
 
+const services = Object.fromEntries(
+  Object.entries({ ...baseServices, ...extraServices }).map(([slug, s]) => [slug, { ...s, photo: serviceMedia[slug] }]),
+);
+
 const ServiceDetail = () => {
   const { slug } = useParams();
   const { phoneNumber } = businessConfig;
   const service = services[slug];
   const [form, setForm] = useState({ name: '', phone: '', message: '' });
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [formError, setFormError] = useState('');
   const wa = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}`;
+  const HeroIcon = getService(slug)?.icon;
 
   if (!service) {
     return (
@@ -213,11 +219,21 @@ const ServiceDetail = () => {
     );
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const message = `Hello PestKill, I'm interested in ${service.name}. Name: ${form.name}, Phone: ${form.phone}, Message: ${form.message}`;
-    window.open(`${wa}?text=${encodeURIComponent(message)}`, '_blank');
-    setSent(true);
+    setSending(true);
+    setFormError('');
+    try {
+      await submitLead(
+        { type: 'quote', service: service.name, name: form.name, phone: form.phone, message: form.message, source: `service:${slug}` },
+        { whatsappNumber: phoneNumber, whatsappText: `Hello PestKill, I'm interested in ${service.name}. Name: ${form.name}, Phone: ${form.phone}, Message: ${form.message}` },
+      );
+      setSent(true);
+    } catch (err) {
+      setFormError(err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -234,9 +250,21 @@ const ServiceDetail = () => {
               <a href={`tel:${phoneNumber}`} className="btn btn-ghost btn-lg"><Phone size={18} /> {phoneNumber}</a>
             </div>
           </div>
-          <div className="sd-hero-media">
-            <img src={service.image} alt={service.name} />
-          </div>
+          {service.photo ? (
+            <figure className="sd-hero-media">
+              <img src={service.photo.src} alt={service.photo.alt} />
+              <figcaption>{creditLine(service.photo)}</figcaption>
+            </figure>
+          ) : (
+            <div className="sd-hero-panel">
+              <span className="icon-tile">{HeroIcon ? <HeroIcon size={26} /> : <CheckCircle size={26} />}</span>
+              <h3>What's included</h3>
+              <ul>
+                {service.features.slice(0, 5).map((f) => <li key={f}><CheckCircle size={16} />{f}</li>)}
+              </ul>
+              <Link to={`/book?service=${slug}`} className="btn btn-primary btn-block">Book online <ArrowRight size={16} /></Link>
+            </div>
+          )}
         </div>
       </section>
 
@@ -318,7 +346,8 @@ const ServiceDetail = () => {
                   <input className="form-input" type="text" placeholder="Your name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
                   <input className="form-input" type="tel" placeholder="Phone number" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required />
                   <textarea className="form-input" rows="3" placeholder="Describe your pest problem" value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} />
-                  <button type="submit" className="btn btn-primary btn-block btn-lg">Get Free Quote <ArrowRight size={18} /></button>
+                  {formError && <p className="form-error" role="alert">{formError}</p>}
+                  <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={sending}>{sending ? 'Sending…' : <>Get Free Quote <ArrowRight size={18} /></>}</button>
                 </form>
               )}
             </div>

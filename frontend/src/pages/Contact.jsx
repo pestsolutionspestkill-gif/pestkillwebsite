@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import businessConfig from '../data/businessConfig';
-import { Phone, MessageCircle, Mail, MapPin, Clock, CheckCircle, Smartphone } from 'lucide-react';
+import { Phone, MessageCircle, Mail, MapPin, Clock, CheckCircle, Send } from 'lucide-react';
+import { submitLead } from '../lib/api';
 import './Contact.css';
 
 const Contact = () => {
@@ -10,12 +11,24 @@ const Contact = () => {
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   
-  const handleSubmit = (e) => {
+  const [sending, setSending] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const message = `Hello Pest Kill,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nSubject: ${formData.subject}\nMessage: ${formData.message}`;
-    const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    setSubmitted(true);
+    setSending(true);
+    setFormError('');
+    try {
+      await submitLead(
+        { type: 'contact', name: formData.name, phone: formData.phone, email: formData.email, service: formData.subject, message: formData.message, source: 'contact-page' },
+        { whatsappNumber, whatsappText: `Hello Pest Kill,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nSubject: ${formData.subject}\nMessage: ${formData.message}` },
+      );
+      setSubmitted(true);
+    } catch (err) {
+      setFormError(err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -78,7 +91,7 @@ const Contact = () => {
                 <div className="success-message">
                   <CheckCircle size={56} style={{color:'#0E9F6E'}} />
                   <h3>Thank You!</h3>
-                  <p>We've received your message on WhatsApp. Our team will contact you shortly.</p>
+                  <p>We've received your message. Our team will contact you shortly.</p>
                   <button className="btn btn-primary" onClick={() => setSubmitted(false)}>Send Another</button>
                 </div>
               ) : (
@@ -104,7 +117,8 @@ const Contact = () => {
                     <label className="form-label">Message *</label>
                     <textarea name="message" className="form-input" rows="5" value={formData.message} onChange={handleChange} required />
                   </div>
-                  <button type="submit" className="btn btn-primary"><Smartphone size={16} style={{marginRight:'6px',verticalAlign:'middle'}} />Send via WhatsApp</button>
+                  {formError && <p className="form-error" role="alert">{formError}</p>}
+                  <button type="submit" className="btn btn-primary" disabled={sending}><Send size={16} />{sending ? 'Sending…' : 'Send message'}</button>
                 </form>
               )}
             </div>

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import businessConfig from '../data/businessConfig';
 import { Bug, Zap, Shield, BedDouble, ShieldCheck, Tag, Clock, CheckCircle, Layers, ArrowRight, Home as HomeIcon, Hotel, Hospital, Building2, Warehouse, GraduationCap, HardHat, UtensilsCrossed } from 'lucide-react';
 import { scrollToId } from '../components/SmoothScroll';
+import { submitLead } from '../lib/api';
 import './Services.css';
 
 const Services = () => {
@@ -70,11 +71,24 @@ const Services = () => {
     scrollToId('book');
   };
 
-  const handleSubmit = (e) => {
+  const [sending, setSending] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const msg = `Hello PestKill, I'd like a free inspection.\nName: ${formData.name}\nPhone: ${formData.phone}\nDetails: ${formData.message}`;
-    window.open(`https://wa.me/${businessConfig.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
-    setSuccess(true);
+    setSending(true);
+    setFormError('');
+    try {
+      await submitLead(
+        { type: 'inspection', name: formData.name, phone: formData.phone, message: formData.message, source: 'services-page' },
+        { whatsappNumber: businessConfig.whatsappNumber, whatsappText: `Hello PestKill, I'd like a free inspection.\nName: ${formData.name}\nPhone: ${formData.phone}\nDetails: ${formData.message}` },
+      );
+      setSuccess(true);
+    } catch (err) {
+      setFormError(err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -190,7 +204,8 @@ const Services = () => {
                   <input type="tel" name="phone" placeholder="Phone Number *" className="form-input" value={formData.phone} onChange={handleChange} required />
                 </div>
                 <textarea name="message" placeholder="Tell us about your pest problem..." className="form-input" rows="3" value={formData.message} onChange={handleChange} />
-                <button type="submit" className="btn btn-primary">Get Free Quote</button>
+                {formError && <p className="form-error" role="alert">{formError}</p>}
+                <button type="submit" className="btn btn-primary" disabled={sending}>{sending ? 'Sending…' : 'Get Free Quote'}</button>
                 <p style={{fontSize: '0.85rem', color: '#666', marginTop: '12px', textAlign: 'center'}}>We respond within 15 minutes</p>
               </form>
             )}

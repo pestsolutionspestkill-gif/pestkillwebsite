@@ -1,49 +1,40 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
+import db, { audit } from '../db.js';
+import { auth, requirePermission } from '../middleware/rbac.js';
+import { str, oneOf, intId } from '../utils/validate.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
+const STATUSES = ['pending', 'in_progress', 'resolved', 'closed'];
 
-const auth = async (req, res, next) => {
+router.post('/', auth, (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'No token provided' });
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) { res.status(401).json({ error: 'Invalid token' }); }
-};
-
-router.post('/', auth, async (req, res) => {
-  try {
-    const { subject, description } = req.body;
-    const result = req.db.prepare(
-      'INSERT INTO complaints (user_id, subject, description, status) VALUES (?, ?, ?, ?)'
-    ).run(req.user.id, subject, description, 'pending');
-    const complaint = req.db.prepare('SELECT * FROM complaints WHERE id = ?').get(result.lastInsertRowid);
-    res.status(201).json(complaint);
-  } catch (error) { res.status(500).json({ error: error.message }); }
+    const subject = str(req.body.subject, { field: 'Subject', min: 3, max: 150, required: true });
+    const description = str(req.body.description, { field: 'Description', min: 10, max: 3000, required: true });
+    const { lastInsertRowid } = db.prepare("INSERT INTO complaints (user_id, subject, description, status) VALUES (?, ?, ?, 'pending')").run(req.user.id, subject, description);
+    res.status(201).json(db.prepare('SELECT * FROM complaints WHERE id = ?').get(lastInsertRowid));
+  } catch (e) { next(e); }
 });
 
-router.get('/', async (req, res) => {
-  try {
-    const complaints = req.db.prepare('SELECT * FROM complaints ORDER BY created_at DESC').all();
-    res.json(complaints);
-  } catch (error) { res.status(500).json({ error: error.message }); }
+router.get('/my-complaints', auth, (req, res) => {
+  res.json(db.prepare('SELECT id, subject, description, status, response, created_at, updated_at FROM complaints WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id));
 });
 
-router.get('/my-complaints', auth, async (req, res) => {
-  try {
-    const complaints = req.db.prepare('SELECT * FROM complaints WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
-    res.json(complaints);
-  } catch (error) { res.status(500).json({ error: error.message }); }
+router.get('/', requirePermission('complaints.manage'), (_req, res) => {
+  res.json(db.prepare(`SELECT c.*, u.name AS user_name, u.phone AS user_phone, u.email AS user_email
+    FROM complaints c LEFT JOIN users u ON u.id = c.user_id ORDER BY c.created_at DESC LIMIT 500`).all());
 });
 
-router.delete('/:id', auth, async (req, res) => {
+router.patch('/:id', requirePermission('complaints.manage'), (req, res, next) => {
   try {
-    req.db.prepare('DELETE FROM complaints WHERE id = ?').run(req.params.id);
-    res.json({ message: 'Deleted' });
-  } catch (error) { res.status(500).json({ error: error.message }); }
+    const id = intId(req.params.id);
+    const existing = db.prepare('SELECT * FROM complaints WHERE id = ?').get(id);
+    if (!existing) return res.status(404).json({ error: 'Complaint not found.' });
+    const status = req.body.status !== undefined ? oneOf(req.body.status, STATUSES, 'status') : existing.status;
+    const response = req.body.response !== undefined ? str(req.body.response, { field: 'Response', max: 3000 }) : existing.response;
+    db.prepare('UPDATE complaints SET status = ?, response = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, response, id);
+    audit(req, 'complaint.update', 'complaint', id, { status });
+    res.json(db.prepare('SELECT * FROM complaints WHERE id = ?').get(id));
+  } catch (e) { next(e); }
 });
 
 export default router;

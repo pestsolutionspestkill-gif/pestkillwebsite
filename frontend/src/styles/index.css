@@ -59,7 +59,7 @@
   --font-serif: 'Playfair Display', Georgia, serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --transition: all 0.35s var(--ease);
-  --nav-h: 76px;
+  --nav-h: 114px;
 }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -167,6 +167,7 @@ strong { color: var(--navy-900); font-weight: 600; }
 .btn-outline:hover { border-color: var(--navy-900); transform: translateY(-2px); }
 .btn-white { background: var(--white); color: var(--navy-900); }
 .btn-white:hover { background: var(--emerald-50); transform: translateY(-2px); }
+.btn-ghost { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.28); color: var(--white); }
 .btn-ghost:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.4); }
 .btn-lg { padding: 18px 36px; font-size: 1rem; }
 .btn-sm { padding: 10px 20px; font-size: 0.85rem; }
@@ -243,6 +244,12 @@ textarea.form-input { resize: vertical; min-height: 120px; }
 .page-hero .text-gradient,
 .services-hero .text-gradient, .blog-hero .text-gradient, .shop-hero .text-gradient { color: var(--emerald-400); }
 
+.photo-frame { position: relative; overflow: hidden; margin: 0; }
+.photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+.photo-credit { position: absolute; right: 10px; bottom: 10px; padding: 3px 9px; font-size: 0.68rem; line-height: 1.4; color: rgba(255,255,255,0.88); background: rgba(6,19,42,0.55); border-radius: var(--radius-full); pointer-events: none; }
+
+.form-error { padding: 10px 14px; font-size: 0.86rem; color: #B42318 !important; background: #FDECEC; border: 1px solid #F8D3D3; border-radius: var(--radius-md); }
+
 /* ---------- Utility ---------- */
 .success-message { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 40px 24px; }
 .success-message svg { color: var(--emerald-500); }
@@ -259,8 +266,9 @@ textarea.form-input { resize: vertical; min-height: 120px; }
 }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
 
+@media (max-width: 1024px) { :root { --nav-h: 68px; } }
+
 @media (max-width: 768px) {
-  :root { --nav-h: 68px; }
   .container { padding: 0 20px; }
   .section { padding: 76px 0; }
   .section-head { margin-bottom: 44px; }

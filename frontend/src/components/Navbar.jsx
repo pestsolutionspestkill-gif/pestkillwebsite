@@ -1,25 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import {
+  Phone, MessageCircle, Menu, X, ChevronDown, ShieldCheck, ArrowRight, Search, Clock, BadgeCheck, CalendarCheck,
+} from 'lucide-react';
 import businessConfig from '../data/businessConfig';
-import { Phone, MessageCircle, Menu, X, ChevronDown, ShieldCheck, ArrowRight } from 'lucide-react';
+import { services, serviceGroups, sectors, pests } from '../data/catalog';
+import SearchPalette from './SearchPalette';
+import { useAuth, homeFor } from '../context/AuthContext';
 import './Navbar.css';
-
-const links = [
-  { name: 'Home', path: '/' },
-  { name: 'Services', path: '/services' },
-  { name: 'About', path: '/about' },
-  { name: 'Blog', path: '/blog' },
-  { name: 'Contact', path: '/contact' },
-];
-
-const servicePages = [
-  { name: 'Anti-Termite Piping', desc: 'Porous pipe system · New construction', path: '/services/anti-termite-piping' },
-  { name: 'Termite Control', desc: 'Pre & post construction', path: '/services/termite-control' },
-  { name: 'Cockroach Control', desc: 'Gel & spray treatment', path: '/services/cockroach-control' },
-  { name: 'Rodent Control', desc: 'Proofing & baiting', path: '/services/rodent-control' },
-  { name: 'Bed Bug Treatment', desc: 'Heat & chemical', path: '/services/bed-bugs' },
-  { name: 'General Pest Control', desc: 'Annual contracts', path: '/services/general-pest-control' },
-];
 
 export const Logo = ({ light = false }) => (
   <Link to="/" className={`logo ${light ? 'logo-light' : ''}`} aria-label="PestKill home">
@@ -31,11 +19,131 @@ export const Logo = ({ light = false }) => (
   </Link>
 );
 
+const companyLinks = [
+  { name: 'About Us', desc: 'Our story and values', path: '/about' },
+  { name: 'Locations', desc: 'Cities we serve', path: '/locations' },
+  { name: 'Careers', desc: 'Join our team', path: '/careers' },
+  { name: 'Blog & Guides', desc: 'Expert pest advice', path: '/blog' },
+  { name: 'Contact', desc: 'Talk to a specialist', path: '/contact' },
+];
+
+const MENUS = [
+  { id: 'services', label: 'Services', match: ['/services', '/termite-control', '/cockroach-control', '/bed-bug-treatment', '/rodent-control', '/anti-termite-piping'] },
+  { id: 'business', label: 'For Business', match: ['/business', '/integrated-pest-management'] },
+  { id: 'pests', label: 'Pest Library', match: ['/pests'] },
+  { id: 'company', label: 'Company', match: ['/about', '/locations', '/careers', '/blog', '/contact'] },
+];
+
+const ServicesPanel = () => (
+  <div className="mega-grid mega-services">
+    {serviceGroups.map((g) => (
+      <div key={g.id} className="mega-col">
+        <p className="mega-heading">{g.label}</p>
+        {services.filter((s) => s.group === g.id).map(({ icon: Icon, ...s }) => (
+          <Link key={s.slug} to={s.path} className="mega-link">
+            <span className="mega-icon"><Icon size={17} /></span>
+            <span><strong>{s.short}</strong><small>{s.summary}</small></span>
+          </Link>
+        ))}
+      </div>
+    ))}
+    <div className="mega-feature">
+      <span className="eyebrow light">Book Online</span>
+      <h4>Schedule a treatment in two minutes</h4>
+      <p>See starting prices, pick a slot and get a confirmation call.</p>
+      <Link to="/book" className="btn btn-primary btn-sm">Book now <ArrowRight size={14} /></Link>
+      <Link to="/services" className="mega-more">All services & AMC plans <ArrowRight size={14} /></Link>
+    </div>
+  </div>
+);
+
+const BusinessPanel = () => (
+  <div className="mega-grid mega-business">
+    <div className="mega-col span-2">
+      <p className="mega-heading">Industries</p>
+      <div className="mega-two">
+        {sectors.map(({ icon: Icon, ...s }) => (
+          <Link key={s.slug} to={`/business/${s.slug}`} className="mega-link">
+            <span className="mega-icon"><Icon size={17} /></span>
+            <span><strong>{s.name}</strong></span>
+          </Link>
+        ))}
+      </div>
+    </div>
+    <div className="mega-col">
+      <p className="mega-heading">Approach</p>
+      <Link to="/integrated-pest-management" className="mega-link plain"><span><strong>Integrated Pest Management</strong><small>Prevention-first programmes</small></span></Link>
+      <Link to="/business" className="mega-link plain"><span><strong>Commercial solutions</strong><small>Audit-ready service plans</small></span></Link>
+      <Link to="/services/fumigation" className="mega-link plain"><span><strong>Fumigation</strong><small>Warehouses & commodities</small></span></Link>
+    </div>
+    <div className="mega-feature">
+      <span className="eyebrow light">Free site survey</span>
+      <h4>Get a written proposal for your premises</h4>
+      <p>A specialist inspects your site and recommends a programme.</p>
+      <Link to="/contact" className="btn btn-primary btn-sm">Request survey <ArrowRight size={14} /></Link>
+    </div>
+  </div>
+);
+
+const PestsPanel = () => (
+  <div className="mega-grid mega-pests">
+    <div className="mega-col span-3">
+      <p className="mega-heading">Identify your pest</p>
+      <div className="mega-pest-grid">
+        {pests.map(({ icon: Icon, ...p }) => (
+          <Link key={p.slug} to={`/pests/${p.slug}`} className="mega-pest">
+            <span className="mega-icon"><Icon size={18} /></span>
+            <strong>{p.name}</strong>
+            <small>{p.tag}</small>
+          </Link>
+        ))}
+      </div>
+    </div>
+    <div className="mega-feature">
+      <span className="eyebrow light">Not sure?</span>
+      <h4>Send us a photo</h4>
+      <p>WhatsApp a picture and our specialist will identify the pest for free.</p>
+      <Link to="/pests" className="btn btn-primary btn-sm">Open pest library <ArrowRight size={14} /></Link>
+    </div>
+  </div>
+);
+
+const CompanyPanel = () => (
+  <div className="mega-grid mega-company">
+    <div className="mega-col span-2">
+      <p className="mega-heading">Company</p>
+      <div className="mega-two">
+        {companyLinks.map((c) => (
+          <Link key={c.path} to={c.path} className="mega-link plain">
+            <span><strong>{c.name}</strong><small>{c.desc}</small></span>
+          </Link>
+        ))}
+      </div>
+    </div>
+    <div className="mega-feature">
+      <span className="eyebrow light">Head Office</span>
+      <h4>Jaipur, Rajasthan</h4>
+      <p>{businessConfig.officeAddress}</p>
+      <Link to="/locations" className="btn btn-primary btn-sm">All locations <ArrowRight size={14} /></Link>
+    </div>
+  </div>
+);
+
+const PANELS = { services: ServicesPanel, business: BusinessPanel, pests: PestsPanel, company: CompanyPanel };
+
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState(null);
+  const [mobileSection, setMobileSection] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const closeTimer = useRef(null);
+  const { user } = useAuth();
+  const accountLabel = user ? (user.role === 'client' ? 'My account' : 'Console') : 'Login';
+  const accountPath = user ? homeFor(user) : '/login';
   const location = useLocation();
-  const { phoneNumber, whatsappNumber } = businessConfig;
+  const { phoneNumber, whatsappNumber, workingHours } = businessConfig;
+  const wa = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -44,69 +152,115 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearchOpen(true); }
+      if (e.key === 'Escape') setOpenMenu(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
-  const isActive = (path) => location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
+  useEffect(() => { setMobileOpen(false); setOpenMenu(null); }, [location.pathname]);
+
+  const enter = (id) => { clearTimeout(closeTimer.current); setOpenMenu(id); };
+  const leave = () => { closeTimer.current = setTimeout(() => setOpenMenu(null), 140); };
+  const isActive = (m) => m.match.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`));
+  const isBusiness = location.pathname.startsWith('/business') || location.pathname.startsWith('/integrated-pest-management');
+  const Panel = openMenu ? PANELS[openMenu] : null;
 
   return (
     <>
-      <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-        <div className="nav-container">
+      <header className={`navbar ${scrolled ? 'scrolled' : ''} ${openMenu ? 'menu-open' : ''}`}>
+        <div className="nav-utility">
+          <div className="nav-utility-inner">
+            <div className="segment-tabs" role="tablist" aria-label="Audience">
+              <Link to="/" className={!isBusiness ? 'active' : ''}>For Home</Link>
+              <Link to="/business" className={isBusiness ? 'active' : ''}>For Business</Link>
+            </div>
+            <div className="utility-meta">
+              <span><BadgeCheck size={14} /> Licensed pest control operator</span>
+              <span><Clock size={14} /> {workingHours}</span>
+              <a href={wa}><MessageCircle size={14} /> WhatsApp</a>
+              <a href={`tel:${phoneNumber}`} className="utility-phone"><Phone size={14} /> {phoneNumber}</a>
+            </div>
+          </div>
+        </div>
+
+        <div className="nav-container" onMouseLeave={leave}>
           <Logo />
 
-          <nav className={`nav-links ${mobileOpen ? 'mobile-open' : ''}`} data-lenis-prevent>
-            {links.map(link => (
-              link.name === 'Services' ? (
-                <div key={link.name} className="service-item">
-                  <Link to={link.path} className={`nav-link ${isActive(link.path) ? 'active' : ''}`}>
-                    Services <ChevronDown size={14} className="chev" />
-                  </Link>
-                  <div className="service-menu">
-                    {servicePages.map(page => (
-                      <Link key={page.path} to={page.path} className="service-link">
-                        <span className="service-link-name">{page.name}</span>
-                        <span className="service-link-desc">{page.desc}</span>
-                      </Link>
-                    ))}
-                    <Link to="/services" className="service-link-all">All services <ArrowRight size={14} /></Link>
-                  </div>
-                </div>
-              ) : (
-                <Link key={link.name} to={link.path} className={`nav-link ${isActive(link.path) ? 'active' : ''}`}>
-                  {link.name}
-                </Link>
-              )
+          <nav className="nav-menus" aria-label="Main">
+            {MENUS.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className={`nav-link ${isActive(m) ? 'active' : ''} ${openMenu === m.id ? 'open' : ''}`}
+                aria-expanded={openMenu === m.id}
+                onMouseEnter={() => enter(m.id)}
+                onFocus={() => enter(m.id)}
+                onClick={() => setOpenMenu(openMenu === m.id ? null : m.id)}
+              >
+                {m.label} <ChevronDown size={14} className="chev" />
+              </button>
             ))}
-            <div className="mobile-only">
-              <Link to="/login" className="btn btn-outline btn-block">Login</Link>
-              <Link to="/services" className="btn btn-primary btn-block">Get Free Quote</Link>
-            </div>
           </nav>
 
           <div className="nav-actions">
-            <a href={`tel:${phoneNumber}`} className="nav-phone">
-              <span className="nav-phone-icon"><Phone size={15} /></span>
-              <span className="nav-phone-text">
-                <small>Call 24×7</small>
-                {phoneNumber}
-              </span>
-            </a>
-            <Link to="/login" className="login-btn">Login</Link>
-            <Link to="/services" className="btn btn-primary btn-sm quote-btn">Get Free Quote</Link>
-            <button className="menu-btn" aria-label="Toggle menu" onClick={() => setMobileOpen(!mobileOpen)}>
+            <button type="button" className="nav-search" onClick={() => setSearchOpen(true)} aria-label="Search">
+              <Search size={17} /><span>Search</span><kbd>Ctrl K</kbd>
+            </button>
+            <Link to={accountPath} className="login-btn">{accountLabel}</Link>
+            <Link to="/book" className="btn btn-primary btn-sm quote-btn"><CalendarCheck size={16} /> Book Online</Link>
+            <button type="button" className="menu-btn" aria-label="Toggle menu" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
+
+          {Panel && (
+            <div className="mega" onMouseEnter={() => enter(openMenu)}>
+              <div className="mega-inner"><Panel /></div>
+            </div>
+          )}
         </div>
       </header>
+      {openMenu && <div className="mega-scrim" onMouseEnter={leave} onClick={() => setOpenMenu(null)} />}
+
+      <div className={`mobile-drawer ${mobileOpen ? 'open' : ''}`} data-lenis-prevent>
+        <div className="mobile-segment">
+          <Link to="/" className={!isBusiness ? 'active' : ''}>For Home</Link>
+          <Link to="/business" className={isBusiness ? 'active' : ''}>For Business</Link>
+        </div>
+        <button type="button" className="mobile-search" onClick={() => { setMobileOpen(false); setSearchOpen(true); }}><Search size={18} /> Search services, pests, cities</button>
+        {[
+          { id: 'services', label: 'Services', items: services.map((s) => ({ name: s.name, path: s.path })) },
+          { id: 'business', label: 'For Business', items: [{ name: 'Commercial solutions', path: '/business' }, { name: 'Integrated Pest Management', path: '/integrated-pest-management' }, ...sectors.map((s) => ({ name: s.name, path: `/business/${s.slug}` }))] },
+          { id: 'pests', label: 'Pest Library', items: [{ name: 'All pests', path: '/pests' }, ...pests.map((p) => ({ name: p.name, path: `/pests/${p.slug}` }))] },
+          { id: 'company', label: 'Company', items: companyLinks },
+        ].map((sec) => (
+          <div key={sec.id} className={`mobile-sec ${mobileSection === sec.id ? 'open' : ''}`}>
+            <button type="button" onClick={() => setMobileSection(mobileSection === sec.id ? null : sec.id)}>
+              {sec.label} <ChevronDown size={18} />
+            </button>
+            <div className="mobile-sec-items">
+              {sec.items.map((it) => <Link key={it.path + it.name} to={it.path}>{it.name}</Link>)}
+            </div>
+          </div>
+        ))}
+        <div className="mobile-cta">
+          <Link to="/book" className="btn btn-primary btn-block">Book Online</Link>
+          <div className="mobile-cta-row">
+            <a href={`tel:${phoneNumber}`} className="btn btn-outline"><Phone size={16} /> Call</a>
+            <Link to={accountPath} className="btn btn-outline">{accountLabel}</Link>
+          </div>
+        </div>
+      </div>
+
+      <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       <div className="floating-actions">
-        <a href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`} className="float-btn float-wa" aria-label="WhatsApp">
-          <MessageCircle size={22} />
-        </a>
-        <a href={`tel:${phoneNumber}`} className="float-btn float-call" aria-label="Call">
-          <Phone size={20} />
-        </a>
+        <a href={wa} className="float-btn float-wa" aria-label="WhatsApp"><MessageCircle size={22} /></a>
+        <a href={`tel:${phoneNumber}`} className="float-btn float-call" aria-label="Call"><Phone size={20} /></a>
       </div>
     </>
   );

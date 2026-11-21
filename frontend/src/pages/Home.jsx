@@ -7,6 +7,9 @@ import {
   ClipboardList, Search, BadgeCheck, Award, Building2, Layers, Plus, Minus,
   Home as HomeIcon, Hotel, Hospital, Warehouse, UtensilsCrossed, HardHat,
 } from 'lucide-react';
+import { pests } from '../data/catalog';
+import { submitLead } from '../lib/api';
+import { media, pestMedia } from '../data/media';
 import './Home.css';
 
 const services = [
@@ -76,11 +79,24 @@ const Home = () => {
     { value: '100%', label: 'Satisfaction guarantee' },
   ];
 
-  const handleSubmit = (e) => {
+  const [sending, setSending] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const msg = `Hello PestKill, I'd like a free inspection.\nName: ${formData.name}\nPhone: ${formData.phone}\nService: ${formData.service || 'Not specified'}`;
-    window.open(`${wa}?text=${encodeURIComponent(msg)}`, '_blank');
-    setSubmitted(true);
+    setSending(true);
+    setFormError('');
+    try {
+      await submitLead(
+        { type: 'inspection', name: formData.name, phone: formData.phone, service: formData.service || null, source: 'home-hero' },
+        { whatsappNumber, whatsappText: `Hello PestKill, I'd like a free inspection.\nName: ${formData.name}\nPhone: ${formData.phone}\nService: ${formData.service || 'Not specified'}` },
+      );
+      setSubmitted(true);
+    } catch (err) {
+      setFormError(err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -99,8 +115,8 @@ const Home = () => {
               Government-certified termite, cockroach, rodent and bed bug control for homes, hotels and industries — delivered by trained specialists with written warranty.
             </p>
             <div className="hero-actions fade-up d3">
-              <a href={`tel:${phoneNumber}`} className="btn btn-primary btn-lg"><Phone size={18} /> Call Now</a>
-              <a href={wa} className="btn btn-ghost btn-lg"><MessageCircle size={18} /> WhatsApp Us</a>
+              <Link to="/book" className="btn btn-primary btn-lg">Book Online <ArrowRight size={18} /></Link>
+              <a href={`tel:${phoneNumber}`} className="btn btn-ghost btn-lg"><Phone size={18} /> {phoneNumber}</a>
             </div>
             <div className="hero-proof fade-up d4">
               <div className="hero-stars">
@@ -132,7 +148,8 @@ const Home = () => {
                   <option value="">Select a service</option>
                   {services.map(s => <option key={s.slug} value={s.name}>{s.name}</option>)}
                 </select>
-                <button type="submit" className="btn btn-primary btn-block btn-lg">Request Inspection <ArrowRight size={18} /></button>
+                {formError && <p className="form-error" role="alert">{formError}</p>}
+                <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={sending}>{sending ? 'Sending…' : <>Request Inspection <ArrowRight size={18} /></>}</button>
                 <p className="hero-form-note"><BadgeCheck size={14} /> No obligation. Free across Jaipur.</p>
               </form>
             )}
@@ -151,6 +168,30 @@ const Home = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* AUDIENCE SPLIT */}
+      <section className="section-sm audience-section">
+        <div className="container audience-grid">
+          <Link to="/services" className="audience-card">
+            <span className="icon-tile"><HomeIcon size={24} /></span>
+            <div>
+              <span className="audience-kicker">For your home</span>
+              <h3>Residential pest control</h3>
+              <p>Odourless, family-safe treatments with fixed starting prices and online booking.</p>
+            </div>
+            <span className="audience-cta">Explore home services <ArrowRight size={16} /></span>
+          </Link>
+          <Link to="/business" className="audience-card dark">
+            <span className="icon-tile"><Building2 size={24} /></span>
+            <div>
+              <span className="audience-kicker">For your business</span>
+              <h3>Commercial pest management</h3>
+              <p>Audit-ready programmes for food, healthcare, hospitality, warehouses and offices.</p>
+            </div>
+            <span className="audience-cta">Explore business solutions <ArrowRight size={16} /></span>
+          </Link>
         </div>
       </section>
 
@@ -188,7 +229,7 @@ const Home = () => {
       <section className="section bg-surface">
         <div className="container why-layout">
           <div className="why-visual">
-            <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900" alt="PestKill technician at work" loading="lazy" />
+            <img src={media.technician.src} alt={media.technician.alt} loading="lazy" />
             <div className="why-badge">
               <Award size={28} />
               <div>
@@ -273,6 +314,27 @@ const Home = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* PEST LIBRARY */}
+      <section className="section">
+        <div className="container">
+          <div className="section-head">
+            <span className="eyebrow">Pest Library</span>
+            <h2 className="section-title">Know what you're <span className="text-gradient">dealing with</span></h2>
+            <p className="section-subtitle">Identify common pests, spot the warning signs early and learn how to prevent them.</p>
+          </div>
+          <div className="pest-strip">
+            {pests.map((p) => (
+              <Link key={p.slug} to={`/pests/${p.slug}`} className="pest-chip">
+                <img className="pest-chip-photo" src={pestMedia[p.slug].src} alt={pestMedia[p.slug].alt} loading="lazy" />
+                <strong>{p.name}</strong>
+                <small>{p.tag}</small>
+              </Link>
+            ))}
+          </div>
+          <div className="center-cta"><Link to="/pests" className="btn btn-outline">Open the pest library <ArrowRight size={16} /></Link></div>
         </div>
       </section>
 

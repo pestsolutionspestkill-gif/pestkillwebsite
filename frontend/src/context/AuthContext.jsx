@@ -1,117 +1,72 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { API_URL } from '../config';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { api, tokenStore } from '../lib/api';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 };
+
+export const homeFor = (user) => (user?.role === 'owner' || user?.role === 'manager' ? '/admin' : '/dashboard');
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
-  const [demoMode, setDemoMode] = useState(false);
+  const [loading, setLoading] = useState(Boolean(tokenStore.get()));
+
+  const logout = useCallback(() => {
+    tokenStore.clear();
+    setUser(null);
+  }, []);
+
+  const refresh = useCallback(async () => {
+    if (!tokenStore.get()) { setUser(null); setLoading(false); return null; }
+    try {
+      const me = await api('/users/profile');
+      setUser(me);
+      return me;
+    } catch (e) {
+      if (e.status === 401) logout();
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [logout]);
 
   useEffect(() => {
-    const initAuth = async () => {
-      if (token) {
-        try {
-          const res = await fetch(`${API_URL}/users/profile`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const userData = await res.json();
-            setUser(userData);
-          } else {
-            localStorage.removeItem('token');
-            setToken(null);
-          }
-        } catch (error) {
-          console.log('Backend not connected, using demo mode');
-          const savedUser = localStorage.getItem('demoUser');
-          if (savedUser) {
-            setUser(JSON.parse(savedUser));
-            setDemoMode(true);
-          }
-        }
-      }
-      setLoading(false);
-    };
-    initAuth();
-  }, [token]);
-
-  const login = async (email, password) => {
-    try {
-      const res = await fetch(`${API_URL}/users/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      localStorage.setItem('token', data.token);
-      setToken(data.token);
-      setUser(data.user);
-      return data.user;
-    } catch (error) {
-      const savedUser = localStorage.getItem('demoUser');
-      if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        if (userData.email === email) {
-          setUser(userData);
-          setDemoMode(true);
-          return userData;
-        }
-      }
-      throw new Error('Backend not connected. Please start MongoDB and backend.');
-    }
-  };
-
-  const register = async (userData) => {
-    try {
-      const res = await fetch(`${API_URL}/users/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      localStorage.setItem('token', data.token);
-      setToken(data.token);
-      setUser(data.user);
-      return data.user;
-    } catch (error) {
-      const newUser = { ...userData, id: Date.now().toString(), role: 'user' };
-      localStorage.setItem('demoUser', JSON.stringify(newUser));
-      localStorage.setItem('token', 'demo_' + newUser.id);
-      setToken('demo_' + newUser.id);
-      setUser(newUser);
-      setDemoMode(true);
-      return newUser;
-    }
-  };
-
-  const logout = () => {
     localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-    setDemoMode(false);
+    localStorage.removeItem('demoUser');
+    refresh();
+    const onUnauthorized = () => logout();
+    window.addEventListener('pk:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('pk:unauthorized', onUnauthorized);
+  }, [refresh, logout]);
+
+  const startSession = ({ user: u, token }) => {
+    tokenStore.set(token);
+    setUser(u);
+    return u;
   };
 
-  const value = {
+  const login = async (email, password) => startSession(await api('/users/login', { method: 'POST', body: { email, password } }));
+  const register = async (data) => startSession(await api('/users/register', { method: 'POST', body: data }));
+
+  const value = useMemo(() => ({
     user,
-    token,
     loading,
     login,
     register,
     logout,
-    isAdmin: user?.role === 'admin',
-    isAuthenticated: !!user,
-    demoMode
-  };
+    refresh,
+    setUser,
+    isAuthenticated: Boolean(user),
+    isOwner: user?.role === 'owner',
+    isManager: user?.role === 'manager',
+    isStaff: user?.role === 'owner' || user?.role === 'manager',
+    isClient: user?.role === 'client',
+    can: (perm) => user?.role === 'owner' || Boolean(user?.permissions?.includes(perm)),
+  }), [user, loading, logout, refresh]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

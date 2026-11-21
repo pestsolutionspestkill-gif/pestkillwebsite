@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import businessConfig from '../data/businessConfig';
 import { Phone, Mail, MapPin, ShieldCheck, Leaf, Award, Users, ArrowRight } from 'lucide-react';
+import { media } from '../data/media';
 import './About.css';
 
 const values = [
@@ -26,7 +27,7 @@ const About = () => {
       <section className="section">
         <div className="container about-grid">
           <div className="about-image">
-            <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900" alt="PestKill technician" className="about-hero-img" />
+            <img src={media.technician.src} alt={media.technician.alt} className="about-hero-img" />
             <div className="about-image-card">
               <span>Years of service</span>
               <strong>8+</strong>

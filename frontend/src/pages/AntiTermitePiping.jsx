@@ -5,6 +5,8 @@ import {
   RefreshCw, FlaskConical, CheckCircle, XCircle, Home, Building2, Landmark, HardHat,
   Wrench, FileCheck2, BookOpen,
 } from 'lucide-react';
+import PipeDiagram from '../components/PipeDiagram';
+import { media, creditLine } from '../data/media';
 import './ServiceDetail.css';
 import './AntiTermitePiping.css';
 
@@ -57,43 +59,6 @@ const faqs = [
   { q: 'Which chemicals do you use?', a: 'Professional Fipronil- or Imidacloprid-based termiticides from reputed manufacturers such as ENVU and Heranba, handled only by trained technicians.' },
 ];
 
-const PipeDiagram = () => (
-  <svg viewBox="0 0 560 320" className="pipe-diagram" role="img" aria-label="Cross-section of a building foundation showing porous pipes in the soil and an external refill point">
-    <defs>
-      <pattern id="soil" width="14" height="14" patternUnits="userSpaceOnUse">
-        <circle cx="3" cy="4" r="1.2" fill="#C9B79A" />
-        <circle cx="10" cy="10" r="1" fill="#BFAA8A" />
-      </pattern>
-    </defs>
-    <rect x="0" y="150" width="560" height="170" fill="#E9DFCF" />
-    <rect x="0" y="150" width="560" height="170" fill="url(#soil)" />
-    <rect x="70" y="40" width="420" height="22" rx="3" fill="#12294A" />
-    <rect x="70" y="62" width="420" height="88" fill="#F1F4F8" stroke="#CBD3DE" />
-    <rect x="70" y="150" width="34" height="90" fill="#9AA6B6" />
-    <rect x="456" y="150" width="34" height="90" fill="#9AA6B6" />
-    <rect x="263" y="150" width="34" height="70" fill="#9AA6B6" />
-    <rect x="104" y="146" width="352" height="10" fill="#6B7A90" />
-    {[120, 300].map((x) => (
-      <g key={x}>
-        <rect x={x} y="176" width="140" height="10" rx="5" fill="#0E9F6E" />
-        {[...Array(7)].map((_, i) => (
-          <circle key={i} cx={x + 12 + i * 19} cy="194" r="3" fill="#34C38F" opacity={0.75 - i * 0.04} />
-        ))}
-      </g>
-    ))}
-    <rect x="104" y="164" width="352" height="44" rx="6" fill="rgba(14,159,110,0.14)" />
-    <path d="M440 181 H530 V122" stroke="#0E9F6E" strokeWidth="8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    <rect x="516" y="96" width="28" height="26" rx="5" fill="#0B1F3A" />
-    <g fontFamily="Inter, sans-serif" fontSize="12" fontWeight="600" fill="#0B1F3A">
-      <text x="120" y="110">Floor / slab</text>
-      <text x="120" y="232">Treated soil barrier</text>
-      <text x="300" y="232" fill="#0A7A55">Porous pipes · 6–8" deep</text>
-      <text x="420" y="88">Refill point</text>
-      <text x="20" y="140" fill="#6B7A90">Ground level</text>
-    </g>
-  </svg>
-);
-
 const AntiTermitePiping = () => {
   const { phoneNumber } = businessConfig;
 
@@ -136,10 +101,23 @@ const AntiTermitePiping = () => {
               <li><RefreshCw size={18} /> External refill points allow re-dosing for years</li>
             </ul>
           </div>
-          <div className="atp-diagram-card">
-            <PipeDiagram />
-            <p>Illustrative cross-section. The actual layout is planned from your building drawings.</p>
+          <figure className="photo-frame atp-photo">
+            <img src={media.foundation.src} alt={media.foundation.alt} />
+            <figcaption className="photo-credit">{creditLine(media.foundation)}</figcaption>
+            <span className="atp-photo-tag">Pipes are laid at this stage, before the floor</span>
+          </figure>
+        </div>
+      </section>
+
+      <section className="section atp-visual" id="how-it-works">
+        <div className="container">
+          <div className="section-head">
+            <span className="eyebrow">तस्वीरों में समझें · See it in pictures</span>
+            <h2 className="section-title">दीमक से घर की <span className="text-gradient">पक्की सुरक्षा</span></h2>
+            <p className="section-subtitle">How the porous pipe system keeps termites out of your home. Green means protection, red means danger.</p>
           </div>
+          <PipeDiagram />
+          <p className="atp-note">Illustration only. The actual pipe layout is designed from your building drawings.</p>
         </div>
       </section>
 

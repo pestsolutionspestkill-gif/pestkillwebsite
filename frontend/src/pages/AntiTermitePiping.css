@@ -97,3 +97,10 @@
   .atp-page .atp-steps, .atp-page .atp-adv-grid, .atp-page .atp-aud-grid { grid-template-columns: 1fr; }
   .atp-page .atp-price-card, .atp-page .atp-safety { padding: 28px 22px; }
 }
+
+/* Foundation photo */
+.atp-page .atp-photo { aspect-ratio: 4 / 5; max-height: 620px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); }
+.atp-page .atp-photo-tag { position: absolute; left: 16px; top: 16px; max-width: 70%; padding: 10px 14px; font-size: 0.85rem; font-weight: 600; color: var(--white); background: rgba(6,19,42,0.82); border-left: 3px solid var(--emerald-400); border-radius: 10px; }
+
+/* Picture explainer section */
+.atp-page .atp-visual { background: linear-gradient(180deg, #EFF9F4 0%, #F7F9FB 100%); }

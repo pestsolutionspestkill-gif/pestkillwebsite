@@ -1,7 +1,15 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import SmoothScroll from './components/SmoothScroll';
 import AntiTermitePiping from './pages/AntiTermitePiping';
+import BookOnline from './pages/BookOnline';
+import PestLibrary from './pages/PestLibrary';
+import PestDetail from './pages/PestDetail';
+import Business from './pages/Business';
+import SectorPage from './pages/SectorPage';
+import IPM from './pages/IPM';
+import Locations from './pages/Locations';
+import Careers from './pages/Careers';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Services from './pages/Services';
@@ -28,17 +36,26 @@ import Alwar from './pages/Alwar';
 import Bharatpur from './pages/Bharatpur';
 
 function App() {
+  const consoleMode = useLocation().pathname.startsWith('/admin');
   return (
     <div className="app">
       <SmoothScroll />
-      <Navbar />
-      <main style={{minHeight: '100vh', paddingTop: 'var(--nav-h)'}}>
+      {!consoleMode && <Navbar />}
+      <main style={{ minHeight: '100vh', paddingTop: consoleMode ? 0 : 'var(--nav-h)' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />
           <Route path="/services/anti-termite-piping" element={<AntiTermitePiping />} />
           <Route path="/anti-termite-piping" element={<AntiTermitePiping />} />
           <Route path="/services/:slug" element={<ServiceDetail />} />
+          <Route path="/book" element={<BookOnline />} />
+          <Route path="/pests" element={<PestLibrary />} />
+          <Route path="/pests/:slug" element={<PestDetail />} />
+          <Route path="/business" element={<Business />} />
+          <Route path="/business/:slug" element={<SectorPage />} />
+          <Route path="/integrated-pest-management" element={<IPM />} />
+          <Route path="/locations" element={<Locations />} />
+          <Route path="/careers" element={<Careers />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
@@ -61,7 +78,7 @@ function App() {
           <Route path="/bharatpur" element={<Bharatpur />} />
         </Routes>
       </main>
-      <Footer />
+      {!consoleMode && <Footer />}
     </div>
   );
 }

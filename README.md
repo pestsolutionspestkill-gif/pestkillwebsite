@@ -1,23 +1,40 @@
 # pestkillwebsite
 
-Website for **PestKill Pest Solutions**, a professional pest control company based in Jaipur, Rajasthan.
+Website and operations console for **PestKill Pest Solutions**, Jaipur.
 
-## Structure
+- `frontend/` — React + Vite website, customer dashboard and Owner/Manager console
+- `backend/` — Express API with SQLite, role-based access control and audit logging
 
-- `frontend/` — React + Vite website
-- `backend/` — Express API with SQLite
-
-## Run locally
+## First-time setup
 
 ```bash
-# Backend
+# 1. Backend
 cd backend
-cp .env.example .env    # then fill in JWT_SECRET with a long random value
+cp .env.example .env          # set JWT_SECRET to a long random value
 npm install
-npm start
+npm run create-owner          # creates your Owner login (asks for name, email, mobile, password)
+npm start                     # API on http://localhost:5000
 
-# Frontend (in a second terminal)
+# 2. Frontend (second terminal)
 cd frontend
 npm install
-npm run dev
+npm run dev                   # website on http://localhost:3000
 ```
+
+Sign in at `/login`. Owners and managers land on `/admin`; customers land on `/dashboard`.
+
+## Roles
+
+| Role | Access |
+|------|--------|
+| Owner | Everything: bookings, customers, team, permissions, audit log, revenue |
+| Manager | Only what the owner grants in **Admin → Permissions**. Managers can never create staff, change roles, see revenue or edit permissions. |
+| Client | Own bookings, complaints, orders and profile |
+
+Permissions are checked on the server for every request, and changes apply immediately.
+
+## Where website forms go
+
+Book Online, inspection, quote, contact and careers forms are saved to the database and appear in
+**Admin → Bookings / Applications**. If the API cannot be reached, the form falls back to WhatsApp
+so no enquiry is lost.
