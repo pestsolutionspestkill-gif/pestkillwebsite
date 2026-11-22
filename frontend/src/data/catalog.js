@@ -8,57 +8,85 @@ import {
    `path` is the page that describes the service in detail.
    `pricing` is used by the booking wizard ("starting from", final after inspection).
 ------------------------------------------------------------------- */
+/* ------------------------------------------------------------------
+   Official rates. Change a price here and every page, the booking
+   wizard and the FAQs pick it up.
+------------------------------------------------------------------- */
+export const RATES = {
+  termitePost: { min: 6, max: 9 },
+  termitePre: { min: 12, max: 15 },
+  porousPipe: { min: 22, max: 25 },
+  home: { '1BHK': 1200, '2BHK': 1500, '3BHK': 1500 },
+};
+
+const inr = (n) => `₹${n.toLocaleString('en-IN')}`;
+export const sqftLabel = (r) => `₹${r.min}–${r.max} per sq.ft.`;
+export const homeFrom = inr(RATES.home['1BHK']);
+export const homeRateLine = `${inr(RATES.home['1BHK'])} (1BHK) · ${inr(RATES.home['2BHK'])} (2BHK & 3BHK)`;
+
+const homePricing = { unit: 'bhk', tiers: RATES.home };
+const sqftPricing = (r) => ({ unit: 'sqft', min: r.min, max: r.max, label: sqftLabel(r) });
+
 export const services = [
   {
     slug: 'anti-termite-piping', name: 'Porous Pipe Anti-Termite System', short: 'Porous Pipe System',
     group: 'termite', segment: ['home', 'business'], icon: Layers, path: '/services/anti-termite-piping',
     summary: 'Refillable pipe network laid under the foundation before flooring.',
-    pricing: { unit: 'sqft', min: 8, max: 12, label: '₹8–12 per sq.ft.' },
+    pricing: sqftPricing(RATES.porousPipe),
   },
   {
-    slug: 'termite-control', name: 'Anti-Termite Treatment (Pre & Post Construction)', short: 'Pre & Post Construction',
+    slug: 'pre-construction-termite', name: 'Pre-Construction Anti-Termite (Soil Treatment)', short: 'Pre-Construction',
+    group: 'termite', segment: ['home', 'business'], icon: Shield, path: '/termite-control',
+    summary: 'Chemical soil barrier laid while the building is being constructed.',
+    pricing: sqftPricing(RATES.termitePre),
+  },
+  {
+    slug: 'termite-control', name: 'Post-Construction Anti-Termite (Drill & Fill)', short: 'Post-Construction',
     group: 'termite', segment: ['home', 'business'], icon: Bug, path: '/termite-control',
-    summary: 'Soil barrier for new builds, drill-fill injection for existing buildings.',
-    pricing: { unit: 'sqft', min: 12, max: 18, label: '₹12–18 per sq.ft. (post-construction)' },
+    summary: 'Drill-fill injection for existing homes and buildings.',
+    pricing: sqftPricing(RATES.termitePost),
   },
   {
     slug: 'cockroach-control', name: 'Cockroach Control', short: 'Cockroach Control',
     group: 'general', segment: ['home', 'business'], icon: Zap, path: '/cockroach-control',
     summary: 'Odourless gel baiting and residual spray.',
-    pricing: { unit: 'bhk', tiers: { '1BHK': 499, '2BHK': 699, '3BHK': 999 } },
+    pricing: homePricing,
   },
   {
     slug: 'bed-bugs', name: 'Bed Bug Treatment', short: 'Bed Bug Treatment',
     group: 'general', segment: ['home', 'business'], icon: BedDouble, path: '/bed-bug-treatment',
     summary: 'Heat, steam and chemical protocol for every life stage.',
-    pricing: { unit: 'bhk', tiers: { '1BHK': 3999, '2BHK': 5999 } },
+    pricing: homePricing,
   },
   {
     slug: 'rodent-control', name: 'Rodent Control', short: 'Rodent Control',
     group: 'general', segment: ['home', 'business'], icon: Rat, path: '/rodent-control',
     summary: 'Proofing, tamper-resistant bait stations and monitoring.',
-    pricing: { unit: 'flat', from: 699 },
+    pricing: homePricing,
   },
   {
     slug: 'mosquito-control', name: 'Mosquito Control', short: 'Mosquito Control',
     group: 'general', segment: ['home', 'business'], icon: Droplets, path: '/services/mosquito-control',
     summary: 'Larviciding, fogging and ULV space spraying.',
+    pricing: homePricing,
   },
   {
     slug: 'general-pest-control', name: 'General Pest Control', short: 'General Pest Control',
     group: 'general', segment: ['home', 'business'], icon: ShieldCheck, path: '/services/general-pest-control',
     summary: 'Ants, spiders, silverfish and crawling insects.',
-    pricing: { unit: 'flat', from: 499 },
+    pricing: homePricing,
   },
   {
     slug: 'fly-control', name: 'Fly Control', short: 'Fly Control',
     group: 'general', segment: ['home', 'business'], icon: Wind, path: '/services/fly-control',
     summary: 'Source reduction, baits and residual treatment.',
+    pricing: homePricing,
   },
   {
     slug: 'lizard-control', name: 'Lizard Control', short: 'Lizard Control',
     group: 'general', segment: ['home'], icon: Shield, path: '/services/lizard-control',
     summary: 'Targeted treatment of resting and entry points.',
+    pricing: homePricing,
   },
   {
     slug: 'bird-control', name: 'Bird Control & Netting', short: 'Bird Control',

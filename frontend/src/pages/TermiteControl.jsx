@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone, MapPin, Layers, TreeDeciduous, Bug, AlertTriangle } from 'lucide-react';
+import { RATES } from '../data/catalog';
 import './ServiceDetail.css';
 
 const TermiteControl = () => {
@@ -122,19 +123,10 @@ const TermiteControl = () => {
 
             <h3>Termite Treatment Pricing in Rajasthan</h3>
             <div className="pricing-grid">
-              <div className="pricing-card">
-                <h4>Pre-Construction</h4>
-                <div className="price">₹8-12<span>/sq.ft.</span></div>
-                <ul>
-                  <li>Foundation treatment</li>
-                  <li>Soil drenching</li>
-                  <li>10 years warranty</li>
-                </ul>
-              </div>
               <div className="pricing-card popular">
-                <span className="popular-badge">Most Popular</span>
+                <span className="popular-badge">Existing buildings</span>
                 <h4>Post-Construction</h4>
-                <div className="price">₹12-18<span>/sq.ft.</span></div>
+                <div className="price">₹{RATES.termitePost.min}–{RATES.termitePost.max}<span>/sq.ft.</span></div>
                 <ul>
                   <li>Drilling & injection</li>
                   <li>Wood treatment</li>
@@ -142,12 +134,21 @@ const TermiteControl = () => {
                 </ul>
               </div>
               <div className="pricing-card">
-                <h4>Furniture</h4>
-                <div className="price">₹500-2000<span>/item</span></div>
+                <h4>Pre-Construction</h4>
+                <div className="price">₹{RATES.termitePre.min}–{RATES.termitePre.max}<span>/sq.ft.</span></div>
                 <ul>
-                  <li>Per furniture item</li>
-                  <li>Fumigation available</li>
-                  <li>1 year warranty</li>
+                  <li>Foundation treatment</li>
+                  <li>Soil drenching</li>
+                  <li>10 years warranty</li>
+                </ul>
+              </div>
+              <div className="pricing-card">
+                <h4>Porous Pipe System</h4>
+                <div className="price">₹{RATES.porousPipe.min}–{RATES.porousPipe.max}<span>/sq.ft.</span></div>
+                <ul>
+                  <li>Pipes laid before flooring</li>
+                  <li>Refill from outside, no drilling</li>
+                  <li><Link to="/services/anti-termite-piping">How it works →</Link></li>
                 </ul>
               </div>
             </div>

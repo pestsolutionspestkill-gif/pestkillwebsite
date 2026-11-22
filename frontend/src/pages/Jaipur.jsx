@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Phone, MapPin, Award, Star, Zap, Check, Bug, BedDouble } from 'lucide-react';
+import RateCards from '../components/RateCards';
+import { RATES, homeRateLine } from '../data/catalog';
 import './ServiceDetail.css';
 
 const Jaipur = () => {
@@ -147,39 +149,13 @@ const Jaipur = () => {
             </div>
 
             <h3>Pricing in Jaipur</h3>
-            <div className="pricing-grid">
-              <div className="pricing-card">
-                <h4>General Pest Control</h4>
-                <div className="price">₹499<span>/visit</span></div>
-                <ul>
-                  <li>Ants, spiders, flies</li>
-                  <li>1 year warranty</li>
-                </ul>
-              </div>
-              <div className="pricing-card popular">
-                <span className="popular-badge">Most Popular</span>
-                <h4>Cockroach Control</h4>
-                <div className="price">₹699<span>/flat</span></div>
-                <ul>
-                  <li>Gel + Spray</li>
-                  <li>1 year warranty</li>
-                </ul>
-              </div>
-              <div className="pricing-card">
-                <h4>Termite Treatment</h4>
-                <div className="price">₹12-18<span>/sq.ft.</span></div>
-                <ul>
-                  <li>5 years warranty</li>
-                  <li>Professional treatment</li>
-                </ul>
-              </div>
-            </div>
+            <RateCards withTermite />
 
             <h3>Frequently Asked Questions</h3>
             <div className="faq-section">
               <div className="faq-item">
                 <h4>How much does pest control cost in Jaipur?</h4>
-                <p>Pest control in Jaipur starts from ₹499 for general pests. Termite treatment starts from ₹12 per sq ft.</p>
+                <p>Pest control in Jaipur is {homeRateLine}. Anti-termite treatment is ₹{RATES.termitePost.min}–{RATES.termitePost.max} per sq.ft. for existing buildings and ₹{RATES.termitePre.min}–{RATES.termitePre.max} per sq.ft. before construction.</p>
               </div>
               <div className="faq-item">
                 <h4>Do you provide free inspection in Jaipur?</h4>

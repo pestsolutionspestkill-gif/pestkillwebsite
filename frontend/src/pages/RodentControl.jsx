@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone, MapPin, AlertCircle, Scissors, Volume2, AlertTriangle } from 'lucide-react';
+import RateCards from '../components/RateCards';
 import './ServiceDetail.css';
 
 const RodentControl = () => {
@@ -88,35 +89,7 @@ const RodentControl = () => {
             </div>
 
             <h3>Rodent Control Pricing</h3>
-            <div className="pricing-grid">
-              <div className="pricing-card">
-                <h4>Basic Treatment</h4>
-                <div className="price">₹699<span>/visit</span></div>
-                <ul>
-                  <li>Inspection</li>
-                  <li>Basic proofing</li>
-                </ul>
-              </div>
-              <div className="pricing-card popular">
-                <span className="popular-badge">Most Popular</span>
-                <h4>Complete Treatment</h4>
-                <div className="price">₹1,299<span>/home</span></div>
-                <ul>
-                  <li>Full inspection</li>
-                  <li>Proofing + baiting</li>
-                  <li>1-year warranty</li>
-                </ul>
-              </div>
-              <div className="pricing-card">
-                <h4>Annual AMC</h4>
-                <div className="price">₹3,999<span>/year</span></div>
-                <ul>
-                  <li>Quarterly visits</li>
-                  <li>Full protection</li>
-                  <li>Emergency calls</li>
-                </ul>
-              </div>
-            </div>
+            <RateCards includes={['Inspection & proofing', 'Bait stations', 'Follow-up visit']} />
 
             <h3>Frequently Asked Questions</h3>
             <div className="faq-section">

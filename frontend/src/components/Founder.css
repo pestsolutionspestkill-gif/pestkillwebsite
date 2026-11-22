@@ -1,0 +1,56 @@
+/* ---------- Large founder section ---------- */
+.founder-section { padding: 130px 0; background: var(--surface); }
+.founder-grid { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 80px; align-items: center; }
+.founder-figure {
+  position: relative;
+  margin: 0;
+  display: flex; justify-content: center; align-items: flex-end;
+  height: 640px;
+  padding-top: 40px;
+  border-radius: var(--radius-xl);
+  background: var(--white);
+  overflow: hidden;
+}
+.founder-figure::after {
+  content: '';
+  position: absolute; left: 50%; bottom: 18px;
+  width: 58%; height: 22px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgba(0,0,0,0.10);
+  filter: blur(10px);
+}
+.founder-figure img { position: relative; z-index: 1; height: 100%; width: auto; object-fit: contain; }
+.founder-copy h2 { font-size: clamp(2rem, 4vw, 3.2rem); margin-bottom: 26px; }
+.founder-copy > p { font-size: 1.12rem; line-height: 1.6; color: var(--ink-soft); margin-bottom: 16px; max-width: 600px; }
+.founder-sign { display: flex; flex-direction: column; margin-top: 26px; padding-left: 16px; border-left: 3px solid var(--emerald-500); }
+.founder-sign strong { font-size: 1.15rem; font-weight: 600; color: var(--ink); letter-spacing: -0.02em; }
+.founder-sign span { font-size: 0.92rem; color: var(--muted); }
+.founder-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 34px; }
+
+/* ---------- Compact strip (every page) ---------- */
+.founder-strip { padding: 56px 0; background: var(--white); border-top: 1px solid var(--line-soft); }
+.founder-strip-inner { display: grid; grid-template-columns: auto 1fr auto; gap: 36px; align-items: center; }
+.founder-strip-photo {
+  width: 150px; height: 170px;
+  object-fit: cover; object-position: top center;
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-sm);
+}
+.founder-strip-quote { color: var(--emerald-500); margin-bottom: 8px; }
+.founder-strip-promise { font-size: 1.3rem; font-weight: 600; line-height: 1.35; letter-spacing: -0.025em; color: var(--ink); max-width: 720px; }
+.founder-strip .founder-sign { margin-top: 16px; }
+.founder-strip-link { align-self: center; white-space: nowrap; }
+
+@media (max-width: 1024px) {
+  .founder-grid { grid-template-columns: 1fr; gap: 48px; }
+  .founder-figure { height: 520px; max-width: 520px; width: 100%; margin: 0 auto; }
+}
+@media (max-width: 760px) {
+  .founder-section { padding: 88px 0; }
+  .founder-strip-inner { grid-template-columns: 1fr; gap: 20px; text-align: left; }
+  .founder-strip-photo { width: 120px; height: 140px; }
+  .founder-strip-promise { font-size: 1.12rem; }
+}

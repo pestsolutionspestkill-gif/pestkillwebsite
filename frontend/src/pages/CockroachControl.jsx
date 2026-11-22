@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone, MapPin, AlertCircle, Check } from 'lucide-react';
+import RateCards from '../components/RateCards';
 import './ServiceDetail.css';
 
 const CockroachControl = () => {
@@ -121,33 +122,7 @@ const CockroachControl = () => {
             </div>
 
             <h3>Cockroach Control Pricing</h3>
-            <div className="pricing-grid">
-              <div className="pricing-card">
-                <h4>1 BHK Flat</h4>
-                <div className="price">₹499<span>/visit</span></div>
-                <ul>
-                  <li>Gel treatment</li>
-                  <li>1 year warranty</li>
-                </ul>
-              </div>
-              <div className="pricing-card popular">
-                <span className="popular-badge">Most Popular</span>
-                <h4>2 BHK Flat</h4>
-                <div className="price">₹699<span>/visit</span></div>
-                <ul>
-                  <li>Gel + Spray</li>
-                  <li>1 year warranty</li>
-                </ul>
-              </div>
-              <div className="pricing-card">
-                <h4>3 BHK / Villa</h4>
-                <div className="price">₹999<span>/visit</span></div>
-                <ul>
-                  <li>Complete treatment</li>
-                  <li>1 year warranty</li>
-                </ul>
-              </div>
-            </div>
+            <RateCards includes={['Gel + spray treatment', 'Kitchen & bathrooms', 'Follow-up visit']} />
 
             <h3>Why Choose Our Cockroach Control?</h3>
             <div className="benefits-grid">
@@ -197,7 +172,7 @@ const CockroachControl = () => {
               </div>
               <div className="faq-item">
                 <h4>Do you offer annual maintenance contracts?</h4>
-                <p>Yes, we offer AMC plans starting at ₹1999/year for quarterly treatments.</p>
+                <p>Yes, we offer annual maintenance contracts with quarterly treatments. Contact us for a quote for your home or business.</p>
               </div>
             </div>
 

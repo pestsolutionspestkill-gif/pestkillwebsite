@@ -3,8 +3,6 @@
   padding: 88px 0 150px;
   text-align: center;
   background:
-    radial-gradient(800px 380px at 85% -10%, rgba(14,159,110,0.24), transparent 60%),
-    radial-gradient(700px 380px at 0% 110%, rgba(42,78,127,0.55), transparent 60%),
     var(--navy-900);
 }
 .book-hero h1 { color: var(--white); font-size: clamp(2rem, 4vw, 3.1rem); margin-bottom: 14px; }
@@ -149,3 +147,11 @@
   .book-done-card { grid-template-columns: 1fr; }
   .book-done-card > div + div { border-left: none; border-top: 1px solid var(--line-soft); }
 }
+
+/* ===== Apple light hero (override) ===== */
+.book-hero { background: var(--surface) !important; }
+.book-hero h1 { color: var(--ink); }
+.book-hero p { color: var(--muted); font-size: 1.2rem; }
+.book-hero .eyebrow.light { color: var(--emerald-600); }
+.book-progress li.current .dot { background: var(--ink); border-color: var(--ink); }
+.book-estimate { background: #000; }

@@ -9,7 +9,8 @@ export const useAuth = () => {
   return ctx;
 };
 
-export const homeFor = (user) => (user?.role === 'owner' || user?.role === 'manager' ? '/admin' : '/dashboard');
+const STAFF = ['owner', 'manager', 'technician'];
+export const homeFor = (user) => (STAFF.includes(user?.role) ? '/admin' : '/dashboard');
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -63,7 +64,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: Boolean(user),
     isOwner: user?.role === 'owner',
     isManager: user?.role === 'manager',
-    isStaff: user?.role === 'owner' || user?.role === 'manager',
+    isTechnician: user?.role === 'technician',
+    isStaff: STAFF.includes(user?.role),
     isClient: user?.role === 'client',
     can: (perm) => user?.role === 'owner' || Boolean(user?.permissions?.includes(perm)),
   }), [user, loading, logout, refresh]);

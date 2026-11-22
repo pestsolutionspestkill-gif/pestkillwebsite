@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import SmoothScroll from './components/SmoothScroll';
+import { FounderStrip } from './components/Founder';
 import AntiTermitePiping from './pages/AntiTermitePiping';
 import BookOnline from './pages/BookOnline';
 import PestLibrary from './pages/PestLibrary';
@@ -34,9 +35,12 @@ import Ajmer from './pages/Ajmer';
 import Bikaner from './pages/Bikaner';
 import Alwar from './pages/Alwar';
 import Bharatpur from './pages/Bharatpur';
+import { PrintInvoice, PrintCertificate } from './pages/print/PrintDocs';
 
 function App() {
-  const consoleMode = useLocation().pathname.startsWith('/admin');
+  const { pathname } = useLocation();
+  const consoleMode = pathname.startsWith('/admin') || pathname.startsWith('/print');
+  const hasFounderSection = pathname === '/' || pathname === '/about';
   return (
     <div className="app">
       <SmoothScroll />
@@ -76,8 +80,11 @@ function App() {
           <Route path="/bikaner" element={<Bikaner />} />
           <Route path="/alwar" element={<Alwar />} />
           <Route path="/bharatpur" element={<Bharatpur />} />
+          <Route path="/print/invoice/:id" element={<PrintInvoice />} />
+          <Route path="/print/certificate/:ref" element={<PrintCertificate />} />
         </Routes>
       </main>
+      {!consoleMode && !hasFounderSection && <FounderStrip />}
       {!consoleMode && <Footer />}
     </div>
   );

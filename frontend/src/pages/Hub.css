@@ -91,7 +91,7 @@
 .hub-aside-card { padding: 28px; border: 1px solid var(--line); border-radius: var(--radius-xl); background: var(--white); }
 .hub-aside-card h3 { font-size: 1.15rem; margin-bottom: 8px; }
 .hub-aside-card p { font-size: 0.9rem; color: var(--muted); margin-bottom: 20px; }
-.hub-aside-card.dark { border-color: transparent; background: radial-gradient(300px 180px at 100% 0%, rgba(14,159,110,0.3), transparent 70%), var(--navy-900); }
+.hub-aside-card.dark { border-color: transparent; background: var(--navy-900); }
 .hub-aside-card.dark h3 { color: var(--white); }
 .hub-aside-card.dark p { color: rgba(255,255,255,0.68); }
 .hub-aside-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; font-size: 0.86rem; font-weight: 600; color: var(--emerald-400); }
@@ -152,7 +152,7 @@
 .ipm-stage p { font-size: 0.93rem; color: var(--muted); line-height: 1.7; }
 .hub-split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
 .hub-split h2 { margin-bottom: 18px; }
-.hub-cta { max-width: 720px; text-align: center; padding: 56px 40px; border-radius: var(--radius-xl); background: radial-gradient(400px 220px at 50% 0%, rgba(14,159,110,0.3), transparent 70%), var(--navy-900); color: var(--emerald-400); }
+.hub-cta { max-width: 720px; text-align: center; padding: 56px 40px; border-radius: var(--radius-xl); background: var(--navy-900); color: var(--emerald-400); }
 .hub-cta h2 { color: var(--white); margin: 14px 0 10px; }
 .hub-cta p { color: rgba(255,255,255,0.7); margin-bottom: 28px; }
 
@@ -167,7 +167,7 @@
 .role-card ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 18px; }
 .role-card li { display: inline-flex; align-items: center; gap: 6px; font-size: 0.84rem; color: var(--ink-soft); }
 .role-card li svg { color: var(--emerald-500); }
-.apply-card { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; padding: 56px; border-radius: var(--radius-xl); background: radial-gradient(500px 260px at 0% 0%, rgba(14,159,110,0.25), transparent 70%), var(--navy-900); }
+.apply-card { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; padding: 56px; border-radius: var(--radius-xl); background: var(--navy-900); }
 .apply-copy h2 { color: var(--white); margin-bottom: 14px; }
 .apply-copy p { color: rgba(255,255,255,0.7); }
 .apply-form { padding: 32px; background: var(--white); border-radius: var(--radius-lg); }

@@ -19,7 +19,7 @@ const assertCanActOn = (actor, target) => {
 
 /* ---------- Staff directory (for assigning bookings) ---------- */
 router.get('/staff', staffOnly, (_req, res) => {
-  res.json(db.prepare("SELECT id, name, role FROM users WHERE role IN ('owner','manager') AND is_active = 1 ORDER BY role DESC, name").all());
+  res.json(db.prepare("SELECT id, name, role FROM users WHERE role IN ('owner','manager','technician') AND is_active = 1 ORDER BY CASE role WHEN 'owner' THEN 0 WHEN 'manager' THEN 1 ELSE 2 END, name").all());
 });
 
 /* ---------- Users ---------- */
@@ -184,6 +184,75 @@ router.get('/stats', requirePermission('reports.view'), (req, res) => {
   res.json(stats);
 });
 
+
+/* ---------- Analytics ---------- */
+router.get('/analytics', requirePermission('reports.view'), (req, res) => {
+  const days = Math.min(365, Math.max(7, parseInt(req.query.days, 10) || 30));
+  const since = `-${days - 1} days`;
+  const scoped = !can(req.user, 'services.assign');
+  const scope = scoped ? 'AND assigned_to = @me' : '';
+  const p = { since, me: req.user.id };
+
+  const daily = db.prepare(`SELECT date(created_at) d, COUNT(*) n, SUM(status = 'completed') done
+    FROM leads WHERE created_at >= date('now', @since) ${scope} GROUP BY d`).all(p);
+  const map = Object.fromEntries(daily.map((r) => [r.d, r]));
+  const series = [];
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    series.push({ date: d, leads: map[d]?.n || 0, completed: map[d]?.done || 0 });
+  }
+
+  const group = (col) => db.prepare(`SELECT COALESCE(NULLIF(TRIM(${col}), ''), 'Not specified') label, COUNT(*) n
+    FROM leads WHERE created_at >= date('now', @since) ${scope} GROUP BY label ORDER BY n DESC LIMIT 8`).all(p);
+
+  const totals = db.prepare(`SELECT COUNT(*) total, SUM(status = 'completed') completed, SUM(status = 'cancelled') cancelled,
+    SUM(status IN ('new','contacted')) pending, SUM(type = 'booking') bookings
+    FROM leads WHERE created_at >= date('now', @since) ${scope}`).get(p);
+
+  const result = {
+    days,
+    scoped,
+    totals: { ...totals, conversion: totals.total ? Math.round((totals.completed / totals.total) * 100) : 0 },
+    series,
+    byService: group('service'),
+    byCity: group('city'),
+    bySource: group('source'),
+    byType: group('type'),
+  };
+
+  if (!scoped) {
+    result.workload = db.prepare(`SELECT u.id, u.name, u.role,
+      (SELECT COUNT(*) FROM leads WHERE (assigned_to = u.id OR technician_id = u.id) AND status NOT IN ('completed','cancelled')) open,
+      (SELECT COUNT(*) FROM leads WHERE (assigned_to = u.id OR technician_id = u.id) AND status = 'completed' AND completed_at >= date('now', @since)) done
+      FROM users u WHERE u.role IN ('owner','manager','technician') AND u.is_active = 1 ORDER BY open DESC, done DESC`).all(p);
+  }
+
+  if (can(req.user, 'reports.financial')) {
+    const fin = db.prepare(`SELECT COALESCE(SUM(CASE WHEN status != 'void' THEN total END), 0) invoiced,
+      COALESCE(SUM(CASE WHEN status = 'paid' THEN total END), 0) collected,
+      COALESCE(SUM(CASE WHEN status = 'unpaid' THEN total END), 0) outstanding, COUNT(*) invoices
+      FROM invoices WHERE issued_at >= date('now', @since)`).get(p);
+    const rev = Object.fromEntries(db.prepare(`SELECT date(issued_at) d, SUM(total) v FROM invoices
+      WHERE status != 'void' AND issued_at >= date('now', @since) GROUP BY d`).all(p).map((r) => [r.d, r.v]));
+    result.finance = { ...fin, series: series.map((s) => ({ date: s.date, value: Math.round(rev[s.date] || 0) })) };
+  }
+  res.json(result);
+});
+
+/* ---------- Schedule (calendar) ---------- */
+router.get('/schedule', requirePermission('services.view', 'services.assign'), (req, res) => {
+  const from = Date.parse(req.query.from) ? req.query.from : new Date().toISOString().slice(0, 10);
+  const to = Date.parse(req.query.to) ? req.query.to : new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const scope = can(req.user, 'services.assign') ? '' : 'AND (l.assigned_to = @me OR l.technician_id = @me)';
+  res.json(db.prepare(`SELECT l.id, l.ref, l.service, l.name, l.phone, l.city, l.address, l.status, l.scheduled_at, l.preferred_date, l.preferred_slot,
+      l.technician_id, t.name technician_name
+    FROM leads l LEFT JOIN users t ON t.id = l.technician_id
+    WHERE l.status != 'cancelled' AND (
+      (l.scheduled_at >= @from AND l.scheduled_at < date(@to, '+1 day')) OR
+      (l.scheduled_at IS NULL AND l.preferred_date >= @from AND l.preferred_date <= @to)
+    ) ${scope}
+    ORDER BY COALESCE(l.scheduled_at, l.preferred_date)`).all({ from, to, me: req.user.id }));
+});
 /* ---------- Audit log (owner only) ---------- */
 router.get('/audit', ownerOnly, (_req, res) => {
   res.json(db.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 300').all());

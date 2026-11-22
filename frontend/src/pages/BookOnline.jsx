@@ -126,7 +126,8 @@ const BookOnline = () => {
         type: 'booking',
         service: service.name,
         property: propertyLabel,
-        preferredDate: schedule.date.toISOString().slice(0, 10),
+        // Local calendar date; toISOString() would shift Indian dates back one day (UTC).
+        preferredDate: `${schedule.date.getFullYear()}-${String(schedule.date.getMonth() + 1).padStart(2, '0')}-${String(schedule.date.getDate()).padStart(2, '0')}`,
         preferredSlot: `${slotLabel.label} (${slotLabel.time})`,
         estimate: estimate.text,
         name: details.name,

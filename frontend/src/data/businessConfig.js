@@ -10,6 +10,8 @@ const businessConfig = {
   workingHours: "Mon-Sat: 9:00 AM - 7:00 PM",
   // Pest control licence issued by the Agriculture Department. Leave empty to show "available on request".
   licenceNumber: "",
+  // GST registration number. When set, invoices are titled "Tax Invoice" and show it.
+  gstin: "",
   services: [
     { name: "Anti-Termite Piping", slug: "anti-termite-piping", icon: "piping", desc: "Pre-construction porous pipe system with external refill points" },
     { name: "Termite Control", slug: "termite-control", icon: "termite", desc: "10-year warranty with government-certified treatment" },

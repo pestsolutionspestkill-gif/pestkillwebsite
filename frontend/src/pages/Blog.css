@@ -35,7 +35,6 @@
   position: relative;
   height: 180px !important;
   background:
-    radial-gradient(260px 140px at 80% 0%, rgba(14,159,110,0.35), transparent 70%),
     linear-gradient(145deg, var(--navy-800), var(--navy-950)) !important;
   color: var(--emerald-400) !important;
 }
@@ -60,7 +59,6 @@
 .blog-detail-page .blog-detail-hero {
   padding: 88px 0 72px;
   background:
-    radial-gradient(700px 320px at 90% 0%, rgba(14,159,110,0.2), transparent 60%),
     var(--navy-900);
 }
 .blog-detail-page .blog-detail-hero .container { max-width: 860px; }
@@ -76,7 +74,6 @@
   margin-bottom: 52px;
   border-radius: var(--radius-xl);
   background:
-    radial-gradient(400px 200px at 80% 0%, rgba(14,159,110,0.35), transparent 70%),
     linear-gradient(145deg, var(--navy-800), var(--navy-950)) !important;
   color: var(--emerald-400) !important;
 }
@@ -93,7 +90,6 @@
   text-align: center;
   border-radius: var(--radius-xl);
   background:
-    radial-gradient(400px 200px at 50% 0%, rgba(14,159,110,0.3), transparent 70%),
     var(--navy-900);
 }
 .blog-detail-page .blog-cta h3 { color: var(--white); font-size: 1.6rem; margin-bottom: 8px; }
@@ -124,3 +120,13 @@
   .blog-page .blog-grid { grid-template-columns: 1fr; }
   .blog-detail-page .blog-cta { padding: 36px 24px; }
 }
+
+/* ===== Apple light hero (override) ===== */
+.blog-detail-page .blog-detail-hero { background: var(--surface) !important; }
+.blog-detail-page .blog-detail-hero h1 { color: var(--ink); }
+.blog-detail-page .back-link { color: var(--muted); }
+.blog-detail-page .back-link:hover { color: var(--ink); }
+.blog-detail-page .blog-detail-meta { color: var(--muted); }
+.blog-detail-page .blog-detail-hero .blog-category { background: var(--white); color: var(--emerald-700); }
+.blog-page .blog-image, .blog-detail-page .blog-featured-image { background: #000 !important; }
+.blog-detail-page .blog-cta { background: #000; }

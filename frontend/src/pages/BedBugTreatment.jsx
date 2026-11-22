@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone, MapPin, AlertCircle, Droplets, BedDouble, Search, Trash2, Luggage, Bug } from 'lucide-react';
+import RateCards from '../components/RateCards';
 import './ServiceDetail.css';
 
 const BedBugTreatment = () => {
@@ -123,36 +124,7 @@ const BedBugTreatment = () => {
             </div>
 
             <h3>Bed Bug Treatment Pricing</h3>
-            <div className="pricing-grid">
-              <div className="pricing-card">
-                <h4>Single Room</h4>
-                <div className="price">₹1,499<span>/room</span></div>
-                <ul>
-                  <li>Heat or chemical</li>
-                  <li>Mattress included</li>
-                  <li>1 year warranty</li>
-                </ul>
-              </div>
-              <div className="pricing-card popular">
-                <span className="popular-badge">Most Popular</span>
-                <h4>1 BHK Flat</h4>
-                <div className="price">₹3,999<span>/flat</span></div>
-                <ul>
-                  <li>All rooms</li>
-                  <li>Furniture treatment</li>
-                  <li>1 year warranty</li>
-                </ul>
-              </div>
-              <div className="pricing-card">
-                <h4>2 BHK / Villa</h4>
-                <div className="price">₹5,999<span>/property</span></div>
-                <ul>
-                  <li>Complete treatment</li>
-                  <li>Multiple follow-ups</li>
-                  <li>1 year warranty</li>
-                </ul>
-              </div>
-            </div>
+            <RateCards includes={['Heat & chemical treatment', 'Mattress & furniture', 'Follow-up visit']} />
 
             <h3>Prevention Tips</h3>
             <div className="tips-list">

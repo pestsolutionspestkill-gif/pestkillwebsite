@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import businessConfig from '../data/businessConfig';
 import { Phone, Mail, MapPin, ShieldCheck, Leaf, Award, Users, ArrowRight } from 'lucide-react';
 import { media } from '../data/media';
+import { FounderSection } from '../components/Founder';
 import './About.css';
 
 const values = [
@@ -47,7 +48,9 @@ const About = () => {
         </div>
       </section>
 
-      <section className="section bg-surface">
+      <FounderSection />
+
+      <section className="section">
         <div className="container">
           <div className="section-head">
             <span className="eyebrow">What We Stand For</span>

@@ -3,47 +3,20 @@ import { Navigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, MessageSquareWarning, Briefcase, Users, UserCog, KeyRound, ScrollText,
   LogOut, Search, X, Phone, MessageCircle, Mail, MapPin, RefreshCw, Trash2, Plus, Lock, ShieldCheck, CheckCircle,
+  BarChart3, CalendarDays, Wrench, ReceiptText, Award,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, waLink } from '../lib/api';
+import { fmtDate, label, STATUS_TONE, LEAD_STATUSES, Badge, useLoad, State } from './admin/shared';
 import { Logo } from '../components/Navbar';
+import Analytics from './admin/Analytics';
+import Schedule from './admin/Schedule';
+import MyJobs from './admin/MyJobs';
+import Invoices from './admin/Invoices';
 import './Admin.css';
 
-/* ---------- helpers ---------- */
-const fmtDate = (s) => (s ? new Date(`${s.replace(' ', 'T')}${s.includes('Z') || s.includes('T') ? '' : 'Z'}`).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
-const label = (s) => (s || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-const STATUS_TONE = {
-  new: 'info', contacted: 'warning', scheduled: 'info', in_progress: 'warning', completed: 'success', cancelled: 'danger',
-  pending: 'warning', resolved: 'success', closed: 'neutral',
-  shortlisted: 'info', interview: 'warning', hired: 'success', rejected: 'danger',
-};
-const LEAD_STATUSES = ['new', 'contacted', 'scheduled', 'in_progress', 'completed', 'cancelled'];
 const COMPLAINT_STATUSES = ['pending', 'in_progress', 'resolved', 'closed'];
 const APP_STATUSES = ['new', 'shortlisted', 'interview', 'hired', 'rejected'];
-
-const Badge = ({ value }) => <span className={`badge badge-${STATUS_TONE[value] || 'neutral'}`}>{label(value)}</span>;
-
-const useLoad = (path) => {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const reload = useCallback(async () => {
-    if (!path) { setLoading(false); return; }
-    setLoading(true);
-    setError('');
-    try { setData(await api(path)); } catch (e) { setError(e.message); }
-    setLoading(false);
-  }, [path]);
-  useEffect(() => { reload(); }, [reload]);
-  return { data, setData, error, loading, reload };
-};
-
-const State = ({ loading, error, empty, children }) => {
-  if (loading) return <div className="adm-state"><span className="spinner" /> Loading…</div>;
-  if (error) return <div className="adm-state error">{error}</div>;
-  if (empty) return <div className="adm-state">{empty}</div>;
-  return children;
-};
 
 /* ---------- Overview ---------- */
 const Overview = ({ go }) => {
@@ -99,7 +72,7 @@ const Overview = ({ go }) => {
 };
 
 /* ---------- Bookings ---------- */
-const Bookings = ({ notify }) => {
+const Bookings = ({ notify, onInvoice }) => {
   const { can, isOwner } = useAuth();
   const [filters, setFilters] = useState({ status: '', type: '', q: '' });
   const [query, setQuery] = useState('');
@@ -147,15 +120,15 @@ const Bookings = ({ notify }) => {
       <State loading={loading && !data} error={error} empty={data?.length === 0 && 'No bookings match these filters.'}>
         <div className="table-wrap">
           <table className="adm-table">
-            <thead><tr><th>Ref</th><th>Customer</th><th>Service</th><th>Preferred</th><th>Assigned</th><th>Status</th><th>Received</th></tr></thead>
+            <thead><tr><th>Ref</th><th>Customer</th><th>Service</th><th>Visit</th><th>Team</th><th>Status</th><th>Received</th></tr></thead>
             <tbody>
               {data?.map((l) => (
                 <tr key={l.id} onClick={() => setOpenId(l.id)} className={openId === l.id ? 'selected' : ''}>
                   <td className="mono">{l.ref}</td>
                   <td><strong>{l.name}</strong><small>{l.phone}</small></td>
                   <td>{l.service || <span className="adm-muted">{label(l.type)}</span>}<small>{l.property}</small></td>
-                  <td>{l.preferred_date || '—'}<small>{l.preferred_slot}</small></td>
-                  <td>{l.assigned_name || <span className="adm-muted">Unassigned</span>}</td>
+                  <td>{l.scheduled_at ? <><strong>{fmtDate(l.scheduled_at)}</strong><small>Scheduled</small></> : <>{l.preferred_date || '—'}<small>{l.preferred_slot || 'Requested'}</small></>}</td>
+                  <td>{l.assigned_name || <span className="adm-muted">Unassigned</span>}<small>{l.technician_name ? `Tech: ${l.technician_name}` : ''}</small></td>
                   <td><Badge value={l.status} /></td>
                   <td className="nowrap">{fmtDate(l.created_at)}</td>
                 </tr>
@@ -173,6 +146,8 @@ const Bookings = ({ notify }) => {
           canAssign={can('services.assign')}
           canManage={can('services.manage')}
           canDelete={isOwner}
+          canInvoice={can('invoices.manage')}
+          onInvoice={() => onInvoice?.(open)}
           onClose={() => setOpenId(null)}
           onSave={(body) => save(open.id, body)}
           onDelete={() => remove(open.id)}
@@ -182,8 +157,13 @@ const Bookings = ({ notify }) => {
   );
 };
 
-const LeadDrawer = ({ lead, staff, canAssign, canManage, canDelete, onClose, onSave, onDelete }) => {
+const toLocalInput = (s) => { if (!s) return ''; const d = new Date(s); if (Number.isNaN(d)) return ''; const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
+
+const LeadDrawer = ({ lead, staff, canAssign, canManage, canDelete, canInvoice, onInvoice, onClose, onSave, onDelete }) => {
   const [notes, setNotes] = useState(lead.internal_notes || '');
+  const [when, setWhen] = useState(toLocalInput(lead.scheduled_at));
+  const [job, setJob] = useState({ amount: lead.amount ?? '', areaSqft: lead.area_sqft ?? '', warranty: lead.warranty || '' });
+  const jobDirty = String(job.amount) !== String(lead.amount ?? '') || String(job.areaSqft) !== String(lead.area_sqft ?? '') || job.warranty !== (lead.warranty || '');
   return (
     <div className="drawer-scrim" onMouseDown={onClose}>
       <aside className="drawer" onMouseDown={(e) => e.stopPropagation()} data-lenis-prevent>
@@ -223,6 +203,39 @@ const LeadDrawer = ({ lead, staff, canAssign, canManage, canDelete, onClose, onS
               </select>
             </label>
           )}
+          {canAssign && (
+            <div className="drawer-sub">
+              <h4><CalendarDays size={15} /> Schedule visit</h4>
+              <label>Technician
+                <select value={lead.technician_id || ''} onChange={(e) => onSave({ technicianId: e.target.value ? Number(e.target.value) : null })}>
+                  <option value="">Not assigned</option>
+                  {staff.filter((s) => s.role !== 'owner').map((s) => <option key={s.id} value={s.id}>{s.name} ({label(s.role)})</option>)}
+                </select>
+              </label>
+              <label>Visit date & time
+                <span className="inline-row">
+                  <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+                  <button type="button" className="btn btn-sm btn-navy" disabled={when === toLocalInput(lead.scheduled_at)} onClick={() => onSave({ scheduledAt: when ? new Date(when).toISOString() : null })}>Save</button>
+                </span>
+              </label>
+            </div>
+          )}
+          {canManage && (
+            <div className="drawer-sub">
+              <h4><Wrench size={15} /> Job details</h4>
+              <div className="inline-grid">
+                <label>Area (sq.ft.)<input type="number" min="0" value={job.areaSqft} onChange={(e) => setJob({ ...job, areaSqft: e.target.value })} /></label>
+                <label>Amount (₹)<input type="number" min="0" value={job.amount} onChange={(e) => setJob({ ...job, amount: e.target.value })} /></label>
+              </div>
+              <label>Warranty<input value={job.warranty} onChange={(e) => setJob({ ...job, warranty: e.target.value })} placeholder="e.g. 5 years, 90 days" /></label>
+              <button type="button" className="btn btn-sm btn-primary" disabled={!jobDirty} onClick={() => onSave(job)}>Save job details</button>
+              {lead.completion_notes && <p className="visit-report"><strong>Visit report:</strong> {lead.completion_notes}{lead.chemicals_used ? ` · ${lead.chemicals_used}` : ''}</p>}
+            </div>
+          )}
+          <div className="drawer-docs">
+            {canInvoice && <button type="button" className="btn btn-sm btn-outline" onClick={onInvoice}><ReceiptText size={14} /> Create invoice</button>}
+            {lead.status === 'completed' && <a className="btn btn-sm btn-outline" href={`/print/certificate/${lead.ref}`} target="_blank" rel="noopener noreferrer"><Award size={14} /> Certificate</a>}
+          </div>
           {canManage && (
             <label>Internal notes
               <textarea rows="4" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Visit details, chemicals used, follow-up date…" />
@@ -401,7 +414,7 @@ const People = ({ notify, team, onPermissions }) => {
     } catch (e) { notify(e.message, 'error'); }
   };
 
-  const createRoles = team ? (isOwner ? ['manager', 'owner'] : []) : (can('users.create') ? ['client'] : []);
+  const createRoles = team ? (isOwner ? ['manager', 'technician', 'owner'] : []) : (can('users.create') ? ['client'] : []);
   return (
     <>
       <div className="toolbar">
@@ -514,23 +527,33 @@ const Audit = () => {
 
 /* ---------- Shell ---------- */
 const Admin = () => {
-  const { user, loading, logout, can, isOwner, isStaff } = useAuth();
+  const { user, loading, logout, can, isOwner, isStaff, isTechnician } = useAuth();
+  const [invoiceLead, setInvoiceLead] = useState(null);
   const location = useLocation();
   const [toast, setToast] = useState(null);
   const [permManager, setPermManager] = useState(null);
 
   const sections = useMemo(() => [
+    { id: 'jobs', label: 'My jobs', icon: Wrench, show: isTechnician },
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, show: can('reports.view') },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, show: can('reports.view') },
     { id: 'bookings', label: 'Bookings', icon: CalendarCheck, show: can('services.view') || can('services.assign') },
+    { id: 'schedule', label: 'Schedule', icon: CalendarDays, show: can('services.view') || can('services.assign') },
+    { id: 'invoices', label: 'Invoices', icon: ReceiptText, show: can('invoices.manage') },
     { id: 'complaints', label: 'Complaints', icon: MessageSquareWarning, show: can('complaints.manage') },
     { id: 'applications', label: 'Applications', icon: Briefcase, show: can('careers.manage') },
     { id: 'customers', label: 'Customers', icon: Users, show: can('users.view') },
     { id: 'team', label: 'Team', icon: UserCog, show: isOwner },
     { id: 'permissions', label: 'Permissions', icon: KeyRound, show: isOwner },
     { id: 'audit', label: 'Audit log', icon: ScrollText, show: isOwner },
-  ].filter((s) => s.show), [can, isOwner]);
+  ].filter((s) => s.show), [can, isOwner, isTechnician]);
 
-  const [active, setActive] = useState(null);
+  // The open section lives in the URL hash so screens can be bookmarked and shared (e.g. /admin#analytics).
+  const [active, setActiveState] = useState(() => window.location.hash.slice(1) || null);
+  const setActive = useCallback((id) => {
+    setActiveState(id);
+    window.history.replaceState(null, '', `${window.location.pathname}${id ? `#${id}` : ''}`);
+  }, []);
   const current = sections.find((s) => s.id === active) || sections[0];
 
   const notify = useCallback((message, tone = 'success') => {
@@ -548,7 +571,7 @@ const Admin = () => {
   return (
     <div className="admin-shell">
       <aside className="admin-side" data-lenis-prevent>
-        <div className="admin-brand"><Logo light /></div>
+        <div className="admin-brand"><Logo /></div>
         <div className="admin-me">
           <span className="avatar-sm">{user.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}</span>
           <div><strong>{user.name}</strong><span className={`role role-${user.role}`}>{label(user.role)}</span></div>
@@ -571,12 +594,16 @@ const Admin = () => {
           <>
             <header className="admin-head">
               <div>
-                <span className="eyebrow">{isOwner ? 'Owner console' : 'Manager console'}</span>
+                <span className="eyebrow">{isOwner ? 'Owner console' : isTechnician ? 'Technician app' : 'Manager console'}</span>
                 <h1>{current.label}</h1>
               </div>
             </header>
             {current.id === 'overview' && <Overview go={go} />}
-            {current.id === 'bookings' && <Bookings notify={notify} />}
+            {current.id === 'jobs' && <MyJobs notify={notify} />}
+            {current.id === 'analytics' && <Analytics />}
+            {current.id === 'bookings' && <Bookings notify={notify} onInvoice={(l) => { setInvoiceLead(l); setActive('invoices'); }} />}
+            {current.id === 'schedule' && <Schedule onOpen={() => setActive('bookings')} />}
+            {current.id === 'invoices' && <Invoices notify={notify} prefillLead={invoiceLead} clearPrefill={() => setInvoiceLead(null)} />}
             {current.id === 'complaints' && <Complaints notify={notify} />}
             {current.id === 'applications' && <Applications notify={notify} />}
             {current.id === 'customers' && <People notify={notify} team={false} />}

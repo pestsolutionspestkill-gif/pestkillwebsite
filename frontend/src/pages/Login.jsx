@@ -1,8 +1,28 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ShieldCheck, Crown, Briefcase, Wrench, UserRound } from 'lucide-react';
 import { useAuth, homeFor } from '../context/AuthContext';
 import './Auth.css';
+
+const ROLE_TOUR = [
+  { icon: Crown, role: 'Owner', text: 'Analytics, revenue, team and permissions.' },
+  { icon: Briefcase, role: 'Manager', text: 'Bookings, schedule, invoices, complaints.' },
+  { icon: Wrench, role: 'Technician', text: 'Today\'s jobs, directions and visit reports.' },
+  { icon: UserRound, role: 'Customer', text: 'Bookings, invoices and treatment certificates.' },
+];
+
+export const AuthAside = () => (
+  <aside className="auth-aside">
+    <span className="auth-aside-kicker">PestKill Account</span>
+    <h2>One sign-in.<br />The right tools for every role.</h2>
+    <ul>
+      {ROLE_TOUR.map(({ icon: Icon, role, text }) => (
+        <li key={role}><span><Icon size={18} /></span><div><strong>{role}</strong><small>{text}</small></div></li>
+      ))}
+    </ul>
+    <p className="auth-aside-note"><ShieldCheck size={15} /> Encrypted passwords, role-based access and a full audit trail.</p>
+  </aside>
+);
 
 const Login = () => {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -30,12 +50,13 @@ const Login = () => {
 
   return (
     <div className="auth-page">
-      <div className="auth-container">
+      <div className="auth-container split">
+        <AuthAside />
         <div className="auth-card">
           <div className="auth-header">
             <span className="auth-icon"><ShieldCheck size={24} /></span>
             <h1>Welcome back</h1>
-            <p>Sign in to track bookings, complaints and orders.</p>
+            <p>Sign in to your PestKill account.</p>
           </div>
           {error && <div className="auth-error" role="alert">{error}</div>}
           <form onSubmit={submit} className="auth-form" noValidate>

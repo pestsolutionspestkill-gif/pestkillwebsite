@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, UserPlus } from 'lucide-react';
 import { useAuth, homeFor } from '../context/AuthContext';
+import { AuthAside } from './Login';
 import './Auth.css';
 
 const Register = () => {
@@ -33,7 +34,8 @@ const Register = () => {
 
   return (
     <div className="auth-page">
-      <div className="auth-container">
+      <div className="auth-container split">
+        <AuthAside />
         <div className="auth-card">
           <div className="auth-header">
             <span className="auth-icon"><UserPlus size={24} /></span>

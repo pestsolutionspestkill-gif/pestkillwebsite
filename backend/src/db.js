@@ -140,10 +140,47 @@ addColumn('users', 'city', 'TEXT');
 addColumn('users', 'last_login', 'DATETIME');
 addColumn('complaints', 'response', 'TEXT');
 addColumn('complaints', 'updated_at', 'DATETIME');
+// Job scheduling & completion
+addColumn('leads', 'scheduled_at', 'TEXT');
+addColumn('leads', 'technician_id', 'INTEGER REFERENCES users(id)');
+addColumn('leads', 'area_sqft', 'REAL');
+addColumn('leads', 'amount', 'REAL');
+addColumn('leads', 'completion_notes', 'TEXT');
+addColumn('leads', 'chemicals_used', 'TEXT');
+addColumn('leads', 'warranty', 'TEXT');
+addColumn('leads', 'completed_at', 'DATETIME');
+db.exec('CREATE INDEX IF NOT EXISTS idx_leads_technician ON leads(technician_id)');
+db.exec('CREATE INDEX IF NOT EXISTS idx_leads_scheduled ON leads(scheduled_at)');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS invoices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    number TEXT UNIQUE NOT NULL,
+    lead_id INTEGER REFERENCES leads(id),
+    user_id INTEGER REFERENCES users(id),
+    customer_name TEXT NOT NULL,
+    customer_phone TEXT,
+    customer_email TEXT,
+    customer_address TEXT,
+    customer_gstin TEXT,
+    items TEXT NOT NULL,
+    subtotal REAL NOT NULL,
+    gst_rate REAL NOT NULL DEFAULT 18,
+    gst_amount REAL NOT NULL,
+    total REAL NOT NULL,
+    status TEXT NOT NULL DEFAULT 'unpaid',
+    notes TEXT,
+    issued_by INTEGER REFERENCES users(id),
+    issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    paid_at DATETIME
+  );
+  CREATE INDEX IF NOT EXISTS idx_invoices_lead ON invoices(lead_id);
+`);
 db.exec("UPDATE users SET role = 'owner' WHERE role = 'admin'");
 db.exec("UPDATE users SET role = 'client' WHERE role = 'user' OR role IS NULL");
 
-export const ROLES = ['owner', 'manager', 'client'];
+export const ROLES = ['owner', 'manager', 'technician', 'client'];
+export const STAFF_ROLES = ['owner', 'manager', 'technician'];
 
 export const PERMISSIONS = [
   { key: 'services.view', group: 'Bookings & Services', label: 'View bookings', description: 'See bookings assigned to them' },
@@ -151,6 +188,7 @@ export const PERMISSIONS = [
   { key: 'services.manage', group: 'Bookings & Services', label: 'Update bookings', description: 'Change status and add notes' },
   { key: 'complaints.manage', group: 'Support', label: 'Manage complaints', description: 'View and respond to complaints' },
   { key: 'careers.manage', group: 'Support', label: 'Job applications', description: 'View and update job applications' },
+  { key: 'invoices.manage', group: 'Billing', label: 'Invoices & certificates', description: 'Create invoices, mark payments, issue certificates' },
   { key: 'users.view', group: 'Customers', label: 'View customers', description: 'See client accounts' },
   { key: 'users.create', group: 'Customers', label: 'Create customers', description: 'Create client accounts' },
   { key: 'users.edit', group: 'Customers', label: 'Edit customers', description: 'Edit or suspend client accounts' },

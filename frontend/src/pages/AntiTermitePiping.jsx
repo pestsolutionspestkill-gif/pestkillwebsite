@@ -6,13 +6,18 @@ import {
   Wrench, FileCheck2, BookOpen,
 } from 'lucide-react';
 import PipeDiagram from '../components/PipeDiagram';
+import { RATES } from '../data/catalog';
+
+const pipe = RATES.porousPipe;
+const pre = RATES.termitePre;
+const post = RATES.termitePost;
 import { media, creditLine } from '../data/media';
 import './ServiceDetail.css';
 import './AntiTermitePiping.css';
 
 const facts = [
   { icon: Clock, value: '10–15 yrs', label: 'Protection with refills' },
-  { icon: IndianRupee, value: '₹8–12', label: 'Per sq.ft. (indicative)' },
+  { icon: IndianRupee, value: `₹${pipe.min}–${pipe.max}`, label: 'Per sq.ft.' },
   { icon: Hammer, value: 'Zero', label: 'Drilling for re-treatment' },
   { icon: Layers, value: 'Pre-floor', label: 'Installed before flooring' },
 ];
@@ -31,12 +36,12 @@ const advantages = [
   { title: 'Re-treatment without damage', text: 'Future doses go in through external refill points. No drilling, no broken tiles.' },
   { title: 'Uniform distribution', text: 'Chemical seeps evenly through the pipe walls instead of collecting at isolated drill points.' },
   { title: 'No structural impact', text: 'Installed during construction, so walls and floors are never hacked afterwards.' },
-  { title: 'Lower lifetime cost', text: 'Costs slightly more upfront than one drilling job, and far less over the life of the building.' },
+  { title: 'No repeat drilling', text: 'Costs more upfront than a drilling job, but every future re-treatment goes in from outside, with no drilling, sealing or tile repair.' },
   { title: 'Targeted chemical use', text: 'Termiticide goes exactly where termites enter, which avoids wasteful surface spraying.' },
 ];
 
 const comparison = [
-  { feature: 'Typical cost', pipe: '₹8–12 / sq.ft.', drill: '₹15–25 / sq.ft.' },
+  { feature: 'Cost', pipe: `₹${pipe.min}–${pipe.max} / sq.ft. (one-time installation)`, drill: `₹${post.min}–${post.max} / sq.ft. (each treatment)` },
   { feature: 'Protection period', pipe: '10–15 years (with refills)', drill: '5–7 years' },
   { feature: 'Re-treatment', pipe: 'Easy, from outside', drill: 'Difficult, needs fresh drilling' },
   { feature: 'Damage to floor', pipe: 'None', drill: 'Drill holes in floor & skirting', bad: true },
@@ -52,7 +57,7 @@ const audiences = [
 
 const faqs = [
   { q: 'Is porous pipe treatment necessary for every new home?', a: 'It is highly recommended. Termites enter from the soil, and a pre-construction barrier is the most reliable and economical way to stop them.' },
-  { q: 'How much does it cost in Rajasthan?', a: 'Generally around ₹8–12 per sq.ft. The final quote depends on the plinth area, the pipe layout and the termiticide selected, and is given after we review your drawings.' },
+  { q: 'How much does it cost in Rajasthan?', a: `₹${pipe.min}–${pipe.max} per sq.ft. The final quote depends on the plinth area and pipe layout, and is given after we review your drawings. For comparison, regular pre-construction soil treatment is ₹${pre.min}–${pre.max} per sq.ft.` },
   { q: 'Can it be installed after construction?', a: 'It is possible only when the flooring is being completely removed, and it is costlier and more difficult. For finished buildings we recommend our drill-fill post-construction treatment.' },
   { q: 'How long does the protection last?', a: 'Typically 10–15 years when the system is recharged through the refill points as advised during periodic inspections.' },
   { q: 'At what construction stage should I contact you?', a: 'Ideally when the foundation is being planned, and no later than when the plinth is complete and before the PCC or flooring is laid.' },
@@ -183,7 +188,7 @@ const AntiTermitePiping = () => {
               </div>
             ))}
           </div>
-          <p className="atp-note">Costs are indicative for Rajasthan. Your exact quotation is provided after we review the site and drawings.</p>
+          <p className="atp-note">Your exact quotation is provided after we review the site and drawings.</p>
         </div>
       </section>
 
@@ -205,8 +210,8 @@ const AntiTermitePiping = () => {
 
           <div className="atp-pricing">
             <div className="atp-price-card">
-              <span className="eyebrow light">Indicative pricing</span>
-              <div className="atp-price">₹8–12 <small>/ sq.ft.</small></div>
+              <span className="eyebrow light">Pricing</span>
+              <div className="atp-price">₹{pipe.min}–{pipe.max} <small>/ sq.ft.</small></div>
               <ul>
                 <li><CheckCircle size={16} /> Pipe layout design from drawings</li>
                 <li><CheckCircle size={16} /> Porous pipes, joints & refill points</li>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone, MapPin, Bug, Zap, Shield } from 'lucide-react';
+import RateCards from '../components/RateCards';
 import './ServiceDetail.css';
 
 const Ajmer = () => {
@@ -35,10 +36,7 @@ const Ajmer = () => {
               <div className="city-area">Nasirabad</div>
             </div>
             <h3>Pricing</h3>
-            <div className="pricing-grid">
-              <div className="pricing-card"><h4>General Pest</h4><div className="price">₹449<span>/visit</span></div></div>
-              <div className="pricing-card popular"><span className="popular-badge">Popular</span><h4>Cockroach</h4><div className="price">₹599<span>/flat</span></div></div>
-            </div>
+            <RateCards withTermite />
           </div>
         </div>
       </section>

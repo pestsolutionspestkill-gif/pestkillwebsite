@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Phone, MapPin, Award, Star, Zap, Check, Bug, BedDouble } from 'lucide-react';
+import RateCards from '../components/RateCards';
+import { RATES, homeRateLine } from '../data/catalog';
 import './ServiceDetail.css';
 
 const Jodhpur = () => {
@@ -99,27 +101,13 @@ const Jodhpur = () => {
             </div>
 
             <h3>Pricing in Jodhpur</h3>
-            <div className="pricing-grid">
-              <div className="pricing-card">
-                <h4>General Pest Control</h4>
-                <div className="price">₹449<span>/visit</span></div>
-              </div>
-              <div className="pricing-card popular">
-                <span className="popular-badge">Most Popular</span>
-                <h4>Cockroach Control</h4>
-                <div className="price">₹599<span>/flat</span></div>
-              </div>
-              <div className="pricing-card">
-                <h4>Termite Treatment</h4>
-                <div className="price">₹10-15<span>/sq.ft.</span></div>
-              </div>
-            </div>
+            <RateCards withTermite />
 
             <h3>Frequently Asked Questions</h3>
             <div className="faq-section">
               <div className="faq-item">
                 <h4>How much does pest control cost in Jodhpur?</h4>
-                <p>Pest control in Jodhpur starts from ₹449 for general pests.</p>
+                <p>Pest control in Jodhpur is {homeRateLine}. Anti-termite treatment is ₹{RATES.termitePost.min}–{RATES.termitePost.max} per sq.ft. for existing buildings and ₹{RATES.termitePre.min}–{RATES.termitePre.max} per sq.ft. before construction.</p>
               </div>
               <div className="faq-item">
                 <h4>Do you serve all of Jodhpur?</h4>

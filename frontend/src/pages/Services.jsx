@@ -4,6 +4,7 @@ import businessConfig from '../data/businessConfig';
 import { Bug, Zap, Shield, BedDouble, ShieldCheck, Tag, Clock, CheckCircle, Layers, ArrowRight, Home as HomeIcon, Hotel, Hospital, Building2, Warehouse, GraduationCap, HardHat, UtensilsCrossed } from 'lucide-react';
 import { scrollToId } from '../components/SmoothScroll';
 import { submitLead } from '../lib/api';
+import { RATES, sqftLabel, homeFrom } from '../data/catalog';
 import './Services.css';
 
 const Services = () => {
@@ -19,13 +20,13 @@ const Services = () => {
   const services = [
     {
       slug: 'anti-termite-piping', name: 'Anti-Termite Piping (Porous Pipe)', icon: <Layers size={32} />, link: '/services/anti-termite-piping', isNew: true,
-      price: '₹8–12 / sq.ft.', duration: 'At foundation stage',
+      price: sqftLabel(RATES.porousPipe), duration: 'At foundation stage',
       description: 'Pre-construction porous pipe network laid under the foundation and floor. Termiticide can be refilled from outside for years — no drilling, no floor breaking.',
       features: ['Porous pipe layout under plinth', 'External refill points', 'Re-treatment without drilling', '10–15 year protection', 'Ideal for new homes & projects'],
     },
     {
       slug: 'termite-control', name: 'Termite Treatment', icon: <Bug size={32} />,
-      price: 'From ₹5,000', duration: '2-4 hours',
+      price: `Post ₹${RATES.termitePost.min}–${RATES.termitePost.max} · Pre ₹${RATES.termitePre.min}–${RATES.termitePre.max} / sq.ft.`, duration: '2-4 hours',
       description: 'Complete termite treatment using advanced techniques. We offer both pre-construction and post-construction treatment with up to 10-year warranty.',
       features: ['Pre-construction treatment', 'Post-construction treatment', 'Soil treatment', 'Wood treatment', '10-year warranty'],
       signs: ['Mud tubes on walls', 'Hollow sound in wood', 'Discarded wings', 'Blisters on wood surface'],
@@ -33,7 +34,7 @@ const Services = () => {
     },
     { 
       slug: 'cockroach-control', name: 'Cockroach Control', icon: <Zap size={32} />,
-      price: 'From ₹1,500', duration: '1-2 hours',
+      price: `From ${homeFrom} (1BHK)`, duration: '1-2 hours',
       description: 'Professional cockroach elimination using gel baiting and spray treatment. Safe for children and pets.',
       features: ['Gel treatment', 'Spray application', 'Crack & crevice treatment', 'Follow-up visit'],
       signs: ['Droppings', 'Egg cases', 'Foul odor', 'Live insects'],
@@ -41,7 +42,7 @@ const Services = () => {
     },
     { 
       slug: 'rodent-control', name: 'Rodent Control', icon: <Shield size={32} />,
-      price: 'From ₹2,000', duration: '1-3 hours',
+      price: `From ${homeFrom} (1BHK)`, duration: '1-3 hours',
       description: 'Complete rat and mouse control with permanent proofing solutions. We use both chemical and non-chemical methods.',
       features: ['Rat control', 'Mouse control', 'Proofing', 'Monitoring stations'],
       signs: ['Droppings', 'Gnaw marks', 'Urine stains', 'Scratching sounds'],
@@ -49,7 +50,7 @@ const Services = () => {
     },
     { 
       slug: 'bed-bugs', name: 'Bed Bug Treatment', icon: <BedDouble size={32} />,
-      price: 'From ₹3,000', duration: '3-5 hours',
+      price: `From ${homeFrom} (1BHK)`, duration: '3-5 hours',
       description: 'Heat treatment combined with chemical application for complete bed bug elimination. Safe and effective.',
       features: ['Heat treatment', 'Chemical treatment', 'Steam treatment', 'Furniture treatment'],
       signs: ['Bite marks', 'Blood stains', 'Egg casings', 'Musty odor'],
@@ -57,7 +58,7 @@ const Services = () => {
     },
     { 
       slug: 'general-pest-control', name: 'General Pest Control', icon: <ShieldCheck size={32} />,
-      price: 'From ₹1,500', duration: '1-2 hours',
+      price: `From ${homeFrom} (1BHK)`, duration: '1-2 hours',
       description: 'Annual pest control contract covering all common pests. Regular maintenance and emergency support.',
       features: ['Cockroach control', 'Ant control', 'Spider control', 'Annual contract', 'Emergency support'],
       signs: ['Various insects', 'Droppings', 'Live insects', 'Damage'],

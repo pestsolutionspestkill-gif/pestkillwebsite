@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone, MapPin, Bug, Zap, Shield } from 'lucide-react';
+import RateCards from '../components/RateCards';
 import './ServiceDetail.css';
 
 const Alwar = () => {
@@ -27,10 +28,7 @@ const Alwar = () => {
               <div className="feature-card"><h4 style={{display:'flex',alignItems:'center',gap:'8px'}}><Zap size={18} />Cockroach Control</h4><p>Permanent solution</p></div>
               <div className="feature-card"><h4 style={{display:'flex',alignItems:'center',gap:'8px'}}><Shield size={18} />Rodent Control</h4><p>Safe removal</p></div>
             </div>
-            <div className="pricing-grid">
-              <div className="pricing-card"><h4>General</h4><div className="price">₹449</div></div>
-              <div className="pricing-card popular"><span className="popular-badge">Popular</span><h4>Cockroach</h4><div className="price">₹599</div></div>
-            </div>
+            <RateCards withTermite />
           </div>
         </div>
       </section>

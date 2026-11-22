@@ -7,9 +7,10 @@ import {
   ClipboardList, Search, BadgeCheck, Award, Building2, Layers, Plus, Minus,
   Home as HomeIcon, Hotel, Hospital, Warehouse, UtensilsCrossed, HardHat,
 } from 'lucide-react';
-import { pests } from '../data/catalog';
+import { pests, RATES, homeRateLine, homeFrom } from '../data/catalog';
+import { FounderSection } from '../components/Founder';
 import { submitLead } from '../lib/api';
-import { media, pestMedia } from '../data/media';
+import { media, pestMedia, sectorMedia } from '../data/media';
 import './Home.css';
 
 const services = [
@@ -55,7 +56,7 @@ const industries = [
 ];
 
 const faqs = [
-  { q: 'How much does pest control cost in Jaipur?', a: 'General pest control starts from about ₹499 per visit. Termite treatment is priced per sq.ft. after inspection. You always receive a written quotation before any work begins.' },
+  { q: 'How much does pest control cost in Jaipur?', a: `Pest control for cockroaches, bed bugs, rodents and other pests is ${homeRateLine}. Anti-termite treatment is ₹${RATES.termitePost.min}–${RATES.termitePost.max} per sq.ft. for existing buildings, ₹${RATES.termitePre.min}–${RATES.termitePre.max} per sq.ft. before construction, and ₹${RATES.porousPipe.min}–${RATES.porousPipe.max} per sq.ft. for the porous pipe system. You always receive a written quotation before work begins.` },
   { q: 'Are your chemicals safe for children and pets?', a: 'We use government-approved, low-toxicity formulations applied by trained technicians. For gel treatments you can stay at home. For sprays we advise keeping rooms closed for a few hours.' },
   { q: 'I am building a new house. What should I do for termites?', a: 'Choose pre-construction treatment, ideally our porous pipe system. It is installed before flooring and can be refilled from outside for 10–15 years without drilling.' },
   { q: 'How long does termite treatment last?', a: 'Post-construction treatment carries up to a 5-year warranty and pre-construction treatment up to 10 years. The porous pipe system extends protection further with periodic refills.' },
@@ -71,6 +72,7 @@ const Home = () => {
   const [formData, setFormData] = useState({ name: '', phone: '', service: '' });
   const [submitted, setSubmitted] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
+  const pricesFrom = homeFrom;
 
   const stats = [
     { value: '8+', label: 'Years of service' },
@@ -103,30 +105,59 @@ const Home = () => {
     <div className="home">
       {/* HERO */}
       <section className="hero">
-        <div className="hero-glow" />
-        <div className="hero-grid-bg" />
-        <div className="container hero-inner">
-          <div className="hero-content">
-            <span className="hero-pill fade-up"><span className="dot" /> Rajasthan's trusted pest management partner</span>
-            <h1 className="hero-title fade-up d1">
-              Pest-free spaces,<br /><span className="text-gradient">guaranteed.</span>
-            </h1>
-            <p className="hero-subtitle fade-up d2">
-              Government-certified termite, cockroach, rodent and bed bug control for homes, hotels and industries — delivered by trained specialists with written warranty.
-            </p>
-            <div className="hero-actions fade-up d3">
-              <Link to="/book" className="btn btn-primary btn-lg">Book Online <ArrowRight size={18} /></Link>
-              <a href={`tel:${phoneNumber}`} className="btn btn-ghost btn-lg"><Phone size={18} /> {phoneNumber}</a>
-            </div>
-            <div className="hero-proof fade-up d4">
-              <div className="hero-stars">
-                {[...Array(5)].map((_, i) => <Star key={i} size={15} fill="currentColor" />)}
-              </div>
-              <span><strong>4.9/5</strong> from homeowners & businesses across Jaipur</span>
-            </div>
+        <div className="container hero-center">
+          <span className="hero-kicker fade-up">PestKill Pest Solutions</span>
+          <h1 className="hero-title fade-up d1">
+            Pest-free.<br /><span className="text-gradient">Guaranteed.</span>
+          </h1>
+          <p className="hero-subtitle fade-up d2">
+            Termite, cockroach, rodent and bed bug control for homes and businesses — by trained specialists, with a written warranty.
+          </p>
+          <div className="hero-actions fade-up d3">
+            <Link to="/book" className="btn btn-primary btn-lg">Book Online</Link>
+            <a href="#inspect" className="link-more">Get a free inspection <ArrowRight size={17} /></a>
           </div>
+          <div className="hero-proof fade-up d4">
+            <span className="hero-stars">{[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}</span>
+            <span><strong>4.9/5</strong> from homeowners & businesses across Jaipur</span>
+          </div>
+        </div>
+        <div className="container fade-up d4">
+          <figure className="hero-media photo-frame">
+            <img src={media.technician.src} alt={media.technician.alt} />
+            <figcaption className="hero-media-caption">
+              <strong>From {pricesFrom}</strong>
+              <span>Inspection · Treatment · Written warranty</span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
 
-          <div className="hero-card fade-up d2">
+      {/* STATS */}
+      <section className="stats-section">
+        <div className="container">
+          <div className="stats-grid">
+            {stats.map((s) => (
+              <div key={s.label} className="stat-item">
+                <span className="stat-number">{s.value}</span>
+                <span className="stat-label">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* INSPECTION TILE */}
+      <section className="section-sm" id="inspect">
+        <div className="container">
+          <div className="inspect-tile">
+            <div className="inspect-copy">
+              <span className="eyebrow light">Free inspection</span>
+              <h2>A specialist at your door. <span className="text-gradient">Within hours.</span></h2>
+              <p>Tell us what you're seeing. We'll call you back within 30 minutes to schedule a free, no-obligation inspection.</p>
+              <a href={`tel:${phoneNumber}`} className="link-more light"><Phone size={16} /> Or call {phoneNumber}</a>
+            </div>
+          <div className="hero-card">
             <div className="hero-card-head">
               <span className="icon-tile"><ShieldCheck size={22} /></span>
               <div>
@@ -154,19 +185,6 @@ const Home = () => {
               </form>
             )}
           </div>
-        </div>
-      </section>
-
-      {/* STATS */}
-      <section className="stats-section">
-        <div className="container">
-          <div className="stats-grid">
-            {stats.map((s) => (
-              <div key={s.label} className="stat-item">
-                <span className="stat-number">{s.value}</span>
-                <span className="stat-label">{s.label}</span>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -229,7 +247,7 @@ const Home = () => {
       <section className="section bg-surface">
         <div className="container why-layout">
           <div className="why-visual">
-            <img src={media.technician.src} alt={media.technician.alt} loading="lazy" />
+            <img src={sectorMedia['food-processing'].src} alt={sectorMedia['food-processing'].alt} loading="lazy" />
             <div className="why-badge">
               <Award size={28} />
               <div>
@@ -291,7 +309,7 @@ const Home = () => {
             </div>
             <ul className="piping-band-points">
               <li><strong>10–15 yrs</strong><span>Protection with refills</span></li>
-              <li><strong>₹8–12</strong><span>Per sq.ft. (indicative)</span></li>
+              <li><strong>₹{RATES.porousPipe.min}–{RATES.porousPipe.max}</strong><span>Per sq.ft.</span></li>
               <li><strong>0</strong><span>Floor drilling ever</span></li>
             </ul>
           </Link>
@@ -337,6 +355,8 @@ const Home = () => {
           <div className="center-cta"><Link to="/pests" className="btn btn-outline">Open the pest library <ArrowRight size={16} /></Link></div>
         </div>
       </section>
+
+      <FounderSection />
 
       {/* TESTIMONIALS */}
       <section className="section testimonials-section">

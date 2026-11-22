@@ -12,8 +12,10 @@ const publicLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 15 });
 const newRef = () => `PK${Date.now().toString(36).toUpperCase().slice(-5)}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
 
 const LIST_SQL = `
-  SELECT l.*, a.name AS assigned_name
-  FROM leads l LEFT JOIN users a ON a.id = l.assigned_to`;
+  SELECT l.*, a.name AS assigned_name, t.name AS technician_name
+  FROM leads l
+  LEFT JOIN users a ON a.id = l.assigned_to
+  LEFT JOIN users t ON t.id = l.technician_id`;
 
 // Public: website forms (booking wizard, inspection, contact, quote)
 router.post('/', publicLimiter, optionalAuth, (req, res, next) => {
@@ -97,6 +99,31 @@ router.patch('/:id', requirePermission('services.manage', 'services.assign'), (r
         changes.assigned_to = staff.id;
       }
     }
+    if (req.body.technicianId !== undefined || req.body.scheduledAt !== undefined) {
+      if (!canAssign) return res.status(403).json({ error: 'You cannot schedule jobs.' });
+      if (req.body.technicianId !== undefined) {
+        if (req.body.technicianId === null || req.body.technicianId === '') {
+          changes.technician_id = null;
+        } else {
+          const tech = db.prepare("SELECT id FROM users WHERE id = ? AND role IN ('technician','manager','owner') AND is_active = 1").get(intId(req.body.technicianId));
+          if (!tech) throw new ValidationError('Choose an active technician.');
+          changes.technician_id = tech.id;
+        }
+      }
+      if (req.body.scheduledAt !== undefined) {
+        const v = req.body.scheduledAt;
+        if (v && Number.isNaN(Date.parse(v))) throw new ValidationError('Invalid schedule date.');
+        changes.scheduled_at = v || null;
+        if (v && lead.status === 'new') changes.status = changes.status || 'scheduled';
+      }
+    }
+    if (req.body.amount !== undefined || req.body.areaSqft !== undefined || req.body.warranty !== undefined) {
+      if (!can(req.user, 'services.manage')) return res.status(403).json({ error: 'You cannot edit job details.' });
+      if (req.body.amount !== undefined) changes.amount = req.body.amount === '' || req.body.amount === null ? null : Math.max(0, Number(req.body.amount) || 0);
+      if (req.body.areaSqft !== undefined) changes.area_sqft = req.body.areaSqft === '' || req.body.areaSqft === null ? null : Math.max(0, Number(req.body.areaSqft) || 0);
+      if (req.body.warranty !== undefined) changes.warranty = str(req.body.warranty, { field: 'Warranty', max: 80 });
+    }
+    if (changes.status === 'completed' && !lead.completed_at) changes.completed_at = new Date().toISOString();
     if (!Object.keys(changes).length) return res.status(400).json({ error: 'Nothing to update.' });
 
     const sets = Object.keys(changes).map((k) => `${k} = @${k}`).join(', ');
@@ -115,6 +142,22 @@ router.delete('/:id', ownerOnly, (req, res, next) => {
     audit(req, 'lead.delete', 'lead', lead.ref);
     res.json({ message: 'Deleted.' });
   } catch (e) { next(e); }
+});
+
+// Treatment / warranty certificate data for a completed job.
+router.get('/:ref/certificate', auth, (req, res) => {
+  const lead = db.prepare(`${LIST_SQL} WHERE l.ref = ?`).get(String(req.params.ref).slice(0, 40));
+  const isOwnerClient = lead && req.user.role === 'client' && (lead.user_id === req.user.id || (lead.user_id == null && lead.phone === String(req.user.phone || '').slice(-10)));
+  const isStaff = ['owner', 'manager', 'technician'].includes(req.user.role) && (can(req.user, 'services.view') || can(req.user, 'invoices.manage') || lead?.technician_id === req.user.id);
+  if (!lead || !(isOwnerClient || isStaff)) return res.status(404).json({ error: 'Certificate not found.' });
+  if (lead.status !== 'completed') return res.status(409).json({ error: 'The certificate is available once the treatment is completed.' });
+  res.json({
+    number: `PK-CERT-${lead.ref}`,
+    ref: lead.ref, service: lead.service, property: lead.property, area_sqft: lead.area_sqft,
+    name: lead.name, address: lead.address, city: lead.city,
+    completed_at: lead.completed_at || lead.updated_at, technician: lead.technician_name,
+    chemicals_used: lead.chemicals_used, warranty: lead.warranty, notes: lead.completion_notes,
+  });
 });
 
 export default router;

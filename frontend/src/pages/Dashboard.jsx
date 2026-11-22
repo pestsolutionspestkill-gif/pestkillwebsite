@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
-import { CalendarCheck, MessageSquareWarning, Package, UserRound, LogOut, Plus, ArrowRight, CheckCircle } from 'lucide-react';
+import { CalendarCheck, MessageSquareWarning, Package, UserRound, LogOut, Plus, ArrowRight, CheckCircle, ReceiptText, Award, Printer } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import './Dashboard.css';
 
 const label = (s) => (s || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 const fmt = (s) => (s ? new Date(`${s.replace(' ', 'T')}Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
-const TONE = { new: 'info', contacted: 'warning', scheduled: 'info', in_progress: 'warning', completed: 'success', cancelled: 'danger', pending: 'warning', resolved: 'success', closed: 'neutral', confirmed: 'info', processing: 'warning', shipped: 'info', delivered: 'success' };
+const TONE = { new: 'info', contacted: 'warning', scheduled: 'info', in_progress: 'warning', completed: 'success', cancelled: 'danger', pending: 'warning', resolved: 'success', closed: 'neutral', confirmed: 'info', processing: 'warning', shipped: 'info', delivered: 'success', unpaid: 'warning', paid: 'success', void: 'neutral' };
 const Badge = ({ value }) => <span className={`badge badge-${TONE[value] || 'neutral'}`}>{label(value)}</span>;
 
 const useList = (path) => {
@@ -34,7 +34,8 @@ const Bookings = () => {
           <div className="dash-card-side">
             <Badge value={b.status} />
             {b.estimate && <strong>{b.estimate}</strong>}
-            <small>Requested {fmt(b.created_at)}</small>
+            <small>{b.scheduled_at ? `Visit ${fmt(b.scheduled_at)}` : `Requested ${fmt(b.created_at)}`}</small>
+            {b.status === 'completed' && <a className="dash-doc-link" href={`/print/certificate/${b.ref}`} target="_blank" rel="noopener noreferrer"><Award size={14} /> Treatment certificate</a>}
           </div>
         </article>
       ))}
@@ -114,6 +115,26 @@ const Orders = () => {
   );
 };
 
+const Invoices = () => {
+  const { data, error } = useList('/invoices/mine');
+  if (!data) return <p className="dash-muted">Loading…</p>;
+  if (error) return <p className="form-error">{error}</p>;
+  if (!data.length) return <div className="empty-state">No invoices yet. Invoices for completed services appear here.</div>;
+  return (
+    <div className="dash-list">
+      {data.map((i) => (
+        <article key={i.id} className="dash-card">
+          <div className="dash-card-main"><span className="dash-ref">{i.number}</span><h3>₹{Number(i.total).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</h3><p>Issued {fmt(i.issued_at)} · incl. GST {i.gst_rate}%</p></div>
+          <div className="dash-card-side">
+            <Badge value={i.status} />
+            <a className="dash-doc-link" href={`/print/invoice/${i.id}`} target="_blank" rel="noopener noreferrer"><Printer size={14} /> View / download</a>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+};
+
 const Profile = () => {
   const { user, setUser } = useAuth();
   const [form, setForm] = useState({ name: user.name, phone: user.phone || '', address: user.address || '', city: user.city || '' });
@@ -158,6 +179,7 @@ const Profile = () => {
 
 const TABS = [
   { id: 'bookings', label: 'My bookings', icon: CalendarCheck, el: Bookings },
+  { id: 'invoices', label: 'Invoices', icon: ReceiptText, el: Invoices },
   { id: 'complaints', label: 'Complaints', icon: MessageSquareWarning, el: Complaints },
   { id: 'orders', label: 'Orders', icon: Package, el: Orders },
   { id: 'profile', label: 'Profile', icon: UserRound, el: Profile },
@@ -180,7 +202,7 @@ const Dashboard = () => {
           <div>
             <span className="eyebrow light">My Account</span>
             <h1>Hello, {user.name.split(' ')[0]}</h1>
-            <p>Track your bookings, complaints and orders in one place.</p>
+            <p>Bookings, visit schedule, invoices and treatment certificates, all in one place.</p>
           </div>
           <Link to="/book" className="btn btn-primary">Book a service <ArrowRight size={16} /></Link>
         </div>

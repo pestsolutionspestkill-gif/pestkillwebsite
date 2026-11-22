@@ -98,7 +98,7 @@ Comparison: Porous Pipe vs Traditional Treatment
 
 | Feature | Porous Pipe System | Traditional Drilling |
 |---------|------------------|-------------------|
-| Cost | ₹8-12/sq.ft. | ₹15-25/sq.ft. |
+| Cost | ₹22-25/sq.ft. (ek baar) | ₹6-9/sq.ft. (har treatment) |
 | Longevity | 10-15 years | 5-7 years |
 | Re-treatment | Easy | Difficult |
 
@@ -114,7 +114,7 @@ Q1: Is porous pipe treatment necessary for every new home?
 Ans: Ji haan, highly recommended hai.
 
 Q2: How much does it cost in Rajasthan?
-Ans: Generally ₹8-12 per sq.ft. starts hota hai.
+Ans: Porous pipe system ₹22-25 per sq.ft. hota hai. Normal pre-construction soil treatment ₹12-15 per sq.ft. hai.
 
 Q3: Can we install after construction?
 Ans: Possible hai but costly aur difficult hai.
@@ -861,26 +861,22 @@ Call us or book online for inspection.`,
 
 **Average Costs:**
 
-*General Pest Control:*
+*Home Pest Control (cockroaches, bed bugs, rodents, ants, mosquitoes):*
 
-- One-time treatment: ₹2,000-5,000
-- Annual contract: ₹8,000-15,000
+- 1BHK: ₹1,200
+- 2BHK: ₹1,500
+- 3BHK: ₹1,500
+- Bigger homes and villas: quote after inspection
 
-*Termite Treatment:*
+*Anti-Termite Treatment:*
 
-- Pre-construction: ₹5-15/sq ft
-- Post-construction: ₹10-25/sq ft
-- Warranty: Extra cost
+- Post-construction (existing buildings): ₹6-9/sq ft
+- Pre-construction (soil treatment): ₹12-15/sq ft
+- Porous pipe system: ₹22-25/sq ft
 
-*Bed Bugs:*
+*Commercial Sites:*
 
-- Per room: ₹3,000-8,000
-- Whole home: ₹10,000-25,000
-
-*Rodents:*
-
-- Per visit: ₹2,000-5,000
-- Annual: ₹8,000-12,000
+- Quoted after a free site survey
 
 **What's Included:**
 
