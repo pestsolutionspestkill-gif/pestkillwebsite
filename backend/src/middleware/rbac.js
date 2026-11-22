@@ -1,10 +1,16 @@
 import jwt from 'jsonwebtoken';
 import db, { permissionsFor } from '../db.js';
 
-const JWT_SECRET = process.env.JWT_SECRET;
 const TOKEN_TTL = '7d';
 
-export const signToken = (user) => jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: TOKEN_TTL });
+// Set once at start-up (see resolveJwtSecret in db.js) before the server accepts requests.
+let JWT_SECRET = null;
+export const setJwtSecret = (secret) => {
+  if (!secret || secret.length < 32) throw new Error('JWT secret must be at least 32 characters.');
+  JWT_SECRET = secret;
+};
+
+export const signToken = (user) => jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: TOKEN_TTL, algorithm: 'HS256' });
 
 // The user is reloaded from the database on every request, so suspensions, role changes
 // and permission changes take effect immediately.
@@ -14,7 +20,7 @@ const loadUser = async (req) => {
   if (!token) return null;
   let sub;
   try {
-    ({ sub } = jwt.verify(token, JWT_SECRET));
+    ({ sub } = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }));
   } catch {
     return null;
   }

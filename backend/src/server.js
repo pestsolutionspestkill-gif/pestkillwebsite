@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 
-import db, { initDb } from './db.js';
+import db, { initDb, resolveJwtSecret } from './db.js';
 import userRoutes from './routes/userRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import leadRoutes from './routes/leadRoutes.js';
@@ -19,11 +19,15 @@ import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
-import { ah } from './middleware/rbac.js';
+import { ah, setJwtSecret } from './middleware/rbac.js';
 
 const PORT = process.env.PORT || 5000;
-const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173')
-  .split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean);
+// The website is served from this same server, so same-origin calls need no CORS entry.
+// CLIENT_ORIGIN is only for a frontend hosted elsewhere; Render's own URL is added automatically.
+const allowedOrigins = [
+  ...(process.env.CLIENT_ORIGIN || 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173').split(','),
+  process.env.RENDER_EXTERNAL_URL || '',
+].map((o) => o.trim().replace(/\/$/, '')).filter(Boolean);
 
 // One-time owner bootstrap for hosts without a shell (e.g. Render free plan):
 // set OWNER_NAME, OWNER_EMAIL, OWNER_PHONE, OWNER_PASSWORD. Runs only while no owner exists,
@@ -105,9 +109,10 @@ app.use((err, _req, res, _next) => {
 
 try {
   await initDb();
+  setJwtSecret(await resolveJwtSecret());
   await bootstrapOwner();
 } catch (e) {
-  console.error('Database start-up failed:', e.message);
+  console.error(`\n*** PestKill could not start: ${e.message}\n`);
   process.exit(1);
 }
 

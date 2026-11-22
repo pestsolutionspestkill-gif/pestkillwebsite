@@ -1,6 +1,7 @@
-import 'dotenv/config';
+// Loads backend/.env (if present) no matter which folder the server is started from.
+// On hosts like Render there is no .env file; settings come from the host's environment.
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-  console.error('JWT_SECRET is missing or too short. Set it in backend/.env (see .env.example).');
-  process.exit(1);
-}
+dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '../.env') });

@@ -1,9 +1,11 @@
 // PostgreSQL data layer.
 // - Production: set DATABASE_URL (e.g. a free Neon Postgres URL). Data persists across deploys.
 // - Local dev / tests: without DATABASE_URL an embedded Postgres (PGlite) is used, stored in
-//   backend/data/pglite (or PGLITE_DIR; "memory://" for a throwaway database).
+//   ~/.pestkill/pglite (or PGLITE_DIR; "memory://" for a throwaway database).
 // Queries use "?" placeholders; they are converted to $1, $2… here. Never put a literal "?" in SQL.
+import crypto from 'crypto';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -62,16 +64,42 @@ const connect = async () => {
       close: () => pool.end(),
     };
   }
+  // Render's disk is wiped on every deploy/restart: refuse to silently store real bookings there.
+  if (process.env.RENDER && !process.env.ALLOW_TEMPORARY_DB) {
+    throw new Error('DATABASE_URL is not set. Create a free Neon database (neon.tech) and add its connection string '
+      + 'as DATABASE_URL in Render -> Environment, then redeploy. (For a short demo only, set ALLOW_TEMPORARY_DB=1; data will be lost.)');
+  }
   const { PGlite } = await import('@electric-sql/pglite');
-  const dir = process.env.PGLITE_DIR || path.join(__dirname, '../data/pglite');
-  if (!dir.includes('://')) fs.mkdirSync(dir, { recursive: true });
+  // Kept in the user's home folder, outside the project: cloud-sync folders (OneDrive, Dropbox)
+  // lock and upload database files while they change, which breaks start-up.
+  const dir = process.env.PGLITE_DIR || path.join(os.homedir(), '.pestkill', 'pglite');
+  let releaseLock = () => {};
+  if (!dir.includes('://')) {
+    fs.mkdirSync(dir, { recursive: true });
+    // Only one process may open the embedded database. PGlite's own postmaster.pid holds a fake
+    // process id, so a crash or a closed window would otherwise block every later start.
+    // Our lock file records the real process id, which lets us tell "in use" from "stale".
+    const lockFile = `${dir}.lock`;
+    const holder = Number(fs.existsSync(lockFile) ? fs.readFileSync(lockFile, 'utf8').trim() : 0);
+    const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+    if (holder && holder !== process.pid && alive(holder)) {
+      throw new Error(`The local database is already open in another running process (id ${holder}). `
+        + `Stop the other server or script first. If nothing else is running, delete ${lockFile}.`);
+    }
+    fs.rmSync(path.join(dir, 'postmaster.pid'), { force: true }); // stale lock from an unexpected stop
+    fs.writeFileSync(lockFile, String(process.pid));
+    releaseLock = () => {
+      try { if (fs.readFileSync(lockFile, 'utf8').trim() === String(process.pid)) fs.rmSync(lockFile, { force: true }); } catch { /* already gone */ }
+    };
+    process.once('exit', releaseLock);
+  }
   const lite = new PGlite(dir, { parsers: PARSERS });
   await lite.waitReady;
   return {
     kind: `embedded (${dir})`,
     exec: (sql, params) => lite.query(sql, params),
     tx: (fn) => lite.transaction((t) => fn(wrap((s, p) => t.query(s, p)))),
-    close: () => lite.close(),
+    close: async () => { await lite.close(); releaseLock(); },
   };
 };
 
@@ -247,7 +275,22 @@ const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS idx_invoices_lead ON invoices(lead_id);
   CREATE INDEX IF NOT EXISTS idx_invoices_user ON invoices(user_id);
+
+  CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 `;
+
+// Login-token signing key. Uses JWT_SECRET when it is set to 32+ characters; otherwise a random
+// key is generated once and kept in the database, so sessions survive restarts without manual setup.
+export const resolveJwtSecret = async () => {
+  const fromEnv = process.env.JWT_SECRET || '';
+  if (fromEnv.length >= 32) return fromEnv;
+  if (fromEnv) console.warn('JWT_SECRET is shorter than 32 characters; using a generated key stored in the database instead.');
+  await db.run("INSERT INTO app_settings (key, value) VALUES ('jwt_secret', ?) ON CONFLICT (key) DO NOTHING", crypto.randomBytes(48).toString('base64url'));
+  return (await db.get("SELECT value FROM app_settings WHERE key = 'jwt_secret'")).value;
+};
 
 export const initDb = async () => {
   if (driver) return db;

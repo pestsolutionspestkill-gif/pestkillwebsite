@@ -1,0 +1,16 @@
+{
+  "name": "pestkill-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PestKill Pest Solutions website: React frontend + Express/PostgreSQL backend. Build and start from the repository root.",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20 <25"
+  },
+  "scripts": {
+    "build": "npm ci --prefix frontend --include=dev && npm run build --prefix frontend && npm ci --prefix backend --omit=dev",
+    "postinstall": "npm run build",
+    "start": "node index.js"
+  }
+}

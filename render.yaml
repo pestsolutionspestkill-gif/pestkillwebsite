@@ -1,23 +1,20 @@
 # Render Blueprint: one web service runs the whole website (API + built frontend).
 # Render → New → Blueprint → pick this repo. You will be asked for the values marked sync: false.
+# Node version comes from "engines" in the root package.json.
 services:
   - type: web
     name: pestkill
     runtime: node
     plan: free
-    buildCommand: cd frontend && npm ci && npm run build && cd ../backend && npm ci
-    startCommand: cd backend && npm start
+    buildCommand: npm run build
+    startCommand: npm start
     healthCheckPath: /api/health
     envVars:
-      - key: NODE_VERSION
-        value: "22"
       - key: JWT_SECRET
         generateValue: true          # long random secret, created by Render
       - key: TRUST_PROXY
         value: "1"
       - key: DATABASE_URL            # Neon → Connection string (starts with postgresql://, includes sslmode=require)
-        sync: false
-      - key: CLIENT_ORIGIN           # your site URL, e.g. https://pestkill.onrender.com (comma-separate several)
         sync: false
       - key: OWNER_NAME
         sync: false

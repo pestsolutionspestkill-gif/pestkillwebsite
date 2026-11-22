@@ -21,8 +21,10 @@ npm install
 npm run dev                   # website on http://localhost:3000
 ```
 
-Without `DATABASE_URL` the backend uses an embedded PostgreSQL stored in `backend/data/pglite`
-(never committed). Set `DATABASE_URL` to use a real PostgreSQL server instead — the SQL is identical.
+Without `DATABASE_URL` the backend uses an embedded PostgreSQL stored in `~/.pestkill/pglite`
+(your home folder — outside the project, so OneDrive/Dropbox cannot lock or upload it; override
+with `PGLITE_DIR`). Only one process can open it at a time. Set `DATABASE_URL` to use a real
+PostgreSQL server instead — the SQL is identical.
 
 ## Deploy on Render (free) with Neon PostgreSQL (free)
 
@@ -31,20 +33,23 @@ Without `DATABASE_URL` the backend uses an embedded PostgreSQL stored in `backen
 2. **Website** — on [render.com](https://render.com): **New → Blueprint**, choose this repo.
    `render.yaml` sets everything up; fill in the values it asks for:
    - `DATABASE_URL` — the Neon connection string
-   - `CLIENT_ORIGIN` — your Render URL, e.g. `https://pestkill.onrender.com`
    - `OWNER_NAME`, `OWNER_EMAIL`, `OWNER_PHONE`, `OWNER_PASSWORD` — your first Owner login
 3. After the first deploy, sign in at `/login`, then delete `OWNER_PASSWORD` from Render's
    environment (the account stays; the value is only used when no Owner exists).
 
-Manual setup instead of a Blueprint (New → Web Service):
+Manual setup instead of a Blueprint (New → Web Service, Root Directory left empty):
 
 | Setting | Value |
 |---|---|
-| Build Command | `cd frontend && npm ci && npm run build && cd ../backend && npm ci` |
-| Start Command | `cd backend && npm start` |
+| Build Command | `npm install` (or `npm run build`) |
+| Start Command | `npm start` |
 | Health Check Path | `/api/health` |
-| Environment | `JWT_SECRET` (32+ random characters), `TRUST_PROXY=1`, `DATABASE_URL`, `CLIENT_ORIGIN`, `OWNER_*` |
+| Environment | `DATABASE_URL`, `TRUST_PROXY=1`, `OWNER_*`; optional `JWT_SECRET` (32+ random characters) |
 
+The root `package.json` builds the frontend and installs the backend; `npm start` runs the server,
+which also serves the website. Without `JWT_SECRET`, a random signing key is generated once and kept
+in the database. On Render the server refuses to start without `DATABASE_URL`, because Render's disk
+is wiped on every deploy (set `ALLOW_TEMPORARY_DB=1` only for a throwaway demo).
 Do not set `NODE_ENV=production` at build time (the frontend build needs its dev tools).
 Render's free web service sleeps after 15 minutes without visitors; the first visit after that
 takes about a minute. Data is safe in Neon either way.
