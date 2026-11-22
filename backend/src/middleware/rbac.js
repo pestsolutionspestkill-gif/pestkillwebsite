@@ -6,49 +6,61 @@ const TOKEN_TTL = '7d';
 
 export const signToken = (user) => jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: TOKEN_TTL });
 
-const loadUser = (req) => {
+// The user is reloaded from the database on every request, so suspensions, role changes
+// and permission changes take effect immediately.
+const loadUser = async (req) => {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return null;
+  let sub;
   try {
-    const { sub } = jwt.verify(token, JWT_SECRET);
-    const user = db.prepare('SELECT id, name, email, phone, role, is_active FROM users WHERE id = ?').get(sub);
-    if (!user || !user.is_active) return null;
-    user.permissions = permissionsFor(user);
-    return user;
+    ({ sub } = jwt.verify(token, JWT_SECRET));
   } catch {
     return null;
   }
+  const user = await db.get('SELECT id, name, email, phone, role, is_active FROM users WHERE id = ?', Number(sub));
+  if (!user || !user.is_active) return null;
+  user.permissions = await permissionsFor(user);
+  return user;
 };
 
 // Attaches req.user when a valid token is present, but never blocks the request.
-export const optionalAuth = (req, _res, next) => {
-  req.user = loadUser(req);
-  next();
+export const optionalAuth = async (req, _res, next) => {
+  try {
+    req.user = await loadUser(req);
+    next();
+  } catch (e) { next(e); }
 };
 
-export const auth = (req, res, next) => {
-  req.user = loadUser(req);
+const withUser = async (req, res, next, check) => {
+  try {
+    req.user = await loadUser(req);
+  } catch (e) { return next(e); }
   if (!req.user) return res.status(401).json({ error: 'Please log in to continue.' });
-  next();
+  return check(req, res, next);
 };
 
-export const requireRole = (...roles) => (req, res, next) => auth(req, res, () => {
-  if (!roles.includes(req.user.role)) return res.status(403).json({ error: 'You do not have access to this area.' });
-  next();
+export const auth = (req, res, next) => withUser(req, res, next, (_q, _s, n) => n());
+
+export const requireRole = (...roles) => (req, res, next) => withUser(req, res, next, (q, s, n) => {
+  if (!roles.includes(q.user.role)) return s.status(403).json({ error: 'You do not have access to this area.' });
+  return n();
 });
 
 export const ownerOnly = requireRole('owner');
 export const staffOnly = requireRole('owner', 'manager');
 
-// Owners pass every check; managers need the specific permission; clients never pass.
-export const requirePermission = (...perms) => (req, res, next) => auth(req, res, () => {
-  if (req.user.role === 'owner') return next();
-  if (req.user.role === 'manager' && perms.some((p) => req.user.permissions.includes(p))) return next();
-  return res.status(403).json({ error: 'You do not have permission for this action.' });
+// Owners pass every check; managers need one of the listed permissions; others never pass.
+export const requirePermission = (...perms) => (req, res, next) => withUser(req, res, next, (q, s, n) => {
+  if (q.user.role === 'owner') return n();
+  if (q.user.role === 'manager' && perms.some((p) => q.user.permissions.includes(p))) return n();
+  return s.status(403).json({ error: 'You do not have permission for this action.' });
 });
 
 export const can = (user, perm) => user?.role === 'owner' || (user?.role === 'manager' && user.permissions.includes(perm));
+
+// Wraps an async route handler so rejected promises reach the error handler.
+export const ah = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 // Minimal in-memory rate limiter for public form endpoints.
 export const rateLimit = ({ windowMs, max }) => {

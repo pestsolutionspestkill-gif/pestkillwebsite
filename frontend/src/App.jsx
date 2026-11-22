@@ -1,41 +1,54 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { Routes, Route, useLocation, Link } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import SmoothScroll from './components/SmoothScroll';
 import { FounderStrip } from './components/Founder';
-import AntiTermitePiping from './pages/AntiTermitePiping';
-import BookOnline from './pages/BookOnline';
-import PestLibrary from './pages/PestLibrary';
-import PestDetail from './pages/PestDetail';
-import Business from './pages/Business';
-import SectorPage from './pages/SectorPage';
-import IPM from './pages/IPM';
-import Locations from './pages/Locations';
-import Careers from './pages/Careers';
+const AntiTermitePiping = lazy(() => import('./pages/AntiTermitePiping'));
+const BookOnline = lazy(() => import('./pages/BookOnline'));
+const PestLibrary = lazy(() => import('./pages/PestLibrary'));
+const PestDetail = lazy(() => import('./pages/PestDetail'));
+const Business = lazy(() => import('./pages/Business'));
+const SectorPage = lazy(() => import('./pages/SectorPage'));
+const IPM = lazy(() => import('./pages/IPM'));
+const Locations = lazy(() => import('./pages/Locations'));
+const Careers = lazy(() => import('./pages/Careers'));
 import Footer from './components/Footer';
 import Home from './pages/Home';
-import Services from './pages/Services';
-import ServiceDetail from './pages/ServiceDetail';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Admin from './pages/Admin';
-import Blog from './pages/Blog';
-import BlogDetail from './pages/BlogDetail';
-import TermiteControl from './pages/TermiteControl';
-import CockroachControl from './pages/CockroachControl';
-import BedBugTreatment from './pages/BedBugTreatment';
-import RodentControl from './pages/RodentControl';
-import Jaipur from './pages/Jaipur';
-import Jodhpur from './pages/Jodhpur';
-import Udaipur from './pages/Udaipur';
-import Kota from './pages/Kota';
-import Ajmer from './pages/Ajmer';
-import Bikaner from './pages/Bikaner';
-import Alwar from './pages/Alwar';
-import Bharatpur from './pages/Bharatpur';
-import { PrintInvoice, PrintCertificate } from './pages/print/PrintDocs';
+const Services = lazy(() => import('./pages/Services'));
+const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Blog = lazy(() => import('./pages/Blog'));
+const BlogDetail = lazy(() => import('./pages/BlogDetail'));
+const TermiteControl = lazy(() => import('./pages/TermiteControl'));
+const CockroachControl = lazy(() => import('./pages/CockroachControl'));
+const BedBugTreatment = lazy(() => import('./pages/BedBugTreatment'));
+const RodentControl = lazy(() => import('./pages/RodentControl'));
+const Jaipur = lazy(() => import('./pages/Jaipur'));
+const Jodhpur = lazy(() => import('./pages/Jodhpur'));
+const Udaipur = lazy(() => import('./pages/Udaipur'));
+const Kota = lazy(() => import('./pages/Kota'));
+const Ajmer = lazy(() => import('./pages/Ajmer'));
+const Bikaner = lazy(() => import('./pages/Bikaner'));
+const Alwar = lazy(() => import('./pages/Alwar'));
+const Bharatpur = lazy(() => import('./pages/Bharatpur'));
+// Staff console, customer account and print pages load on demand, keeping the public site light.
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Admin = lazy(() => import('./pages/Admin'));
+const PrintInvoice = lazy(() => import('./pages/print/PrintDocs').then((m) => ({ default: m.PrintInvoice })));
+const PrintCertificate = lazy(() => import('./pages/print/PrintDocs').then((m) => ({ default: m.PrintCertificate })));
+
+const PageLoading = () => <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>Loading…</div>;
+
+const NotFound = () => (
+  <section style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '80px 20px', textAlign: 'center' }}>
+    <h1 style={{ fontSize: 'clamp(2.4rem, 6vw, 4rem)', letterSpacing: '-0.04em' }}>Page not found.</h1>
+    <p style={{ color: 'var(--muted)', maxWidth: 420 }}>The page you are looking for has moved or does not exist.</p>
+    <Link to="/" className="btn btn-primary">Back to home</Link>
+  </section>
+);
 
 function App() {
   const { pathname } = useLocation();
@@ -46,6 +59,7 @@ function App() {
       <SmoothScroll />
       {!consoleMode && <Navbar />}
       <main style={{ minHeight: '100vh', paddingTop: consoleMode ? 0 : 'var(--nav-h)' }}>
+        <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />
@@ -82,7 +96,9 @@ function App() {
           <Route path="/bharatpur" element={<Bharatpur />} />
           <Route path="/print/invoice/:id" element={<PrintInvoice />} />
           <Route path="/print/certificate/:ref" element={<PrintCertificate />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </main>
       {!consoleMode && !hasFounderSection && <FounderStrip />}
       {!consoleMode && <Footer />}
