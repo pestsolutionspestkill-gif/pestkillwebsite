@@ -55,3 +55,17 @@
   .dash-card-side { align-items: flex-start; text-align: left; }
   .dash-grid { grid-template-columns: 1fr; }
 }
+
+/* Shop orders & PCO account */
+.dash-pco { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; padding: 16px 18px; border-radius: 16px; background: #F5F5F7; }
+.dash-pco > svg { flex-shrink: 0; color: var(--emerald-600); }
+.dash-pco > div { flex: 1; min-width: 220px; display: flex; flex-direction: column; }
+.dash-pco strong { font-size: 0.98rem; }
+.dash-pco span { font-size: 0.86rem; color: var(--muted); }
+.dash-pco.approved { background: #EEF9F4; }
+.dash-pco.pending { background: #FFF6E0; }
+.dash-pco.rejected { background: #FDECEA; }
+.dash-items { list-style: none; display: flex; flex-direction: column; padding: 10px 14px; background: #fff; border-radius: 12px; }
+.dash-items li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 0.88rem; border-bottom: 1px solid #F0F0F2; }
+.dash-items li:last-child { border-bottom: none; }
+.dash-cancel { align-self: flex-start; }

@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 
-import db, { initDb, resolveJwtSecret } from './db.js';
+import db, { initDb, resolveJwtSecret, audit } from './db.js';
 import userRoutes from './routes/userRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import leadRoutes from './routes/leadRoutes.js';
@@ -19,6 +19,7 @@ import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
+import buyerRoutes from './routes/buyerRoutes.js';
 import { ah, setJwtSecret } from './middleware/rbac.js';
 
 const PORT = process.env.PORT || 5000;
@@ -29,20 +30,32 @@ const allowedOrigins = [
   process.env.RENDER_EXTERNAL_URL || '',
 ].map((o) => o.trim().replace(/\/$/, '')).filter(Boolean);
 
-// One-time owner bootstrap for hosts without a shell (e.g. Render free plan):
-// set OWNER_NAME, OWNER_EMAIL, OWNER_PHONE, OWNER_PASSWORD. Runs only while no owner exists,
-// so changing the password later from the website is never overwritten.
-const bootstrapOwner = async () => {
-  const { OWNER_EMAIL, OWNER_PASSWORD, OWNER_NAME, OWNER_PHONE } = process.env;
-  if (!OWNER_EMAIL || !OWNER_PASSWORD) return;
-  if (await db.get("SELECT 1 FROM users WHERE role = 'owner'")) return;
-  if (OWNER_PASSWORD.length < 8) { console.error('OWNER_PASSWORD must be at least 8 characters; owner not created.'); return; }
-  const email = OWNER_EMAIL.trim().toLowerCase();
-  const hash = await bcrypt.hash(OWNER_PASSWORD, 12);
-  const existing = await db.get('SELECT id FROM users WHERE email = ?', email);
-  if (existing) await db.run("UPDATE users SET password = ?, role = 'owner', is_active = 1 WHERE id = ?", hash, existing.id);
-  else await db.run("INSERT INTO users (name, email, phone, password, role) VALUES (?, ?, ?, ?, 'owner')", OWNER_NAME || 'Owner', email, String(OWNER_PHONE || '').replace(/\D/g, '').slice(-10) || null, hash);
-  console.log(`Owner account ready: ${email}`);
+// Owner login from environment variables (for hosts without a shell, e.g. Render).
+// While OWNER_EMAIL and OWNER_PASSWORD are set, that account always exists as an active Owner and
+// OWNER_PASSWORD always works: to change the password, change the variable and restart.
+const syncOwnerFromEnv = async () => {
+  const email = String(process.env.OWNER_EMAIL || '').trim().toLowerCase();
+  const pass = String(process.env.OWNER_PASSWORD || '').trim();
+  if (!email && !pass) return;
+  if (!email || !pass) { console.error('Owner login not set: add both OWNER_EMAIL and OWNER_PASSWORD.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { console.error(`Owner login not set: OWNER_EMAIL "${email}" is not a valid email address.`); return; }
+  if (pass.length < 8) { console.error('Owner login not set: OWNER_PASSWORD must be at least 8 characters.'); return; }
+
+  const user = await db.get('SELECT id, password, role, is_active FROM users WHERE email = ?', email);
+  if (!user) {
+    const phoneDigits = String(process.env.OWNER_PHONE || '').replace(/\D/g, '').slice(-10) || null;
+    await db.run("INSERT INTO users (name, email, phone, password, role) VALUES (?, ?, ?, ?, 'owner')",
+      String(process.env.OWNER_NAME || '').trim() || 'Owner', email, phoneDigits, await bcrypt.hash(pass, 12));
+    console.log(`Owner login created: ${email}`);
+    return;
+  }
+  const passwordMatches = await bcrypt.compare(pass, user.password);
+  if (passwordMatches && user.role === 'owner' && user.is_active) { console.log(`Owner login ready: ${email}`); return; }
+  await db.run("UPDATE users SET password = ?, role = 'owner', is_active = 1 WHERE id = ?",
+    passwordMatches ? user.password : await bcrypt.hash(pass, 12), user.id);
+  await db.run('DELETE FROM manager_permissions WHERE user_id = ?', user.id);
+  audit({ ip: 'server' }, 'auth.owner_from_env', 'user', user.id, { passwordChanged: !passwordMatches });
+  console.log(`Owner login updated from OWNER_EMAIL / OWNER_PASSWORD: ${email}`);
 };
 
 const app = express();
@@ -61,7 +74,10 @@ app.use((_req, res, next) => {
 });
 app.use(compression());
 app.use('/api', cors({ origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin)) }));
-app.use(express.json({ limit: '100kb' }));
+// Product photo uploads (owner console) may be up to ~2 MB as base64; everything else stays small.
+const smallJson = express.json({ limit: '100kb' });
+const imageJson = express.json({ limit: '2.5mb' });
+app.use((req, res, next) => (/^\/api\/products\/\d+\/image$/.test(req.path) ? imageJson : smallJson)(req, res, next));
 
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
@@ -73,6 +89,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/buyers', buyerRoutes);
 
 app.get('/api/health', ah(async (_req, res) => {
   await db.get('SELECT 1');
@@ -110,7 +127,7 @@ app.use((err, _req, res, _next) => {
 try {
   await initDb();
   setJwtSecret(await resolveJwtSecret());
-  await bootstrapOwner();
+  await syncOwnerFromEnv();
 } catch (e) {
   console.error(`\n*** PestKill could not start: ${e.message}\n`);
   process.exit(1);

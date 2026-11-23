@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, MessageSquareWarning, Briefcase, Users, UserCog, KeyRound, ScrollText,
   LogOut, Search, X, Phone, MessageCircle, Mail, MapPin, RefreshCw, Trash2, Plus, Lock, ShieldCheck, CheckCircle,
-  BarChart3, CalendarDays, Wrench, ReceiptText, Award,
+  BarChart3, CalendarDays, Wrench, ReceiptText, Award, Package, ShoppingBag, Store,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, waLink } from '../lib/api';
@@ -13,6 +13,7 @@ import Analytics from './admin/Analytics';
 import Schedule from './admin/Schedule';
 import MyJobs from './admin/MyJobs';
 import Invoices from './admin/Invoices';
+import { ShopProducts, ShopOrders, Buyers } from './admin/Shop';
 import './Admin.css';
 
 const COMPLAINT_STATUSES = ['pending', 'in_progress', 'resolved', 'closed'];
@@ -540,6 +541,9 @@ const Admin = () => {
     { id: 'bookings', label: 'Bookings', icon: CalendarCheck, show: can('services.view') || can('services.assign') },
     { id: 'schedule', label: 'Schedule', icon: CalendarDays, show: can('services.view') || can('services.assign') },
     { id: 'invoices', label: 'Invoices', icon: ReceiptText, show: can('invoices.manage') },
+    { id: 'orders', label: 'Shop orders', icon: ShoppingBag, show: can('orders.view') || can('orders.manage') },
+    { id: 'products', label: 'Products', icon: Package, show: can('products.view') || can('products.edit') || can('inventory.manage') },
+    { id: 'buyers', label: 'PCO buyers', icon: Store, show: can('buyers.manage') },
     { id: 'complaints', label: 'Complaints', icon: MessageSquareWarning, show: can('complaints.manage') },
     { id: 'applications', label: 'Applications', icon: Briefcase, show: can('careers.manage') },
     { id: 'customers', label: 'Customers', icon: Users, show: can('users.view') },
@@ -604,6 +608,9 @@ const Admin = () => {
             {current.id === 'bookings' && <Bookings notify={notify} onInvoice={(l) => { setInvoiceLead(l); setActive('invoices'); }} />}
             {current.id === 'schedule' && <Schedule onOpen={() => setActive('bookings')} />}
             {current.id === 'invoices' && <Invoices notify={notify} prefillLead={invoiceLead} clearPrefill={() => setInvoiceLead(null)} />}
+            {current.id === 'orders' && <ShopOrders notify={notify} />}
+            {current.id === 'products' && <ShopProducts notify={notify} />}
+            {current.id === 'buyers' && <Buyers notify={notify} />}
             {current.id === 'complaints' && <Complaints notify={notify} />}
             {current.id === 'applications' && <Applications notify={notify} />}
             {current.id === 'customers' && <People notify={notify} team={false} />}

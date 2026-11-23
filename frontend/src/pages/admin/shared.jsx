@@ -12,6 +12,7 @@ export const STATUS_TONE = {
   pending: 'warning', resolved: 'success', closed: 'neutral',
   shortlisted: 'info', interview: 'warning', hired: 'success', rejected: 'danger',
   unpaid: 'warning', paid: 'success', void: 'neutral',
+  confirmed: 'info', processing: 'warning', shipped: 'info', delivered: 'success', approved: 'success', active: 'success', hidden: 'neutral',
 };
 export const LEAD_STATUSES = ['new', 'contacted', 'scheduled', 'in_progress', 'completed', 'cancelled'];
 

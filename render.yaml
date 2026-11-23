@@ -22,5 +22,5 @@ services:
         sync: false
       - key: OWNER_PHONE
         sync: false
-      - key: OWNER_PASSWORD          # used only once, to create the first Owner account
+      - key: OWNER_PASSWORD          # Owner login password (8+ characters); change it here to change the password
         sync: false

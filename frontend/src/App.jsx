@@ -34,6 +34,10 @@ const Ajmer = lazy(() => import('./pages/Ajmer'));
 const Bikaner = lazy(() => import('./pages/Bikaner'));
 const Alwar = lazy(() => import('./pages/Alwar'));
 const Bharatpur = lazy(() => import('./pages/Bharatpur'));
+const Shop = lazy(() => import('./pages/Shop'));
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Cart = lazy(() => import('./pages/Cart'));
+const PcoAccount = lazy(() => import('./pages/PcoAccount'));
 // Staff console, customer account and print pages load on demand, keeping the public site light.
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Admin = lazy(() => import('./pages/Admin'));
@@ -94,6 +98,10 @@ function App() {
           <Route path="/bikaner" element={<Bikaner />} />
           <Route path="/alwar" element={<Alwar />} />
           <Route path="/bharatpur" element={<Bharatpur />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/shop/:slug" element={<ProductDetail />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/pco-account" element={<PcoAccount />} />
           <Route path="/print/invoice/:id" element={<PrintInvoice />} />
           <Route path="/print/certificate/:ref" element={<PrintCertificate />} />
           <Route path="*" element={<NotFound />} />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
-import { CalendarCheck, MessageSquareWarning, Package, UserRound, LogOut, Plus, ArrowRight, CheckCircle, ReceiptText, Award, Printer } from 'lucide-react';
+import { CalendarCheck, MessageSquareWarning, Package, UserRound, LogOut, Plus, ArrowRight, CheckCircle, ReceiptText, Award, Printer, Store } from 'lucide-react';
+import { useBuyer } from '../hooks/useBuyer';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import './Dashboard.css';
@@ -14,7 +15,7 @@ const useList = (path) => {
   const [state, setState] = useState({ data: null, error: '' });
   const load = () => api(path).then((data) => setState({ data, error: '' })).catch((e) => setState({ data: [], error: e.message }));
   useEffect(() => { load(); }, [path]); // eslint-disable-line react-hooks/exhaustive-deps
-  return { ...state, reload: load };
+  return { ...state, setState, reload: load };
 };
 
 const Bookings = () => {
@@ -99,19 +100,51 @@ const Complaints = () => {
 };
 
 const Orders = () => {
-  const { data, error } = useList('/orders/my-orders');
-  if (!data) return <p className="dash-muted">Loading…</p>;
-  if (error) return <p className="form-error">{error}</p>;
-  if (!data.length) return <div className="empty-state">No orders yet.</div>;
+  const { data, setState, error } = useList('/orders/my-orders');
+  const { buyer } = useBuyer();
+  const [busy, setBusy] = useState(null);
+  const cancel = async (o) => {
+    if (!window.confirm(`Cancel order #${o.id}?`)) return;
+    setBusy(o.id);
+    try {
+      const updated = await api(`/orders/${o.id}/cancel`, { method: 'POST' });
+      setState((s) => ({ ...s, data: s.data.map((x) => (x.id === o.id ? updated : x)) }));
+    } catch (e) { window.alert(e.message); }
+    setBusy(null);
+  };
   return (
-    <div className="dash-list">
-      {data.map((o) => (
-        <article key={o.id} className="dash-card">
-          <div className="dash-card-main"><span className="dash-ref">Order #{o.id}</span><h3>₹{Math.round(o.total).toLocaleString('en-IN')}</h3><p>{o.address}</p></div>
-          <div className="dash-card-side"><Badge value={o.status} /><small>{fmt(o.created_at)}</small></div>
-        </article>
-      ))}
-    </div>
+    <>
+      <div className={`dash-pco ${buyer?.status || 'none'}`}>
+        <Store size={20} />
+        <div>
+          <strong>{buyer ? `PCO buyer account: ${label(buyer.status)}` : 'Buy professional chemicals'}</strong>
+          <span>{buyer?.status === 'approved' ? `${buyer.firm_name} · Licence ${buyer.licence_no}` : buyer?.status === 'pending' ? 'We are verifying your licence details.' : buyer?.status === 'rejected' ? (buyer.admin_note || 'Please update your application.') : 'Licensed pest control operators can order Envu, Syngenta, Heranba and Arbuda products online.'}</span>
+        </div>
+        <Link to={buyer?.status === 'approved' ? '/shop' : '/pco-account'} className="btn btn-primary btn-sm">{buyer?.status === 'approved' ? 'Shop now' : buyer ? 'View application' : 'Apply'}</Link>
+      </div>
+      {!data ? <p className="dash-muted">Loading…</p> : error ? <p className="form-error">{error}</p> : !data.length ? (
+        <div className="empty-state">No orders yet. <Link to="/shop">Visit the PCO shop</Link>.</div>
+      ) : (
+        <div className="dash-list">
+          {data.map((o) => (
+            <article key={o.id} className="dash-card column">
+              <div className="dash-card-row">
+                <div><span className="dash-ref">Order #{o.id} · {fmt(o.created_at)}</span><h3>₹{Number(o.total).toLocaleString('en-IN', { maximumFractionDigits: 2 })} <small className="dash-muted">· {o.item_count || o.items?.length} items</small></h3></div>
+                <Badge value={o.status} />
+              </div>
+              {o.items?.length > 0 && (
+                <ul className="dash-items">
+                  {o.items.map((i) => <li key={`${i.product_id}-${i.pack_size}`}><span>{i.brand} {i.name} · {i.pack_size} × {i.quantity}</span><span>₹{(i.price * i.quantity).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span></li>)}
+                </ul>
+              )}
+              <p>{[o.address, o.city, o.pincode].filter(Boolean).join(', ')}</p>
+              {o.admin_note && <div className="dash-reply"><strong>PestKill team</strong><p>{o.admin_note}</p></div>}
+              {o.status === 'pending' && <button type="button" className="btn btn-outline btn-sm dash-cancel" disabled={busy === o.id} onClick={() => cancel(o)}>{busy === o.id ? 'Cancelling…' : 'Cancel order'}</button>}
+            </article>
+          ))}
+        </div>
+      )}
+    </>
   );
 };
 
@@ -181,14 +214,14 @@ const TABS = [
   { id: 'bookings', label: 'My bookings', icon: CalendarCheck, el: Bookings },
   { id: 'invoices', label: 'Invoices', icon: ReceiptText, el: Invoices },
   { id: 'complaints', label: 'Complaints', icon: MessageSquareWarning, el: Complaints },
-  { id: 'orders', label: 'Orders', icon: Package, el: Orders },
+  { id: 'orders', label: 'Shop orders', icon: Package, el: Orders },
   { id: 'profile', label: 'Profile', icon: UserRound, el: Profile },
 ];
 
 const Dashboard = () => {
   const { user, loading, logout, isStaff } = useAuth();
   const location = useLocation();
-  const [tab, setTab] = useState('bookings');
+  const [tab, setTab] = useState(location.state?.tab || 'bookings');
 
   if (loading) return <div className="dashboard-loading"><span className="spinner" /></div>;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;

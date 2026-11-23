@@ -280,7 +280,104 @@ const SCHEMA = `
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  ALTER TABLE products ALTER COLUMN price DROP NOT NULL;
+  ALTER TABLE products ALTER COLUMN stock DROP DEFAULT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS slug TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS brand TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS technical TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS formulation TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS pack_size TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS pack_style TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp DOUBLE PRECISION;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS pco_price DOUBLE PRECISION;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_note TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_verified INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS usage_info TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS sort INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_price DOUBLE PRECISION;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_label TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_ends TEXT;
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
+
+  CREATE TABLE IF NOT EXISTS product_images (
+    product_id INTEGER PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
+    mime TEXT NOT NULL,
+    data BYTEA NOT NULL,
+    updated_at TIMESTAMP DEFAULT ${NOW}
+  );
+
+  CREATE TABLE IF NOT EXISTS buyer_profiles (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    firm_name TEXT NOT NULL,
+    licence_no TEXT NOT NULL,
+    licence_valid_till TEXT,
+    gstin TEXT,
+    address TEXT NOT NULL,
+    city TEXT NOT NULL,
+    state TEXT,
+    pincode TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    admin_note TEXT,
+    applied_at TIMESTAMP DEFAULT ${NOW},
+    reviewed_at TIMESTAMP,
+    reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_buyers_status ON buyer_profiles(status);
+
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS firm_name TEXT;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS gstin TEXT;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS city TEXT;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS pincode TEXT;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes TEXT;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_note TEXT;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS item_count INTEGER;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;
+  ALTER TABLE order_items ADD COLUMN IF NOT EXISTS product_name TEXT;
+  ALTER TABLE order_items ADD COLUMN IF NOT EXISTS brand TEXT;
+  ALTER TABLE order_items ADD COLUMN IF NOT EXISTS pack_size TEXT;
+  CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+  CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 `;
+
+export const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+
+// Loads the starter PCO catalogue the first time the shop table has no catalogue products.
+// Loads/updates the PCO catalogue when CATALOG_VERSION increases:
+// - adds new products and their official pack photos,
+// - refreshes products the owner has never edited (updated_at IS NULL),
+// - never touches products, prices or photos the owner changed in the console.
+const seedProducts = async () => {
+  const { PRODUCT_SEED, CATALOG_VERSION, RETIRED_SLUGS } = await import('./data/productSeed.js');
+  const done = Number((await db.get("SELECT value FROM app_settings WHERE key = 'catalog_version'"))?.value || 0);
+  if (done >= CATALOG_VERSION) return;
+  const imgDir = path.join(__dirname, 'data/product-images');
+  let sort = 0;
+  for (const p of PRODUCT_SEED) {
+    sort += 10;
+    const slug = slugify(`${p.brand} ${p.name} ${p.packSize}`);
+    const fields = [p.name, p.brand, p.technical, p.formulation, p.category, p.packSize, p.packStyle, p.mrp, p.mrp, p.mrpNote, p.usage, `${p.technical}. ${p.usage}`, sort];
+    const existing = await db.get('SELECT id, updated_at FROM products WHERE slug = ?', slug);
+    let id = existing?.id;
+    if (!existing) {
+      id = (await db.get(`INSERT INTO products (name, brand, technical, formulation, category, pack_size, pack_style, mrp, price, mrp_note, usage_info, description, sort, slug, stock)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL) RETURNING id`, ...fields, slug)).id;
+    } else if (existing.updated_at == null) {
+      await db.run(`UPDATE products SET name = ?, brand = ?, technical = ?, formulation = ?, category = ?, pack_size = ?, pack_style = ?, mrp = ?, price = ?,
+        mrp_note = ?, usage_info = ?, description = ?, sort = ? WHERE id = ?`, ...fields, id);
+    }
+    if (p.img && !await db.get('SELECT 1 FROM product_images WHERE product_id = ?', id)) {
+      const file = path.join(imgDir, `${p.img}.webp`);
+      if (fs.existsSync(file)) await db.run(`INSERT INTO product_images (product_id, mime, data, updated_at) VALUES (?, 'image/webp', ?, ${NOW})`, id, fs.readFileSync(file));
+    }
+  }
+  for (const slug of RETIRED_SLUGS) await db.run('UPDATE products SET is_active = 0 WHERE slug = ? AND updated_at IS NULL', slug);
+  await db.run("INSERT INTO app_settings (key, value) VALUES ('catalog_version', ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", String(CATALOG_VERSION));
+  console.log(`Shop catalogue updated to version ${CATALOG_VERSION} (${PRODUCT_SEED.length} products).`);
+};
 
 // Login-token signing key. Uses JWT_SECRET when it is set to 32+ characters; otherwise a random
 // key is generated once and kept in the database, so sessions survive restarts without manual setup.
@@ -300,6 +397,7 @@ export const initDb = async () => {
   }
   await db.run("UPDATE users SET role = 'owner' WHERE role = 'admin'");
   await db.run("UPDATE users SET role = 'client' WHERE role = 'user' OR role IS NULL");
+  await seedProducts();
   return db;
 };
 
@@ -324,6 +422,7 @@ export const PERMISSIONS = [
   { key: 'inventory.manage', group: 'Products & Inventory', label: 'Update stock', description: 'Change stock quantities' },
   { key: 'orders.view', group: 'Orders', label: 'View orders', description: 'See shop orders' },
   { key: 'orders.manage', group: 'Orders', label: 'Update orders', description: 'Change order and delivery status' },
+  { key: 'buyers.manage', group: 'Orders', label: 'PCO buyer accounts', description: 'Approve or reject PCO buyer applications' },
   { key: 'reports.view', group: 'Reports', label: 'Operational reports', description: 'Booking and workload statistics' },
   // Owner-only: can never be granted to a manager
   { key: 'users.assign_roles', group: 'Owner only', label: 'Assign roles', description: 'Create managers and change roles', ownerOnly: true },

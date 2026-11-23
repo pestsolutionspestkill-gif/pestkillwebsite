@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Phone, MessageCircle, Menu, X, ChevronDown, ShieldCheck, ArrowRight, Search, Clock, BadgeCheck, CalendarCheck,
+  Phone, MessageCircle, Menu, X, ChevronDown, ShieldCheck, ArrowRight, Search, Clock, BadgeCheck, CalendarCheck, ShoppingCart, Store,
 } from 'lucide-react';
 import businessConfig from '../data/businessConfig';
 import { services, serviceGroups, sectors, pests } from '../data/catalog';
 import SearchPalette from './SearchPalette';
 import { useAuth, homeFor } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import './Navbar.css';
 
 export const Logo = ({ light = false }) => (
@@ -139,6 +140,7 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const closeTimer = useRef(null);
   const { user } = useAuth();
+  const { count: cartCount, bump } = useCart();
   const accountLabel = user ? (user.role === 'client' ? 'My account' : 'Console') : 'Login';
   const accountPath = user ? homeFor(user) : '/login';
   const location = useLocation();
@@ -204,6 +206,7 @@ const Navbar = () => {
                 {m.label} <ChevronDown size={14} className="chev" />
               </button>
             ))}
+            <Link to="/shop" className={`nav-link ${location.pathname.startsWith('/shop') || location.pathname === '/pco-account' ? 'active' : ''}`} onMouseEnter={() => setOpenMenu(null)}>PCO Shop</Link>
           </nav>
 
           <div className="nav-actions">
@@ -211,6 +214,10 @@ const Navbar = () => {
               <Search size={17} /><span>Search</span><kbd>Ctrl K</kbd>
             </button>
             <Link to={accountPath} className="login-btn">{accountLabel}</Link>
+            <Link to="/cart" className="nav-cart" aria-label={`Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}`}>
+              <ShoppingCart size={19} />
+              {cartCount > 0 && <span key={bump} className="nav-cart-badge">{cartCount > 99 ? '99+' : cartCount}</span>}
+            </Link>
             <Link to="/book" className="btn btn-primary btn-sm quote-btn"><CalendarCheck size={16} /> Book Online</Link>
             <button type="button" className="menu-btn" aria-label="Toggle menu" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -231,6 +238,7 @@ const Navbar = () => {
           <Link to="/" className={!isBusiness ? 'active' : ''}>For Home</Link>
           <Link to="/business" className={isBusiness ? 'active' : ''}>For Business</Link>
         </div>
+        <Link to="/shop" className="mobile-shop"><Store size={20} /><span><strong>PCO Shop</strong><small>Envu, Syngenta, Heranba, Arbuda — at MRP</small></span><ArrowRight size={18} /></Link>
         <button type="button" className="mobile-search" onClick={() => { setMobileOpen(false); setSearchOpen(true); }}><Search size={18} /> Search services, pests, cities</button>
         {[
           { id: 'services', label: 'Services', items: services.map((s) => ({ name: s.name, path: s.path })) },
