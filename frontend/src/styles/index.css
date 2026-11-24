@@ -4,6 +4,11 @@
     they now map to Apple's near-black greys.)
    ========================================================= */
 :root {
+  /* Logo colours */
+  --brand-red: #D71920;
+  --brand-green: #1F7A3A;
+  --brand-leaf: #7DBB42;
+
   /* Dark surfaces (formerly navy) */
   --navy-950: #000000;
   --navy-900: #1D1D1F;
@@ -12,9 +17,9 @@
   --navy-600: #48484A;
 
   /* Accent */
-  --emerald-700: #0A7A55;
-  --emerald-600: #0B8A5F;
-  --emerald-500: #0E9F6E;
+  --emerald-700: #075A3E;
+  --emerald-600: #086A49;
+  --emerald-500: #0A7A55; /* 5.3:1 with white text */
   --emerald-400: #2FD08F;
   --emerald-100: #D7F2E6;
   --emerald-50: #EEF9F4;
@@ -41,7 +46,7 @@
   --gray-100: var(--surface);
   --gray-200: var(--line);
   --gray-300: #C7C7CC;
-  --gray-400: #8E8E93;
+  --gray-400: #6E6E73;
   --gray-500: var(--muted);
   --gray-600: #515154;
   --gray-700: var(--ink-soft);

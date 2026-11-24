@@ -44,20 +44,21 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('pk:unauthorized', onUnauthorized);
   }, [refresh, logout]);
 
-  const startSession = ({ user: u, token }) => {
+  const startSession = useCallback(({ user: u, token }) => {
     tokenStore.set(token);
     setUser(u);
     return u;
-  };
+  }, []);
 
-  const login = async (email, password) => startSession(await api('/users/login', { method: 'POST', body: { email, password } }));
-  const register = async (data) => startSession(await api('/users/register', { method: 'POST', body: data }));
+  const login = useCallback(async (email, password) => startSession(await api('/users/login', { method: 'POST', body: { email, password } })), [startSession]);
+  const register = useCallback(async (data) => startSession(await api('/users/register', { method: 'POST', body: data })), [startSession]);
 
   const value = useMemo(() => ({
     user,
     loading,
     login,
     register,
+    startSession,
     logout,
     refresh,
     setUser,
@@ -68,7 +69,7 @@ export const AuthProvider = ({ children }) => {
     isStaff: STAFF.includes(user?.role),
     isClient: user?.role === 'client',
     can: (perm) => user?.role === 'owner' || Boolean(user?.permissions?.includes(perm)),
-  }), [user, loading, logout, refresh]);
+  }), [user, loading, login, register, startSession, logout, refresh]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

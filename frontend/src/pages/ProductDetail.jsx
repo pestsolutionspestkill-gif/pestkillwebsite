@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { refineHead } from '../seo/RouteSeo';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronRight, Minus, Plus, ShieldAlert, BadgeCheck, ReceiptText, Truck, Zap } from 'lucide-react';
+import { ChevronRight, Minus, Plus, ShieldAlert, BadgeCheck, ReceiptText, Truck, Zap, MessageCircle } from 'lucide-react';
+import businessConfig from '../data/businessConfig';
 import { api } from '../lib/api';
+import { usePreloaded } from '../lib/preload';
 import { useCart } from '../context/CartContext';
 import PackShot from '../components/PackShot';
+import ProductExtras from '../components/ProductExtras';
 import { BuyerBanner, AddToCart, Price } from './Shop';
 import { priceInfo, rupees } from '../lib/shop';
 import './Shop.css';
@@ -13,20 +16,26 @@ const ProductDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { add } = useCart();
-  const [p, setP] = useState(null);
+  // The server sends this product with the page; it is refreshed below (e.g. PCO prices after login).
+  const preloaded = usePreloaded(`/products/${slug}`);
+  const [p, setP] = useState(preloaded);
   const [error, setError] = useState('');
   const [qty, setQty] = useState(1);
 
   useEffect(() => {
     let live = true;
-    setP(null); setError(''); setQty(1);
+    setP((cur) => (cur?.slug === slug ? cur : null)); setError(''); setQty(1);
     api(`/products/${encodeURIComponent(slug)}`).then((d) => live && setP(d)).catch((e) => live && setError(e.message));
     return () => { live = false; };
   }, [slug]);
 
   // Page title for client-side visits (the server already sends it on a direct load).
   useEffect(() => {
-    if (p) refineHead({ title: `${[p.brand, p.name, p.pack_size].filter(Boolean).join(' ')} | PCO Shop | PestKill` });
+    if (!p) return;
+    // Same format as the server (backend/src/seo.js), so the title never changes after loading.
+    const name = [p.brand, p.name, p.pack_size].filter(Boolean).join(' ');
+    const title = `${name} Price & Uses | PestKill`;
+    refineHead({ title: title.length > 65 ? `${name} Price | PestKill` : title });
   }, [p]);
 
   if (error) return <div className="container pd-state"><h2>Product not found</h2><p>{error}</p><Link to="/shop" className="btn btn-primary">Back to shop</Link></div>;
@@ -45,7 +54,12 @@ const ProductDetail = () => {
         </nav>
 
         <div className="pd-grid">
-          <div className="pd-media">
+          <div className={`pd-media${p.image_url ? ' zoomable' : ''}`}
+            onMouseMove={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              e.currentTarget.style.setProperty('--zx', `${((e.clientX - r.left) / r.width) * 100}%`);
+              e.currentTarget.style.setProperty('--zy', `${((e.clientY - r.top) / r.height) * 100}%`);
+            }}>
             <PackShot product={p} />
             {!p.image_url && <span className="pd-media-note">Illustration — the delivered pack carries the manufacturer's label, batch and expiry.</span>}
           </div>
@@ -83,6 +97,10 @@ const ProductDetail = () => {
               </div>
             )}
             {(info.onRequest || !p.in_stock) && <div className="pd-buy"><AddToCart product={p} /></div>}
+            <a className="pd-bulk" target="_blank" rel="noopener noreferrer"
+              href={`https://wa.me/${businessConfig.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi PestKill, I need a bulk price for ${p.brand} ${p.name} (${p.pack_size}). Quantity: `)}`}>
+              <MessageCircle size={16} /> Bulk order? Get a trade price on WhatsApp
+            </a>
             {p.stock != null && p.stock > 0 && p.stock <= 10 && <p className="pd-stock">Only {p.stock} left in stock</p>}
 
             <ul className="pd-assure">
@@ -106,8 +124,26 @@ const ProductDetail = () => {
               <ShieldAlert size={18} />
               <p>For professional use by licensed pest control operators. Read the label and leaflet before use, wear protective equipment, and keep away from children, food and animals.</p>
             </div>
+
+            <ProductExtras product={p} />
           </div>
         </div>
+
+        {p.equivalents?.length > 0 && (
+          <section className="pd-equiv">
+            <h2>Same active ingredient, other brands</h2>
+            <p>{p.technical}</p>
+            <div>
+              {p.equivalents.map((e) => (
+                <Link key={e.id} to={`/shop/${e.slug}`}>
+                  <span className="pcard-brand">{e.brand}</span>
+                  <strong>{e.name}</strong>
+                  <span>{e.pack_size} · {e.mrp != null ? `MRP ${rupees(e.mrp)}` : 'Price on request'}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

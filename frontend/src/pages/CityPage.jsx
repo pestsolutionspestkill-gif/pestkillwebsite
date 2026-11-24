@@ -1,5 +1,6 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { Phone, MapPin, ArrowRight, CalendarCheck, MessageCircle, ShieldCheck, Camera, QrCode, HeartHandshake, CloudSun, ChevronDown } from 'lucide-react';
+import { Phone, MapPin, ArrowRight, CalendarCheck, MessageCircle, ShieldCheck, Camera, QrCode, HeartHandshake, CloudSun, ChevronDown, Store } from 'lucide-react';
+import { PEST_LANDING } from '../data/shopLanding';
 import { CITIES, REGIONS, getCity, cityPath, cityFaqs } from '../data/rajasthan';
 import { RATES, getPest, getService, sqftLabel } from '../data/catalog';
 import { pestMedia } from '../data/media';
@@ -109,6 +110,18 @@ const CityPage = () => {
 
       <section className="section-sm">
         <div className="container">
+          <div className="city-block city-supply">
+            <span className="eyebrow"><Store size={15} /> For pest control operators in {city.name}</span>
+            <h2>Pest control chemicals supply in {city.name}</h2>
+            <p className="city-muted">
+              Licensed PCOs in {city.name} can order genuine Envu, Syngenta, Heranba, Arbuda and Kalyani products online, with MRP,
+              pack sizes, datasheets and an invoice for every order. {city.hi} के PCO के लिए दीमक, कॉकरोच, मच्छर और चूहे की दवाइयाँ।
+            </p>
+            <div className="city-links">
+              {Object.entries(PEST_LANDING).map(([k, v]) => <Link key={k} to={`/shop/pest/${k}`}>{v.short}</Link>)}
+              <Link to="/pco-account" className="all">Open a PCO account <ArrowRight size={14} /></Link>
+            </div>
+          </div>
           {city.areas.length > 0 && (
             <div className="city-block">
               <h2>Areas we cover in {city.name}</h2>

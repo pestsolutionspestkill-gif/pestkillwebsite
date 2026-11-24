@@ -1,0 +1,39 @@
+/* Site-wide motion (see Motion.jsx). Only elements JavaScript marks are ever hidden. */
+.mo-hide {
+  opacity: 0;
+  transform: translateY(28px) scale(0.985);
+  filter: blur(4px);
+  transition:
+    opacity 0.8s cubic-bezier(.16, 1, .3, 1) var(--mo-delay, 0ms),
+    transform 0.9s cubic-bezier(.16, 1, .3, 1) var(--mo-delay, 0ms),
+    filter 0.8s cubic-bezier(.16, 1, .3, 1) var(--mo-delay, 0ms);
+  will-change: opacity, transform;
+}
+.mo-hide.mo-in { opacity: 1; transform: none; filter: none; }
+
+/* Page fade on navigation */
+.mo-page { animation: moPage 0.55s cubic-bezier(.16, 1, .3, 1); }
+@keyframes moPage { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Scroll progress, in the logo colours */
+.mo-progress {
+  position: fixed; left: 0; right: 0; top: 0; z-index: 1200; height: 3px;
+  background: linear-gradient(90deg, var(--brand-green, #1F7A3A), var(--brand-leaf, #7DBB42) 55%, var(--brand-red, #D71920));
+  transform: scaleX(0); transform-origin: 0 50%; pointer-events: none;
+}
+
+/* Magnetic buttons and tilting cards: smooth follow, smooth return */
+.btn-primary, .btn-navy, .btn-white { transition: transform 0.35s cubic-bezier(.2, .8, .2, 1), background 0.2s ease, box-shadow 0.3s ease; }
+.btn-primary.mo-live, .btn-navy.mo-live, .btn-white.mo-live { transition: transform 0.12s linear, background 0.2s ease, box-shadow 0.3s ease; box-shadow: 0 10px 24px -10px rgba(14, 159, 110, 0.55); }
+.pcard, .only-card, .city-pest, .pest-card, .sector-card, .hub-card, .blog-card, .pd-equiv a, .shop-tools a { position: relative; transform-style: preserve-3d; }
+.mo-live:is(.pcard, .only-card, .city-pest, .pest-card, .sector-card, .hub-card, .blog-card) { transition: transform 0.12s linear !important; box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.28); }
+.mo-live:is(.pcard, .only-card, .city-pest, .pest-card, .sector-card, .hub-card, .blog-card)::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(420px circle at var(--mo-gx, 50%) var(--mo-gy, 50%), rgba(255, 255, 255, 0.35), transparent 45%);
+  mix-blend-mode: soft-light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mo-hide { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .mo-page { animation: none; }
+}

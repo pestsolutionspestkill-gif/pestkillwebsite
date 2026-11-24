@@ -10,7 +10,8 @@ export const setJwtSecret = (secret) => {
   JWT_SECRET = secret;
 };
 
-export const signToken = (user) => jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: TOKEN_TTL, algorithm: 'HS256' });
+// `tv` (token version) ties the token to the current password; changing the password signs out old tokens.
+export const signToken = (user) => jwt.sign({ sub: user.id, tv: user.token_version || 0 }, JWT_SECRET, { expiresIn: TOKEN_TTL, algorithm: 'HS256' });
 
 // The user is reloaded from the database on every request, so suspensions, role changes
 // and permission changes take effect immediately.
@@ -18,14 +19,15 @@ const loadUser = async (req) => {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return null;
-  let sub;
+  let payload;
   try {
-    ({ sub } = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }));
+    payload = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
   } catch {
     return null;
   }
-  const user = await db.get('SELECT id, name, email, phone, role, is_active FROM users WHERE id = ?', Number(sub));
+  const user = await db.get('SELECT id, name, email, phone, role, is_active, token_version FROM users WHERE id = ?', Number(payload.sub));
   if (!user || !user.is_active) return null;
+  if ((payload.tv || 0) !== (user.token_version || 0)) return null; // signed out by a password change
   user.permissions = await permissionsFor(user);
   return user;
 };
@@ -79,8 +81,9 @@ export const rateLimit = ({ windowMs, max }) => {
     const key = req.ip;
     const entry = hits.get(key);
     if (!entry || now - entry.start > windowMs) {
+      // Drop only expired entries when the table grows, so busy clients keep their counts.
+      if (hits.size > 5000) for (const [k, v] of hits) if (now - v.start > windowMs) hits.delete(k);
       hits.set(key, { start: now, count: 1 });
-      if (hits.size > 5000) hits.clear();
       return next();
     }
     entry.count += 1;

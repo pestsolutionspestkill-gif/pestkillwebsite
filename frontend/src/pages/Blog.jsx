@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { Bug, Zap, Shield, BedDouble, CloudRain, Home, Leaf, HelpCircle, Utensils, Building2, Factory, Sparkles, IndianRupee, Calendar, Wrench } from 'lucide-react';
+import { useState } from 'react';
+import { Bug, Zap, Shield, BedDouble, CloudRain, Leaf, HelpCircle, Building2, Sparkles } from 'lucide-react';
 import './Blog.css';
 
 const categoryColors = {

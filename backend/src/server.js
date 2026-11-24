@@ -54,7 +54,7 @@ const syncOwnerFromEnv = async () => {
   }
   const passwordMatches = await bcrypt.compare(pass, user.password);
   if (passwordMatches && user.role === 'owner' && user.is_active) { console.log(`Owner login ready: ${email}`); return; }
-  await db.run("UPDATE users SET password = ?, role = 'owner', is_active = 1 WHERE id = ?",
+  await db.run(`UPDATE users SET password = ?, role = 'owner', is_active = 1, token_version = token_version + ${passwordMatches ? 0 : 1} WHERE id = ?`,
     passwordMatches ? user.password : await bcrypt.hash(pass, 12), user.id);
   await db.run('DELETE FROM manager_permissions WHERE user_id = ?', user.id);
   audit({ ip: 'server' }, 'auth.owner_from_env', 'user', user.id, { passwordChanged: !passwordMatches });
@@ -80,7 +80,12 @@ app.use('/api', cors({ origin: (origin, cb) => cb(null, !origin || allowedOrigin
 // Product photo uploads (owner console) may be up to ~2 MB as base64; everything else stays small.
 const smallJson = express.json({ limit: '100kb' });
 const imageJson = express.json({ limit: '2.5mb' });
-app.use((req, res, next) => (/^\/api\/(products\/\d+\/image|jobs\/\d+\/photos)$/.test(req.path) ? imageJson : smallJson)(req, res, next));
+// PDF datasheets and licence copies: up to 5 MB files, about 6.7 MB as base64.
+const documentJson = express.json({ limit: '7mb' });
+app.use((req, res, next) => {
+  if (/^\/api\/(products\/\d+\/documents\/[a-z]+|buyers\/documents\/[a-z]+)$/.test(req.path)) return documentJson(req, res, next);
+  return (/^\/api\/(products\/\d+\/image|jobs\/\d+\/photos)$/.test(req.path) ? imageJson : smallJson)(req, res, next);
+});
 
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
@@ -108,7 +113,6 @@ app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found.' }));
 const distDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
 await mountWebsite(app, distDir);
 
-// eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Invalid request body.' });
   if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Request is too large.' });

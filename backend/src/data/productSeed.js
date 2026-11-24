@@ -2,10 +2,12 @@
 // new products are added, and products the owner has never edited are refreshed.
 // Names, active ingredients and pack sizes come from the brands' official India pages
 // (in.envu.com, heranba.com, arbudaagrochemicals.com); Syngenta from retail listings.
+// Version 5 adds products seen on other Indian PCO distributor listings (names, active ingredients,
+// pack sizes and labelled MRPs only). Packs not listed there show as "Standard pack" until the owner edits them.
 // MRPs: only figures found on public listings are filled in, each marked unverified so the owner
 // checks it against the printed pack in Admin → Products. null = "Price on request".
 // `img` names a pack photo in ./product-images/<img>.webp (official brand images).
-export const CATALOG_VERSION = 3;
+export const CATALOG_VERSION = 5;
 
 // Seeded products that were replaced by corrected entries; hidden if never edited.
 export const RETIRED_SLUGS = ['arbuda-lambdar-10-wp-625-g'];
@@ -14,6 +16,7 @@ const ENVU = 'Envu';
 const SYN = 'Syngenta';
 const HER = 'Heranba';
 const ARB = 'Arbuda';
+const KAL = 'Kalyani';
 
 // [brand, name, technical, formulation, category, packStyle, usage, img, packs: [[size, mrp?, mrpNote?], …]]
 const LINES = [
@@ -35,7 +38,7 @@ const LINES = [
   [ENVU, 'Brigata SC', 'Residual SC', 'SC', 'General Pest Control', 'bottle', 'Cockroaches, houseflies and mosquitoes.', null, [['1 L']]],
   [ENVU, 'Brigata RTU', 'Deltamethrin 0.05% + Allethrin 0.04% RTU', 'RTU', 'General Pest Control', 'jerrycan', 'Ready-to-use spray for mosquitoes, houseflies and cockroaches.', null, [['5 L']]],
   [ENVU, 'Transport EX', 'Propoxur 20% EC', 'EC', 'General Pest Control', 'bottle', 'Bed bugs, cockroaches and houseflies.', null, [['100 ml'], ['1 L', 1930, 'PestoBazaar product page (labelled MRP)'], ['5 L']]],
-  [ENVU, 'Coveze', 'Clothianidin 50% WG', 'WG', 'General Pest Control', 'sachet', 'Cockroaches, bed bugs and houseflies.', null, [['6 g sachet']]],
+  [ENVU, 'Coveze', 'Clothianidin 50% WG', 'WG', 'General Pest Control', 'sachet', 'Cockroaches, bed bugs and houseflies.', null, [['6 g sachet', 210, 'bharatpest.in product page (reference MRP)']]],
   [ENVU, 'Aqua K-Othrine', 'Water-based fogging concentrate', 'EW', 'Mosquito Control', 'bottle', 'Space spray (thermal, ULV, cold fogging) for adult mosquitoes.', null, [['1 L']]],
   [ENVU, 'Kingfog ULV', 'Deltamethrin 1.25% ULV', 'ULV', 'Mosquito Control', 'bottle', 'Thermal and ULV fogging for Anopheles, Culex and Aedes mosquitoes.', 'envu-kingfog-ulv', [['Pack']]],
   [ENVU, 'Bistar WP', 'Wettable powder for IRS', 'WP', 'Mosquito Control', 'sachet', 'Indoor residual spray against adult Aedes, Anopheles and Culex.', null, [['63 g']]],
@@ -53,12 +56,12 @@ const LINES = [
   [SYN, 'Actellic 50 EC', 'Pirimiphos-methyl 50% EC', 'EC', 'Stored Product Pests', 'bottle', 'Stored-product and public health pests.', null, [['1 L']]],
 
   // ---------------- Heranba ----------------
-  [HER, 'Deltaflow', 'Deltamethrin 2.5% SC', 'SC', 'General Pest Control', 'bottle', 'Mosquitoes, cockroaches, houseflies and spiders; bed-net treatment.', 'heranba-deltaflow', [['100 ml'], ['250 ml'], ['1 L']]],
+  [HER, 'Deltaflow', 'Deltamethrin 2.5% SC', 'SC', 'General Pest Control', 'bottle', 'Mosquitoes, cockroaches, houseflies and spiders; bed-net treatment.', 'heranba-deltaflow', [['100 ml'], ['250 ml'], ['1 L', 1900, 'bharatpest.in product page (reference MRP)']]],
   [HER, 'Protex', 'Propoxur 20% EC', 'EC', 'General Pest Control', 'bottle', 'Bed bugs, cockroaches, fleas, ticks, ants, mosquitoes and flies.', 'heranba-protex', [['100 ml'], ['1 L'], ['5 L']]],
-  [HER, 'Spectra', 'Alphacypermethrin 10% SC', 'SC', 'General Pest Control', 'bottle', 'Mosquitoes, houseflies and cockroaches.', 'heranba-spectra', [['100 ml'], ['1 L']]],
+  [HER, 'Spectra', 'Alphacypermethrin 10% SC', 'SC', 'General Pest Control', 'bottle', 'Mosquitoes, houseflies and cockroaches.', 'heranba-spectra', [['100 ml'], ['1 L', 1050, 'bharatpest.in product page (reference MRP)']]],
   [HER, 'Baxstorm', 'Beta-cyfluthrin 2.45% SC', 'SC', 'General Pest Control', 'bottle', 'Houseflies, cockroaches and mosquitoes.', 'heranba-baxstorm', [['100 ml'], ['1 L']]],
   [HER, 'Bloom', 'Clothianidin 50% WG', 'WG', 'General Pest Control', 'sachet', 'Cockroaches, flies and bed bugs.', 'heranba-bloom', [['6 g pouch']]],
-  [HER, 'Control X', 'Lambda-cyhalothrin 2.43% CS', 'CS', 'General Pest Control', 'bottle', 'Cockroaches, mosquitoes and flies.', 'heranba-control-x', [['100 ml'], ['1 L']]],
+  [HER, 'Control X', 'Lambda-cyhalothrin 2.43% CS', 'CS', 'General Pest Control', 'bottle', 'Cockroaches, mosquitoes and flies.', 'heranba-control-x', [['100 ml'], ['1 L', 1750, 'bharatpest.in product page (reference MRP)']]],
   [HER, 'Fligon Plus', 'Diflubenzuron 20% + Deltamethrin 2% SC', 'SC', 'Fly Control', 'bottle', 'Housefly larvae and adults.', 'heranba-fligon-plus', [['500 ml'], ['1 L']]],
   [HER, 'Flumetrix', 'Cyfluthrin 5% EW', 'EW', 'General Pest Control', 'bottle', 'Cockroaches, houseflies and mosquitoes.', 'heranba-flumetrix', [['100 ml'], ['1 L']]],
   [HER, 'Stormguard', 'Imidacloprid 21% + Beta-cyfluthrin 10.5% SC', 'SC', 'General Pest Control', 'bottle', 'Bed bugs, cockroaches and houseflies.', 'heranba-stormguard', [['50 ml'], ['500 ml'], ['1 L']]],
@@ -120,8 +123,71 @@ const LINES = [
   [ARB, 'Run Rat', 'Bromadiolone 0.005% RB', 'RB', 'Rodent Control', 'box', 'Anticoagulant bait for rats and mice.', 'arbuda-run-rat', [['25 g'], ['100 g']]],
   [ARB, 'Run Rat Plus', 'Zinc phosphide 1% RB', 'RB', 'Rodent Control', 'sachet', 'Powder bait for rats and mice.', 'arbuda-run-rat-plus', [['15 g'], ['35 g']]],
   [ARB, 'Rodol', 'Herbal rodenticide cake', 'Herbal', 'Rodent Control', 'box', 'Rats and mice.', 'arbuda-rodol', [['100 g']]],
+  [ARB, 'Armala', 'Malathion 50% EC', 'EC', 'Mosquito Control', 'bottle', 'Adult mosquitoes and flies; public health spraying.', null, [['1 L'], ['5 L'], ['20 L']]],
+  [ARB, 'Fly Jack', 'UV light insect trap (electric)', 'Device', 'Equipment', 'box', 'Flying insects such as houseflies and mosquitoes indoors.', null, [['1 unit']]],
+
+  // ---------------- Additions (version 5) ----------------
+  [ENVU, 'Biflex TC', 'Bifenthrin 2.5% EC', 'EC', 'Termite Control', 'bottle', 'Pre- and post-construction anti-termite treatment.', null, [['1 L', 780, 'bharatpest.in product page (reference MRP)'], ['5 L'], ['20 L']]],
+  [ENVU, 'Durmet TC', 'Chlorpyrifos 20% EC', 'EC', 'Termite Control', 'bottle', 'Pre- and post-construction anti-termite treatment.', null, [['1 L', 555, 'bharatpest.in product page (reference MRP)'], ['5 L'], ['20 L'], ['200 L']]],
+  [SYN, 'Evactri 2.5 EC', 'Bifenthrin 2.5% EC', 'EC', 'Termite Control', 'jerrycan', 'Anti-termite soil treatment for buildings.', null, [['20 L'], ['200 L']]],
+  [SYN, 'Zevictra TC', 'Imidacloprid 30.5% SC', 'SC', 'Termite Control', 'bottle', 'Pre- and post-construction anti-termite treatment.', null, [['250 ml'], ['1 L', 4410, 'bharatpest.in product page (reference MRP)'], ['5 L']]],
+  [SYN, 'Exsectra 3 EC', 'Fipronil 2.92% EC', 'EC', 'Termite Control', 'bottle', 'Termite control in buildings and wood.', null, [['100 ml'], ['1 L']]],
+  [SYN, 'Acrenzel WDG', 'Clothianidin 50% WG', 'WG', 'General Pest Control', 'sachet', 'Cockroaches, flies and bed bugs.', null, [['6 g', 210, 'bharatpest.in product page (reference MRP)']]],
+  [SYN, 'Acugard 10 EC', 'Novaluron 10% EC (IGR)', 'EC', 'Mosquito Control', 'bottle', 'Insect growth regulator for mosquito larvae.', null, [['Standard pack']]],
+  [SYN, 'Klerat Waxblock', 'Brodifacoum 0.005% wax block', 'Bait', 'Rodent Control', 'box', 'Rats and mice; weather-resistant bait blocks.', null, [['100 g']]],
+  [HER, 'Cypra', 'Cypermethrin 10% EC', 'EC', 'General Pest Control', 'bottle', 'Cockroaches, flies, mosquitoes and crawling insects.', null, [['Standard pack']]],
+  [HER, 'Cypra Plus', 'Cypermethrin 25% EC', 'EC', 'General Pest Control', 'bottle', 'Cockroaches, flies, mosquitoes and crawling insects.', null, [['Standard pack']]],
+  [HER, 'Jayam', 'Lambda-cyhalothrin 5% EC', 'EC', 'General Pest Control', 'bottle', 'Mosquitoes and general crawling and flying insects.', null, [['Standard pack']]],
+  [HER, 'Jayam Plus', 'Lambda-cyhalothrin 4.9% CS', 'CS', 'General Pest Control', 'bottle', 'Mosquitoes and general crawling and flying insects.', null, [['Standard pack']]],
+
+  // ---------------- Kalyani ----------------
+  [KAL, 'Armoss', 'Deltamethrin 2.5% + d-trans Allethrin 2% EC', 'EC', 'General Pest Control', 'bottle', 'Flies, bed bugs and general insects.', null, [['Standard pack']]],
+  [KAL, 'Delphier', 'Deltamethrin 2.5% WP', 'WP', 'Mosquito Control', 'sachet', 'Indoor residual spray for mosquitoes and bed bugs.', null, [['Standard pack']]],
+  [KAL, 'Aesther+', 'Lambda-cyhalothrin 9.7% CS', 'CS', 'General Pest Control', 'bottle', 'Mosquitoes and general insects.', null, [['Standard pack']]],
+  [KAL, 'Aesther', 'Lambda-cyhalothrin 2.43% CS', 'CS', 'General Pest Control', 'bottle', 'General crawling and flying insects.', null, [['Standard pack']]],
+  [KAL, 'Lamier 10', 'Lambda-cyhalothrin 10% WP', 'WP', 'Mosquito Control', 'sachet', 'Indoor residual spray for mosquitoes.', null, [['Standard pack']]],
+  [KAL, 'Remover', 'Alphacypermethrin 10% SC', 'SC', 'General Pest Control', 'bottle', 'Cockroaches, bed bugs and general insects.', null, [['Standard pack']]],
+  [KAL, 'Riddle', 'Malathion 50% EC', 'EC', 'Mosquito Control', 'bottle', 'Mosquitoes and general insects.', null, [['Standard pack']]],
+  [KAL, 'Bithrin 100', 'Bifenthrin 10% WP', 'WP', 'Mosquito Control', 'sachet', 'Indoor residual spray for mosquitoes.', null, [['Standard pack']]],
+  [KAL, 'Saphaer', 'Propoxur 20% EC', 'EC', 'Cockroach Control', 'bottle', 'Cockroaches and general insects.', null, [['Standard pack']]],
+  [KAL, 'Saphaer Bait', 'Propoxur 2% bait', 'Bait', 'Cockroach Control', 'tub', 'Cockroach bait for homes and kitchens.', null, [['Standard pack']]],
+  [KAL, 'Rapier', 'Deltamethrin 2.5% SC (flow)', 'SC', 'General Pest Control', 'bottle', 'Mosquitoes, bed bugs and general insects.', null, [['Standard pack']]],
+  [KAL, 'Alphier', 'Alphacypermethrin 5% WP', 'WP', 'Mosquito Control', 'sachet', 'Indoor residual spray for mosquitoes and bed bugs.', null, [['Standard pack']]],
+  [KAL, 'Falcon Gel', 'Fipronil 0.05% Gel', 'Gel', 'Cockroach Control', 'gel', 'Cockroaches in kitchens and homes.', null, [['Standard pack']]],
+  [KAL, 'Negate+', 'Fipronil 0.05% Gel', 'Gel', 'Cockroach Control', 'gel', 'Cockroaches in kitchens and homes.', null, [['Standard pack']]],
+  [KAL, 'Ridoff Dust', 'Cypermethrin 1% DP', 'DP', 'Cockroach Control', 'tub', 'Dusting powder for cockroaches and crawling insects.', null, [['Standard pack']]],
+  [KAL, 'Mathier', 'Deltamethrin 2% EW', 'EW', 'Mosquito Control', 'bottle', 'Space spraying for mosquitoes; bed bugs.', null, [['Standard pack']]],
+  [KAL, 'Smoker', 'Deltamethrin 1.25% ULV', 'ULV', 'Mosquito Control', 'bottle', 'Thermal or ULV fogging for adult mosquitoes.', null, [['Standard pack']]],
+  [KAL, 'XFOG', 'Pyrethrum 2% extract', 'Extract', 'Mosquito Control', 'bottle', 'Fogging for mosquitoes and flying insects.', null, [['Standard pack']]],
+  [KAL, 'WhiteOff 50', 'Chlorpyrifos 50% EC', 'EC', 'Termite Control', 'bottle', 'Anti-termite treatment.', null, [['Standard pack']]],
+  [KAL, 'WhiteOff', 'Chlorpyriphos 20% EC', 'EC', 'Termite Control', 'bottle', 'Pre- and post-construction anti-termite treatment.', null, [['Standard pack']]],
+  [KAL, 'WhiteOff RTU', 'Chlorpyriphos 2% RTU', 'RTU', 'Termite Control', 'bottle', 'Ready-to-use spot treatment for termites in homes.', null, [['Standard pack']]],
+  [KAL, 'Ozier', 'Imidacloprid 30.5% SC', 'SC', 'Termite Control', 'bottle', 'Pre- and post-construction anti-termite treatment.', null, [['Standard pack']]],
+  [KAL, 'Bithrin 25', 'Bifenthrin 2.5% EC', 'EC', 'Termite Control', 'bottle', 'Anti-termite treatment.', null, [['Standard pack']]],
+  [KAL, 'Pexter', 'Fipronil 2.92% EC', 'EC', 'Termite Control', 'bottle', 'Anti-termite treatment.', null, [['Standard pack']]],
+  [KAL, 'Novakal', 'Novaluron 10% EC (IGR)', 'EC', 'Mosquito Control', 'bottle', 'Insect growth regulator for mosquito larvae.', null, [['Standard pack']]],
+  [KAL, 'Tamier', 'Temephos 50% EC', 'EC', 'Mosquito Control', 'bottle', 'Mosquito larvae in stagnant water.', null, [['Standard pack']]],
+  [KAL, 'Tamier GR', 'Temephos 1% GR', 'GR', 'Mosquito Control', 'tub', 'Granules for mosquito larvae in stagnant water.', null, [['Standard pack']]],
+  [KAL, 'Haxer', 'Pyriproxyfen 0.5% GR (IGR)', 'GR', 'Mosquito Control', 'tub', 'Insect growth regulator granules for mosquito larvae.', null, [['Standard pack']]],
+  [KAL, 'Zinphos', 'Zinc phosphide 80% powder', 'Powder', 'Rodent Control', 'tub', 'Rats and field rodents (bait preparation by trained operators).', null, [['Standard pack']]],
+  [KAL, 'Zinphos RB', 'Zinc phosphide 2% RB', 'RB', 'Rodent Control', 'box', 'Ready bait for rats and mice.', null, [['Standard pack']]],
+  [KAL, 'Kalrat CB', 'Bromadiolone 0.25% CB', 'CB', 'Rodent Control', 'bottle', 'Concentrate for preparing anticoagulant rat bait.', null, [['Standard pack']]],
+  [KAL, 'Kalrat RB', 'Bromadiolone 0.005% RB', 'RB', 'Rodent Control', 'box', 'Ready anticoagulant bait for rats and mice.', null, [['Standard pack']]],
+  [KAL, 'Kalder', 'Silicone super-spreader (adjuvant)', 'Adjuvant', 'Adjuvants', 'bottle', 'Improves spreading and coverage of spray solutions.', null, [['Standard pack']]],
 ];
 
-export const PRODUCT_SEED = LINES.flatMap(([brand, name, technical, formulation, category, packStyle, usage, img, packs]) => packs.map(([packSize, mrp = null, mrpNote = null]) => ({
-  brand, name, technical, formulation, category, packStyle, usage, img, packSize, mrp, mrpNote,
-})));
+// Labelled MRPs from another distributor listing, used only where we have no MRP yet.
+const REFERENCE_MRP = {
+  'Heranba|Protex|1 L': 2100, 'Heranba|Baxstorm|1 L': 1000, 'Heranba|Fligon Plus|1 L': 3800, 'Heranba|Stormguard|500 ml': 2550,
+  'Heranba|Mantra Gel|35 g': 430, 'Heranba|Temper EC|1 L': 2500, 'Heranba|Delfog|1 L': 2350, 'Heranba|Aquaflow|1 L': 5400,
+  'Heranba|Strikon 10 CS|1 L': 3850, 'Heranba|Heraban-TC|1 L': 800, 'Heranba|Mantra TC|1 L': 3200, 'Heranba|Termifinn-TC|1 L': 850,
+  'Heranba|Reprove|500 ml': 925,
+};
+
+export const PRODUCT_SEED = LINES.flatMap(([brand, name, technical, formulation, category, packStyle, usage, img, packs]) => packs.map(([packSize, mrp = null, mrpNote = null]) => {
+  const ref = mrp == null ? REFERENCE_MRP[`${brand}|${name}|${packSize}`] : undefined;
+  return {
+    brand, name, technical, formulation, category, packStyle, usage, img, packSize,
+    mrp: ref ?? mrp, mrpNote: ref ? 'bharatpest.in product page (reference MRP)' : mrpNote,
+  };
+}));

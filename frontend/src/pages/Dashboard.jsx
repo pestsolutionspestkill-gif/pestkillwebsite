@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useLocation } from 'react-router-dom';
-import { CalendarCheck, MessageSquareWarning, Package, UserRound, LogOut, Plus, ArrowRight, CheckCircle, ReceiptText, Award, Printer, Store } from 'lucide-react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
+import { CalendarCheck, MessageSquareWarning, Package, UserRound, LogOut, Plus, ArrowRight, CheckCircle, ReceiptText, Printer, Store, RotateCcw } from 'lucide-react';
 import { useBuyer } from '../hooks/useBuyer';
 import Bookings from './dashboard/Bookings';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../lib/api';
+import { api, tokenStore } from '../lib/api';
 import './Dashboard.css';
 
 const label = (s) => (s || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -79,6 +80,10 @@ const Orders = () => {
   const { data, setState, error } = useList('/orders/my-orders');
   const { buyer } = useBuyer();
   const [busy, setBusy] = useState(null);
+  const { add } = useCart();
+  const navigate = useNavigate();
+  // Puts the same products and quantities back in the cart (current prices apply).
+  const reorder = (o) => { o.items.forEach((i) => add(i.product_id, i.quantity)); navigate('/cart'); };
   const cancel = async (o) => {
     if (!window.confirm(`Cancel order #${o.id}?`)) return;
     setBusy(o.id);
@@ -94,7 +99,7 @@ const Orders = () => {
         <Store size={20} />
         <div>
           <strong>{buyer ? `PCO buyer account: ${label(buyer.status)}` : 'Buy professional chemicals'}</strong>
-          <span>{buyer?.status === 'approved' ? `${buyer.firm_name} · Licence ${buyer.licence_no}` : buyer?.status === 'pending' ? 'We are verifying your licence details.' : buyer?.status === 'rejected' ? (buyer.admin_note || 'Please update your application.') : 'Licensed pest control operators can order Envu, Syngenta, Heranba and Arbuda products online.'}</span>
+          <span>{buyer?.status === 'approved' ? `${buyer.firm_name} · Licence ${buyer.licence_no}` : buyer?.status === 'pending' ? 'We are verifying your licence details.' : buyer?.status === 'rejected' ? (buyer.admin_note || 'Please update your application.') : 'Licensed pest control operators can order Envu, Syngenta, Heranba, Arbuda and Kalyani products online.'}</span>
         </div>
         <Link to={buyer?.status === 'approved' ? '/shop' : '/pco-account'} className="btn btn-primary btn-sm">{buyer?.status === 'approved' ? 'Shop now' : buyer ? 'View application' : 'Apply'}</Link>
       </div>
@@ -115,6 +120,7 @@ const Orders = () => {
               )}
               <p>{[o.address, o.city, o.pincode].filter(Boolean).join(', ')}</p>
               {o.admin_note && <div className="dash-reply"><strong>PestKill team</strong><p>{o.admin_note}</p></div>}
+              {o.items?.length > 0 && o.status !== 'pending' && <button type="button" className="btn btn-outline btn-sm dash-cancel" onClick={() => reorder(o)}><RotateCcw size={14} /> Order again</button>}
               {o.status === 'pending' && <button type="button" className="btn btn-outline btn-sm dash-cancel" disabled={busy === o.id} onClick={() => cancel(o)}>{busy === o.id ? 'Cancelling…' : 'Cancel order'}</button>}
             </article>
           ))}
@@ -156,7 +162,11 @@ const Profile = () => {
   };
   const savePassword = async (e) => {
     e.preventDefault();
-    try { await api('/users/password', { method: 'PUT', body: pw }); setPw({ currentPassword: '', newPassword: '' }); setMsg({ password: 'Password updated.' }); } catch (err) { setMsg({ passwordError: err.message }); }
+    try {
+      const r = await api('/users/password', { method: 'PUT', body: pw });
+      if (r?.token) tokenStore.set(r.token); // keep this device signed in; other devices are signed out
+      setPw({ currentPassword: '', newPassword: '' }); setMsg({ password: r?.message || 'Password updated.' });
+    } catch (err) { setMsg({ passwordError: err.message }); }
   };
 
   return (

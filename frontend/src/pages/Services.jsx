@@ -8,7 +8,7 @@ import { RATES, sqftLabel, homeFrom } from '../data/catalog';
 import './Services.css';
 
 const Services = () => {
-  const { phoneNumber, serviceCoverage } = businessConfig;
+  const { serviceCoverage } = businessConfig;
   const [searchParams] = useSearchParams();
   const preselectedService = searchParams.get('service');
 

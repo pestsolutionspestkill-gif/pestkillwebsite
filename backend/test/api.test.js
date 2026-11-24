@@ -153,11 +153,32 @@ test('shop: catalogue, photos, PCO approval, offers, stock and orders', async ()
   const P = await register('Ravi Pest', 'pco@example.com');
   r = await call('POST', '/orders', { items: [{ productId: premise.id, quantity: 1 }], address: 'Shop 4, MI Road', city: 'Jaipur' }, P);
   assert.equal(r.s, 403, 'not approved yet');
-  r = await call('POST', '/buyers/apply', { firmName: 'Chutiya Pest Control', licenceNo: 'RJ/1', address: 'Shop 4, MI Road', city: 'Jaipur' }, P);
-  assert.equal(r.s, 400, 'abusive firm name');
-  r = await call('POST', '/buyers/apply', { firmName: 'Ravi Pest Control', licenceNo: 'RJ/PCO/123', address: 'Shop 4, MI Road', city: 'Jaipur' }, P);
+  const validTill = new Date(Date.now() + 365 * 86400e3).toISOString().slice(0, 10);
+  const firm = { firmName: 'Ravi Pest Control', licenceNo: 'RJ/PCO/123', licenceValidTill: validTill, address: 'Shop 4, MI Road', city: 'Jaipur', state: 'Rajasthan' };
+  r = await call('POST', '/buyers/apply', firm, P);
+  assert.equal(r.s, 400, 'licence copy is required');
+  assert.match(r.j.error, /licence/);
+  const fakePdf = `data:application/pdf;base64,${Buffer.from('not a pdf').toString('base64')}`;
+  r = await call('POST', '/buyers/documents/licence', { dataUrl: fakePdf }, P);
+  assert.equal(r.s, 400, 'file content is checked, not just its type');
+  const pdf = `data:application/pdf;base64,${Buffer.from('%PDF-1.4\n% licence\n').toString('base64')}`;
+  r = await call('POST', '/buyers/documents/licence', { dataUrl: pdf }, P);
   assert.equal(r.s, 201);
+  r = await call('POST', '/buyers/apply', { ...firm, firmName: 'Chutiya Pest Control' }, P);
+  assert.equal(r.s, 400, 'abusive firm name');
+  r = await call('POST', '/buyers/apply', { ...firm, licenceValidTill: '2020-01-01' }, P);
+  assert.equal(r.s, 400, 'expired licence');
+  r = await call('POST', '/buyers/apply', { ...firm, gstin: '08ABCDE1234F1Z4' }, P);
+  assert.match(r.j.error, /not valid/, 'GSTIN check digit');
+  r = await call('POST', '/buyers/apply', { ...firm, gstin: '27AAPFU0939F1ZV', state: 'Rajasthan' }, P);
+  assert.match(r.j.error, /registered in Maharashtra/, 'GSTIN state code');
+  r = await call('POST', '/buyers/apply', { ...firm, gstin: '27AAPFU0939F1ZV', state: 'Maharashtra' }, P);
+  assert.equal(r.s, 201, JSON.stringify(r.j));
+  assert.equal(r.j.documents[0].kind, 'licence');
   const me = (await call('GET', '/admin/users?q=pco@example.com', null, O)).j[0];
+  const doc = await fetch(`${B}/buyers/${me.id}/documents/licence`, { headers: { Authorization: `Bearer ${O}` } });
+  assert.equal(doc.status, 200);
+  assert.equal((await fetch(`${B}/buyers/${me.id}/documents/licence`, { headers: { Authorization: `Bearer ${P}` } })).status, 403, 'buyers cannot read other documents');
   r = await call('PATCH', `/buyers/${me.id}`, { status: 'approved' }, O);
   assert.equal(r.j.status, 'approved');
 
@@ -300,4 +321,118 @@ test('search engines: pre-rendered pages, 404s, redirects, sitemap and robots', 
   assert.equal(prod.s, 200);
   assert.ok(title(prod.h).includes(list[0].name.replace(/&/g, '&amp;')), title(prod.h));
   assert.equal((await page('/shop/not-a-real-product')).s, 404);
+});
+
+test('shop: pest filter, product page content, dose rate and datasheet downloads', async () => {
+  let r = await call('GET', '/products?pest=termite');
+  assert.equal(r.s, 200);
+  assert.ok(r.j.products.length > 0 && r.j.products.every((p) => p.pests.includes('termite')), 'only termite products');
+  assert.ok(r.j.pests.some((x) => x.key === 'termite' && x.n > 0), 'pest counts for the filter');
+  const prod = r.j.products[0];
+
+  r = await call('PUT', `/products/${prod.id}`, {
+    howToUse: 'Dilute as per label.\nSpray along walls.', storageInfo: 'Cool, dry place.', targetPests: ['termite', 'ant'],
+    faqs: [{ q: 'Is it odourless?', a: 'Low odour.' }], dosePerLitre: 2.5, solutionPerSqm: 5, doseNote: 'Post-construction',
+  }, O);
+  assert.equal(r.s, 200, JSON.stringify(r.j));
+  assert.deepEqual(r.j.pests, ['termite', 'ant']);
+  assert.equal(r.j.dose.per_litre, 2.5);
+  assert.equal((await call('PUT', `/products/${prod.id}`, { targetPests: ['dragons'] }, O)).s, 400);
+  assert.equal((await call('PUT', `/products/${prod.id}`, { dosePerLitre: -1 }, O)).s, 400);
+
+  const pdf = `data:application/pdf;base64,${Buffer.from('%PDF-1.4\n% tds\n').toString('base64')}`;
+  assert.equal((await call('PUT', `/products/${prod.id}/documents/tds`, { dataUrl: `data:application/pdf;base64,${Buffer.from('hello').toString('base64')}` }, O)).s, 400, 'not a real PDF');
+  r = await call('PUT', `/products/${prod.id}/documents/tds`, { dataUrl: pdf }, O);
+  assert.equal(r.s, 200);
+  const C = await register('Curious Client', 'curious@example.com');
+  assert.equal((await call('PUT', `/products/${prod.id}/documents/msds`, { dataUrl: pdf }, C)).s, 403, 'clients cannot upload');
+
+  const page = await call('GET', `/products/${prod.slug}`);
+  assert.equal(page.j.documents[0].kind, 'tds');
+  assert.equal(page.j.faqs[0].q, 'Is it odourless?');
+  const file = await fetch(`${B}/products/${prod.id}/documents/tds`);
+  assert.equal(file.headers.get('content-type'), 'application/pdf');
+  const lib = await call('GET', '/products/documents');
+  assert.ok(lib.j.some((d) => d.product_id === prod.id && d.kind === 'tds'));
+});
+
+test('search engines: product and shop landing pages are rendered with full content', { skip: !builtSite && 'run "npm run build" in frontend first' }, async () => {
+  const page = async (p) => { const r = await fetch(SITE + p, { redirect: 'manual' }); return { s: r.status, h: await r.text() }; };
+  const prod = await page('/shop/envu-premise-sc-1-l');
+  assert.equal(prod.s, 200);
+  assert.match(prod.h, /<title>Envu Premise SC 1 L Price/);
+  assert.match(prod.h, /<h1>Premise SC/, 'product name is in the HTML');
+  assert.match(prod.h, /Poori jaankari/, 'Hinglish guide is in the HTML');
+  assert.match(prod.h, /Imidacloprid 30\.5% SC/);
+  assert.match(prod.h, /<script type="application\/json" id="pk-data">/, 'data for the first browser render');
+  assert.ok(!/pco_price":\d/.test(prod.h), 'no trade prices in public HTML');
+  const ld = [...prod.h.matchAll(/<script type="application\/ld\+json" data-pk-seo>(.*?)<\/script>/g)].map((m) => JSON.parse(m[1])['@type']);
+  assert.ok(ld.includes('Product') && ld.includes('BreadcrumbList'));
+
+  const termite = await page('/shop/pest/termite');
+  assert.equal(termite.s, 200);
+  assert.match(termite.h, /<title>Termite Control Chemicals Price List/);
+  assert.match(termite.h, /Premise SC/, 'product list is in the HTML');
+  assert.equal((await page('/shop/pest/dragons')).s, 404);
+  const envu = await page('/shop/brand/envu');
+  assert.match(envu.h, /Envu Pest Control Products/);
+  assert.match(envu.h, /Maxforce/);
+
+  const sitemap = await (await fetch(`${SITE}/sitemap.xml`)).text();
+  assert.match(sitemap, /\/shop\/pest\/termite<\/loc>/);
+  assert.match(sitemap, /\/shop\/brand\/kalyani<\/loc>/);
+  const kota = await page('/pest-control/kota');
+  assert.match(kota.h, /Pest control chemicals supply in <!-- -->Kota/);
+});
+
+test('passwords: reset by email code, old tokens signed out, no account enumeration', async () => {
+  const T = await register('Meera Joshi', 'meera.reset@example.com');
+  assert.equal((await call('GET', '/users/profile', null, T)).s, 200);
+
+  const unknown = await call('POST', '/users/password/forgot', { email: 'nobody.here@example.com' });
+  const known = await call('POST', '/users/password/forgot', { email: 'meera.reset@example.com' });
+  assert.equal(unknown.s, 200);
+  assert.equal(unknown.j.message, known.j.message, 'same answer whether or not the account exists');
+  assert.equal(unknown.j.devCode, undefined);
+  assert.match(known.j.devCode, /^\d{6}$/);
+
+  let r = await call('POST', '/users/password/reset', { email: 'meera.reset@example.com', otp: known.j.devCode, newPassword: 'short' });
+  assert.equal(r.s, 400, 'weak password rejected before the code is used');
+  r = await call('POST', '/users/password/reset', { email: 'meera.reset@example.com', otp: '000000', newPassword: 'MeeraNew#2026' });
+  assert.equal(r.s, 400);
+  r = await call('POST', '/users/password/reset', { email: 'meera.reset@example.com', otp: known.j.devCode, newPassword: 'MeeraNew#2026' });
+  assert.equal(r.s, 200, JSON.stringify(r.j));
+  assert.ok(r.j.token);
+  assert.equal((await call('GET', '/users/profile', null, T)).s, 401, 'token from before the reset no longer works');
+  assert.equal((await call('GET', '/users/profile', null, r.j.token)).s, 200);
+  assert.equal((await call('POST', '/users/password/reset', { email: 'meera.reset@example.com', otp: known.j.devCode, newPassword: 'Another#2026' })).s, 400, 'code cannot be reused');
+
+  // Changing the password while logged in signs out other devices but keeps this one.
+  const other = (await call('POST', '/users/login', { email: 'meera.reset@example.com', password: 'MeeraNew#2026' })).j.token;
+  const changed = await call('PUT', '/users/password', { currentPassword: 'MeeraNew#2026', newPassword: 'MeeraThird#2026' }, r.j.token);
+  assert.equal(changed.s, 200);
+  assert.equal((await call('GET', '/users/profile', null, other)).s, 401);
+  assert.equal((await call('GET', '/users/profile', null, changed.j.token)).s, 200);
+});
+
+test('security headers: CSP on pages, nosniff and frame protection everywhere', { skip: !builtSite && 'run "npm run build" in frontend first' }, async () => {
+  const page = await fetch(`${SITE}/`);
+  const csp = page.headers.get('content-security-policy') || '';
+  assert.match(csp, /default-src 'self'/);
+  assert.match(csp, /script-src 'self' 'sha256-/, 'inline scripts allowed only by hash');
+  assert.match(csp, /frame-ancestors 'none'/);
+  assert.ok(!/unsafe-eval/.test(csp));
+  const apiRes = await fetch(`${B}/health`);
+  assert.equal(apiRes.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(apiRes.headers.get('x-frame-options'), 'DENY');
+  assert.equal(apiRes.headers.get('x-powered-by'), null);
+});
+
+test('uploads: images are checked by content, not just by declared type', async () => {
+  const p = (await call('GET', '/products')).j.products[0];
+  const fakePng = `data:image/png;base64,${Buffer.from('<svg onload=alert(1)>').toString('base64')}`;
+  const r = await call('PUT', `/products/${p.id}/image`, { dataUrl: fakePng }, O);
+  assert.equal(r.s, 400, 'a script disguised as a PNG is rejected');
+  const svg = await call('PUT', `/products/${p.id}/image`, { dataUrl: `data:image/svg+xml;base64,${Buffer.from('<svg/>').toString('base64')}` }, O);
+  assert.equal(svg.s, 400, 'SVG (can carry scripts) is not accepted');
 });

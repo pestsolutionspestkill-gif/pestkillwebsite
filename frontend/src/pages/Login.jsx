@@ -31,7 +31,9 @@ const Login = () => {
   const [busy, setBusy] = useState(false);
   const { login, user, loading } = useAuth();
   const navigate = useNavigate();
-  const from = useLocation().state?.from;
+  // Only same-site paths are followed after login (never //host or /\host, which browsers treat as other sites).
+  const rawFrom = useLocation().state?.from;
+  const from = typeof rawFrom === 'string' && /^\/(?![/\\])/.test(rawFrom) ? rawFrom : null;
 
   if (!loading && user) return <Navigate to={homeFor(user)} replace />;
 
@@ -76,6 +78,7 @@ const Login = () => {
             </button>
           </form>
           <div className="auth-footer">
+            <p><Link to="/forgot-password">Forgot your password?</Link></p>
             <p>New to PestKill? <Link to="/register">Create an account</Link></p>
           </div>
         </div>

@@ -16,8 +16,9 @@
 
 /* Columns */
 .footer-grid { display: grid; grid-template-columns: 1.6fr 0.9fr 1fr 0.8fr 1.4fr; gap: 40px; padding-bottom: 48px; border-bottom: 1px solid var(--line); }
-.footer .logo-text { color: var(--ink) !important; }
-.footer .logo-mark { background: var(--ink) !important; box-shadow: none !important; }
+.footer .logo-text { color: var(--brand-red) !important; }
+.footer .logo-mark { background: none !important; padding: 0 !important; box-shadow: none !important; }
+.footer .logo-sub { color: var(--brand-green) !important; }
 .footer-tagline { margin: 18px 0 20px; font-size: 0.85rem; line-height: 1.6; max-width: 320px; }
 .footer-trust { list-style: none; display: flex; flex-direction: column; gap: 9px; }
 .footer-trust li { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--ink-soft); }

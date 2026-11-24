@@ -45,7 +45,7 @@
 .pid-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .pid-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 .pid-foot .pid-back { margin: 0; }
-.pid-disclaimer { font-size: 0.8rem; color: #8E8E93; }
+.pid-disclaimer { font-size: 0.8rem; color: #6E6E73; }
 
 @media (max-width: 760px) {
   .pid-card { padding: 20px; border-radius: 22px; }

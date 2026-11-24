@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams, useLocation } from 'react-router-dom';
-import { Printer, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Printer, ArrowLeft } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import businessConfig from '../../data/businessConfig';
@@ -44,7 +44,7 @@ const Letterhead = ({ title, number, date }) => {
   return (
     <header className="doc-head">
       <div className="doc-brand">
-        <span className="doc-mark"><ShieldCheck size={22} /></span>
+        <img className="doc-mark" src="/images/brand/pestkill-emblem-192.png" alt="Pest Kill logo" />
         <div>
           <strong>{businessName}</strong>
           <span>{officeAddress}</span>

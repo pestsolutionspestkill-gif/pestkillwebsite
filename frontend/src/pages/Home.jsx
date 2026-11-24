@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import businessConfig from '../data/businessConfig';
 import {
-  Phone, MessageCircle, MapPin, ArrowRight, ArrowUpRight, Star, CheckCircle,
+  Phone, MapPin, ArrowRight, ArrowUpRight, Star, CheckCircle,
   Bug, BedDouble, ShieldCheck, Zap, Shield, Users, Wrench, Leaf, Tag,
   ClipboardList, Search, BadgeCheck, Award, Building2, Layers, Plus, Minus,
   Home as HomeIcon, Hotel, Hospital, Warehouse, UtensilsCrossed, HardHat,
 } from 'lucide-react';
-import { pests, RATES, homeRateLine, homeFrom } from '../data/catalog';
-import { FounderSection } from '../components/Founder';
+import { pests, RATES, homeFrom } from '../data/catalog';
+import { FounderSection, founder } from '../components/Founder';
 import OnlyAtPestKill from '../components/OnlyAtPestKill';
 import { submitLead } from '../lib/api';
 import { media, pestMedia, sectorMedia } from '../data/media';
@@ -63,7 +63,6 @@ const cityLinks = Object.fromEntries(CITIES.map((c) => [c.name, cityPath(c.slug)
 
 const Home = () => {
   const { phoneNumber, whatsappNumber, serviceCoverage, experience, brands } = businessConfig;
-  const wa = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`;
   const [formData, setFormData] = useState({ name: '', phone: '', service: '' });
   const [submitted, setSubmitted] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
@@ -124,6 +123,10 @@ const Home = () => {
               <strong>From {pricesFrom}</strong>
               <span>Inspection · Treatment · Written warranty</span>
             </figcaption>
+            <Link to="/about" className="hero-founder">
+              <img src={founder.portrait} alt={founder.name} width="64" height="64" />
+              <span><em>“{founder.promise}”</em><strong>{founder.name}</strong><small>{founder.title}, Pest Kill Pest Solutions</small></span>
+            </Link>
           </figure>
         </div>
       </section>
@@ -170,9 +173,9 @@ const Home = () => {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="hero-form">
-                <input type="text" placeholder="Full name" className="form-input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
-                <input type="tel" placeholder="Phone number" className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required />
-                <select className="form-input" value={formData.service} onChange={e => setFormData({ ...formData, service: e.target.value })}>
+                <input type="text" placeholder="Full name" aria-label="Full name" autoComplete="name" className="form-input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                <input type="tel" placeholder="Phone number" aria-label="Phone number" autoComplete="tel" className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required />
+                <select className="form-input" aria-label="Service needed" value={formData.service} onChange={e => setFormData({ ...formData, service: e.target.value })}>
                   <option value="">Select a service</option>
                   {services.map(s => <option key={s.slug} value={s.name}>{s.name}</option>)}
                 </select>

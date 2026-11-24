@@ -63,3 +63,30 @@ export const submitLead = async (lead, { whatsappNumber, whatsappText }) => {
 };
 
 export { waLink };
+
+/* Files ---------------------------------------------------------------- */
+
+/** Reads a chosen file as a base64 data URL (for PDF / document uploads). */
+export const fileToDataUrl = (file, { maxMb = 5 } = {}) => new Promise((resolve, reject) => {
+  if (!file) { reject(new Error('Choose a file.')); return; }
+  if (file.size > maxMb * 1024 * 1024) { reject(new Error(`The file is too large (max ${maxMb} MB).`)); return; }
+  const r = new FileReader();
+  r.onload = () => resolve(r.result);
+  r.onerror = () => reject(new Error('Could not read this file.'));
+  r.readAsDataURL(file);
+});
+
+/** Opens a private file (sent only with the login token) in a new tab. */
+export const openPrivateFile = async (path) => {
+  const w = window.open('', '_blank'); // opened now, so pop-up blockers allow it
+  try {
+    const res = await fetch(`${API_URL}${path}`, { headers: { Authorization: `Bearer ${tokenStore.get()}` } });
+    if (!res.ok) throw new Error('Could not open the file.');
+    const url = URL.createObjectURL(await res.blob());
+    if (w) w.location.href = url; else window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (err) {
+    w?.close();
+    throw err;
+  }
+};

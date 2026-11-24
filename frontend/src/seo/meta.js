@@ -14,6 +14,7 @@ import { extraServices } from '../data/extraServices';
 import { CITIES, REGIONS, getCity, cityPath, cityFaqs } from '../data/rajasthan';
 import { BLOG_INDEX, getBlogMeta } from '../data/blogIndex';
 import { HOME_FAQS } from '../data/homeFaqs';
+import { PEST_LANDING, BRAND_LANDING, landingApiPath, SHOP_LANDING_PATHS } from '../data/shopLanding';
 import { pestMedia, serviceMedia, sectorMedia, media } from '../data/media';
 
 export const SITE_URL_TOKEN = '__PK_SITE_URL__';
@@ -38,7 +39,7 @@ const business = () => ({
   alternateName: ['PestKill', 'Pest Kill Solutions'],
   description: 'Licensed pest control company in Jaipur serving all of Rajasthan: termite treatment, cockroach, bed bug, rodent and mosquito control for homes and businesses.',
   url: abs('/'),
-  logo: abs('/favicon.svg'),
+  logo: abs('/images/brand/pestkill-emblem.png'),
   image: abs(DEFAULT_IMAGE),
   telephone: phoneE164,
   email: businessConfig.email,
@@ -64,6 +65,7 @@ const business = () => ({
 const website = () => ({
   '@context': 'https://schema.org',
   '@type': 'WebSite',
+  '@id': abs('/#website'),
   name: SITE_NAME,
   url: abs('/'),
   inLanguage: 'en-IN',
@@ -202,8 +204,18 @@ const STATIC = {
   },
   '/shop': {
     title: 'PCO Shop: Professional Pest Control Products at MRP | PestKill',
-    description: 'Licensed pest control operators can buy ENVU, Syngenta, Heranba and Arbuda professional products at MRP from our Jaipur distributor shop.',
+    description: 'Licensed pest control operators can buy ENVU, Syngenta, Heranba, Arbuda and Kalyani professional products at MRP from our Jaipur distributor shop.',
     crumbs: [{ name: 'PCO shop', path: '/shop' }],
+  },
+  '/shop/dose-calculator': {
+    title: 'Pesticide Dose Calculator for PCOs | PestKill Shop',
+    description: 'Enter the area to treat and get the diluted solution and product quantity, worked out from the rate printed on each product label.',
+    crumbs: [{ name: 'PCO shop', path: '/shop' }, { name: 'Dose calculator', path: '/shop/dose-calculator' }],
+  },
+  '/shop/library': {
+    title: 'Datasheets, MSDS & Labels for Pest Control Products | PestKill',
+    description: 'Download technical datasheets (TDS), safety data sheets (MSDS) and labels for Envu, Syngenta, Heranba, Arbuda and Kalyani products.',
+    crumbs: [{ name: 'PCO shop', path: '/shop' }, { name: 'Downloads library', path: '/shop/library' }],
   },
   '/pco-account': {
     title: 'Open a PCO Buyer Account | PestKill Shop',
@@ -218,18 +230,11 @@ const STATIC = {
 };
 
 // Pages that must not appear in search results (accounts, cart, staff tools, documents).
-const PRIVATE = [/^\/login$/, /^\/register$/, /^\/cart$/, /^\/dashboard(\/|$)/, /^\/admin(\/|$)/, /^\/print\//, /^\/verify\/.+/];
-const PRIVATE_TITLES = { '/login': 'Log in', '/register': 'Create an account', '/cart': 'Your cart' };
+const PRIVATE = [/^\/login$/, /^\/register$/, /^\/forgot-password$/, /^\/cart$/, /^\/dashboard(\/|$)/, /^\/admin(\/|$)/, /^\/print\//, /^\/verify\/.+/];
+const PRIVATE_TITLES = { '/login': 'Log in', '/register': 'Create an account', '/forgot-password': 'Reset your password', '/cart': 'Your cart' };
 
 // Alternate URLs that show the same page as a canonical one.
-export const REDIRECTS = {
-  '/anti-termite-piping': '/services/anti-termite-piping',
-  '/services/termite-control': '/termite-control',
-  '/services/cockroach-control': '/cockroach-control',
-  '/services/rodent-control': '/rodent-control',
-  '/services/bed-bugs': '/bed-bug-treatment',
-  ...Object.fromEntries(['jaipur', 'jodhpur', 'udaipur', 'kota', 'ajmer', 'bikaner', 'alwar', 'bharatpur'].map((s) => [`/${s}`, cityPath(s)])),
-};
+export { REDIRECTS } from './redirects';
 
 const dynamicPage = (path) => {
   let m;
@@ -294,9 +299,27 @@ const dynamicPage = (path) => {
       schema: [article, breadcrumb([{ name: 'Blog', path: '/blog' }, { name: post.title, path }])],
     };
   }
+  if ((m = /^\/shop\/(pest|brand)\/([a-z]+)$/.exec(path))) {
+    const [, kind, key] = m;
+    const info = kind === 'pest' ? PEST_LANDING[key] : BRAND_LANDING[key];
+    if (!info) return null;
+    const label = kind === 'pest' ? info.name : `${info.name} Pest Control Products`;
+    const schema = [
+      { '@context': 'https://schema.org', '@type': 'CollectionPage', name: label, url: abs(path), isPartOf: { '@id': abs('/#website') }, about: kind === 'pest' ? info.short : info.name, provider: { '@id': BUSINESS_ID } },
+      breadcrumb([{ name: 'PCO shop', path: '/shop' }, { name: kind === 'pest' ? info.short : info.name, path }]),
+    ];
+    if (kind === 'pest' && info.faqs.length) schema.push(faqPage(info.faqs));
+    return {
+      title: kind === 'pest' ? `${info.name} Price List | Buy Online | PestKill` : `${info.name} Products Price List | PCO Shop | PestKill`,
+      description: kind === 'pest'
+        ? `${info.short} for licensed PCOs: ${info.ingredients.slice(0, 3).join(', ')} and more. MRP, pack sizes, TDS/MSDS and bulk price. Dispatched from Jaipur.`
+        : `${info.name} professional pest control products with MRP and pack sizes. Genuine sealed packs for licensed PCOs, dispatched from Jaipur.`,
+      schema, dynamic: 'shop-list', apiPath: landingApiPath(kind, key),
+    };
+  }
   if ((m = /^\/shop\/([a-z0-9-]+)$/.exec(path))) {
     // Product details come from the database; the server fills them in when it sends the page.
-    return { title: 'Product | PestKill PCO Shop', description: STATIC['/shop'].description, dynamic: 'product' };
+    return { title: 'Product | PestKill PCO Shop', description: STATIC['/shop'].description, dynamic: 'product', apiPath: `/products/${m[1]}` };
   }
   return null;
 };
@@ -332,6 +355,7 @@ export const seoFor = (pathname) => {
     noindex: false,
     status: 200,
     dynamic: page.dynamic,
+    apiPath: page.apiPath,
     schema,
   };
 };
@@ -346,11 +370,14 @@ export const PRERENDER_PATHS = [
   ...BLOG_INDEX.map((p) => `/blog/${p.slug}`),
 ];
 
+/** Database-backed pages rendered by the server on request (listed in the sitemap too). */
+export const SERVER_RENDERED_PATHS = SHOP_LANDING_PATHS;
+
 /** Pages the sitemap should rank higher. */
 export const sitemapPriority = (path) => {
   if (path === '/') return '1.0';
   if (path.startsWith('/pest-control/') || ['/termite-control', '/cockroach-control', '/bed-bug-treatment', '/rodent-control', '/services/anti-termite-piping', '/book', '/locations'].includes(path)) return '0.9';
-  if (path.startsWith('/services') || path.startsWith('/business')) return '0.8';
+  if (path.startsWith('/services') || path.startsWith('/business') || path.startsWith('/shop/pest/') || path.startsWith('/shop/brand/')) return '0.8';
   return '0.6';
 };
 

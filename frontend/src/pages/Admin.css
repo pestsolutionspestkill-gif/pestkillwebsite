@@ -40,7 +40,7 @@
 
 .admin-main { min-width: 0; padding: 40px 48px 90px; max-width: 1400px; }
 .admin-head { margin-bottom: 30px; }
-.admin-head .eyebrow { margin-bottom: 6px; color: #0E9F6E; }
+.admin-head .eyebrow { margin-bottom: 6px; color: #086A49; }
 .admin-head h1 { font-size: clamp(2rem, 3vw, 2.6rem); font-weight: 700; letter-spacing: -0.035em; color: #1D1D1F; }
 
 /* Panels & state */
@@ -54,7 +54,7 @@
 .adm-muted { color: #6E6E73; }
 .spinner { width: 20px; height: 20px; border: 2px solid #E8E8ED; border-top-color: #0E9F6E; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.link-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 0.86rem; font-weight: 600; color: #0B8A5F; }
+.link-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 0.86rem; font-weight: 600; color: #086A49; }
 .link-btn:hover { text-decoration: underline; }
 
 /* KPIs */
@@ -95,7 +95,7 @@
 .chart-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
 .chart-title { font-size: 1.02rem; font-weight: 600; letter-spacing: -0.02em; color: #1D1D1F; }
 .chart-total { font-size: 0.84rem; color: #6E6E73; font-variant-numeric: tabular-nums; }
-.chart-toggle { margin-left: auto; font-size: 0.8rem; font-weight: 600; color: #0B8A5F; }
+.chart-toggle { margin-left: auto; font-size: 0.8rem; font-weight: 600; color: #086A49; }
 .chart-plot { position: relative; }
 .chart-plot svg { display: block; width: 100%; height: auto; }
 .chart-tip { position: absolute; top: 0; transform: translate(-50%, -6px); pointer-events: none; display: flex; flex-direction: column; align-items: center; padding: 6px 10px; font-size: 0.76rem; color: #fff; background: #1D1D1F; border-radius: 8px; white-space: nowrap; box-shadow: 0 8px 20px -8px rgba(0,0,0,0.35); }
@@ -134,7 +134,7 @@
 .icon-btn:hover { color: #1D1D1F; background: #F5F5F7; }
 .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .icon-btn.danger:hover { color: #B42318; box-shadow: inset 0 0 0 1px #F3B5B0; }
-.text-btn { padding: 6px 10px; font-size: 0.82rem; font-weight: 600; color: #0B8A5F; border-radius: 8px; }
+.text-btn { padding: 6px 10px; font-size: 0.82rem; font-weight: 600; color: #086A49; border-radius: 8px; }
 .text-btn:hover { background: #F5F5F7; }
 .text-btn.danger { color: #B42318; }
 
@@ -241,7 +241,7 @@
 .job-card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .job-card header .mono { color: #8E8E93; }
 .job-card h3 { font-size: 1.2rem; letter-spacing: -0.025em; margin: 2px 0 4px; }
-.job-when { display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 600; color: #0B8A5F; }
+.job-when { display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 600; color: #086A49; }
 .job-facts { display: flex; flex-direction: column; background: #F5F5F7; border-radius: 14px; }
 .job-facts > div { display: grid; grid-template-columns: 100px 1fr; gap: 10px; padding: 9px 14px; font-size: 0.86rem; border-bottom: 1px solid #E8E8ED; }
 .job-facts > div:last-child { border-bottom: none; }
@@ -401,7 +401,7 @@ fieldset.plain { display: contents; border: none; padding: 0; margin: 0; }
 .job-photo { position: relative; width: 72px; height: 72px; border-radius: 10px; overflow: hidden; background: #fff; }
 .job-photo img { width: 100%; height: 100%; object-fit: cover; }
 .job-photo button { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(0,0,0,0.6); border-radius: 50%; }
-.job-photo-add { width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 0.74rem; font-weight: 600; color: #0B8A5F; background: #fff; border: 1.5px dashed #0E9F6E; border-radius: 10px; cursor: pointer; }
+.job-photo-add { width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 0.74rem; font-weight: 600; color: #086A49; background: #fff; border: 1.5px dashed #0E9F6E; border-radius: 10px; cursor: pointer; }
 .job-photo-add.busy { opacity: 0.5; }
 
 /* Warranty claims */
@@ -416,3 +416,15 @@ fieldset.plain { display: contents; border: none; padding: 0; margin: 0; }
 .claim-actions label { display: flex; flex-direction: column; gap: 5px; font-size: 0.8rem; font-weight: 600; color: #424245; }
 .claim-actions label small { font-weight: 400; color: #8E8E93; }
 .claim-actions input { height: 38px; padding: 0 10px; font-size: 0.9rem; border: 1px solid #D2D2D7; border-radius: 10px; background: #fff; }
+
+/* Product page content editor, downloads and buyer documents */
+.pest-checks { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.faq-edit { display: grid; gap: 6px; padding: 12px; margin-bottom: 10px; background: #F5F5F7; border-radius: 12px; }
+.faq-edit .text-btn { justify-self: start; }
+.doc-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.doc-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #F5F5F7; border-radius: 12px; font-size: 0.9rem; }
+.doc-row > span { flex: 1; }
+.doc-row small { color: #8E8E93; }
+.doc-row label.text-btn { cursor: pointer; }
+.doc-links { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.tag-danger { display: inline-block; padding: 2px 8px; font-size: 0.78rem; font-weight: 600; color: #B42318; background: #FEE4E2; border-radius: 999px; }

@@ -23,6 +23,9 @@ const wrap = (text, max) => {
 const Label = ({ x, y, w, h, p, tone, small }) => {
   const name = wrap(p.name, small ? 10 : 13);
   const fs = small ? 16 : 18;
+  const mrpText = p.mrp != null ? `MRP ₹${Number(p.mrp).toLocaleString('en-IN')}` : 'MRP on pack';
+  // Pack size and MRP sit side by side when they fit; otherwise one above the other.
+  const stack = small || (String(p.pack_size || '').length + mrpText.length) * 7.6 > w - 28;
   return (
     <g>
       <rect x={x} y={y} width={w} height={h} rx="10" fill="#fff" />
@@ -34,9 +37,9 @@ const Label = ({ x, y, w, h, p, tone, small }) => {
       ))}
       {p.technical && <text x={x + w / 2} y={y + h - (small ? 58 : 52)} textAnchor="middle" fontSize={small ? 9.5 : 10.5} fill="#515154" {...(String(p.technical).length > (small ? 20 : 26) ? { textLength: w - 16, lengthAdjust: 'spacingAndGlyphs' } : {})}>{String(p.technical).slice(0, 34)}</text>}
       <line x1={x + 10} x2={x + w - 10} y1={y + h - (small ? 48 : 38)} y2={y + h - (small ? 48 : 38)} stroke="#E5E5EA" />
-      <text x={small ? x + w / 2 : x + 12} y={y + h - (small ? 30 : 16)} textAnchor={small ? 'middle' : 'start'} fontSize={small ? 12 : 13} fontWeight="700" fill="#1D1D1F">{p.pack_size}</text>
-      <text x={small ? x + w / 2 : x + w - 12} y={y + h - (small ? 12 : 16)} textAnchor={small ? 'middle' : 'end'} fontSize={small ? 11 : 12.5} fontWeight="800" fill={tone[0]}>
-        {p.mrp != null ? `MRP ₹${Number(p.mrp).toLocaleString('en-IN')}` : 'MRP on pack'}
+      <text x={stack ? x + w / 2 : x + 12} y={y + h - (small ? 30 : stack ? 22 : 16)} textAnchor={stack ? 'middle' : 'start'} fontSize={small ? 12 : 13} fontWeight="700" fill="#1D1D1F">{p.pack_size}</text>
+      <text x={stack ? x + w / 2 : x + w - 12} y={y + h - (small ? 12 : stack ? 6 : 16)} textAnchor={stack ? 'middle' : 'end'} fontSize={small ? 11 : 12.5} fontWeight="800" fill={tone[0]}>
+        {mrpText}
       </text>
     </g>
   );

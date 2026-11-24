@@ -2,6 +2,7 @@ import express from 'express';
 import db, { audit, NOW } from '../db.js';
 import { requireRole, can, ah } from '../middleware/rbac.js';
 import { str, oneOf, intId } from '../utils/validate.js';
+import { readDataUrl } from '../utils/files.js';
 
 const router = express.Router();
 const fieldStaff = requireRole('technician', 'manager', 'owner');
@@ -65,16 +66,14 @@ router.post('/:id/photos', fieldStaff, ah(async (req, res) => {
   if (!job) return res.status(404).json({ error: 'Job not found.' });
   if (job.status === 'cancelled') return res.status(409).json({ error: 'This job was cancelled.' });
   const kind = oneOf(req.body?.kind, ['before', 'after'], 'photo type');
-  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(req.body?.dataUrl || ''));
-  if (!m) return res.status(400).json({ error: 'Upload a JPG, PNG or WebP photo.' });
-  const data = Buffer.from(m[2], 'base64');
-  if (data.length > MAX_PHOTO_BYTES) return res.status(400).json({ error: 'Photo is too large (max 1.5 MB).' });
+  // Type, size and real file content (magic bytes) are all checked.
+  const { mime, data } = readDataUrl(req.body?.dataUrl, { types: ['image/jpeg', 'image/png', 'image/webp'], maxBytes: MAX_PHOTO_BYTES, label: 'photo' });
   if ((await db.get('SELECT COUNT(*)::int c FROM job_photos WHERE lead_id = ?', job.id)).c >= MAX_PHOTOS) {
     return res.status(400).json({ error: `A job can have up to ${MAX_PHOTOS} photos. Remove one first.` });
   }
-  const row = await db.get('INSERT INTO job_photos (lead_id, kind, mime, data, created_by) VALUES (?, ?, ?, ?, ?) RETURNING id, kind, created_at', job.id, kind, m[1], data, req.user.id);
+  const row = await db.get('INSERT INTO job_photos (lead_id, kind, mime, data, created_by) VALUES (?, ?, ?, ?, ?) RETURNING id, kind, created_at', job.id, kind, mime, data, req.user.id);
   audit(req, 'job.photo', 'lead', job.ref, { kind });
-  res.status(201).json({ ...row, url: `data:${m[1]};base64,${m[2]}` });
+  res.status(201).json({ ...row, url: `data:${mime};base64,${data.toString('base64')}` });
 }));
 
 router.delete('/:id/photos/:photoId', fieldStaff, ah(async (req, res) => {

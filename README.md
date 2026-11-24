@@ -118,6 +118,31 @@ products are added; products you have edited in the console are never overwritte
 listings are marked **"Check"** until you tick "I have checked this MRP against the printed pack";
 products without an MRP show "Price on request". Stock left empty means "not tracked".
 
+### Shop tools and PCO verification
+
+- **Shop by pest**: products are tagged by pest. Tags are detected from the product text, or you can set them
+  in Admin → Products.
+- **Product page**: the page shows the following.
+  - An automatic Hinglish product guide (`frontend/src/lib/productGuide.js`).
+  - How to use, storage and FAQs, which you edit in admin.
+  - Products with the same active ingredient.
+  - Photo zoom and a WhatsApp bulk-order button.
+- **Dose calculator** (`/shop/dose-calculator`): it works only for products whose label rate has been entered in
+  admin. It never guesses a dose.
+- **Downloads** (`/shop/library`): staff upload TDS, MSDS and label PDFs in Admin → Products.
+- **PCO verification**: to apply, a buyer must upload a copy of their licence and give its validity date.
+  - The GSTIN is checked, including its check digit and state code.
+  - An expired licence pauses ordering until the licence is renewed.
+  - Staff view the uploaded documents in Admin → PCO buyers.
+- **Catalogue version 5** adds Kalyani and other missing products. Packs without a known size show as
+  "Standard pack". Reference MRPs are marked "Check" until you verify them against the pack.
+
+### Logo and motion
+
+- Logo files are in `frontend/public/images/brand/`: the emblem, the full logo, the favicon and the touch icon.
+- Site-wide motion lives in `frontend/src/components/Motion.jsx`: scroll reveal, a progress bar, magnetic buttons
+  and card tilt. It is turned off for visitors who prefer reduced motion.
+
 ## Customer trust features
 
 - **Warranty Wallet**: in *My account*, each completed booking shows how many warranty days are left, based on
@@ -138,6 +163,36 @@ products without an MRP show "Price on request". Stock left empty means "not tra
   advice and the product label always come first.
 
 Run `npm test` in `backend/` to run the API tests, which cover these features.
+
+## Quality checks
+
+| Command | What it runs |
+|---|---|
+| `npm run lint` in `frontend/` and in `backend/` | ESLint (React and hooks rules on the frontend). |
+| `npm test` in `backend/` | API tests: authentication, roles, bookings, shop, PCO verification, password reset, SEO pages and security headers. |
+| `npm run build && npm run test:e2e` in `frontend/` | Browser tests in Microsoft Edge on the production build. |
+
+The browser tests:
+- check that every public page loads without console errors or Content-Security-Policy violations;
+- run accessibility checks (axe, WCAG 2 AA);
+- run the main journeys end to end: booking, sign-up with email code, password reset, shop and cart, the staff console, access control, 404 pages and the mobile menu.
+
+To use another Chromium-based browser, set `E2E_BROWSER_PATH`.
+
+## Security notes
+
+- **Passwords**: passwords are hashed with bcrypt.
+  - Forgot password uses a 6-digit email code that expires after 10 minutes and allows 5 attempts.
+  - Changing or resetting a password signs out every other device.
+  - Login takes the same time whether or not the email exists, so it cannot be used to find accounts.
+- **Headers**: web pages get a strict Content-Security-Policy. Inline scripts run only if their hash matches.
+  - Every response also gets `nosniff`, `X-Frame-Options: DENY`, a referrer policy and HSTS (on Render).
+- **Uploads**: photos, PDFs and licence copies are checked by type, size and real file content (magic bytes).
+  - SVG is not accepted.
+- **Login tokens**: the token is kept in the browser's local storage. The CSP lowers the XSS risk this brings.
+  - Requests use a Bearer header rather than cookies, so cross-site request forgery does not apply.
+- **Backups**: Neon keeps point-in-time history, and the length depends on your plan. For long-term copies, run
+  a regular `pg_dump` of `DATABASE_URL` to storage you control.
 
 ## Search engines (SEO)
 
@@ -160,6 +215,13 @@ Run `npm test` in `backend/` to run the API tests, which cover these features.
   - Set `SITE_URL` to your final address, for example `https://www.your-domain.in`. Requests to any other host,
     such as `*.onrender.com`, then redirect to it, and the sitemap and canonical links use it.
   - Optionally, set `GOOGLE_SITE_VERIFICATION` to verify the site in Google Search Console.
+- **Shop pages rendered on the server**: each product page (`/shop/<slug>`) and each price-list page is built on
+  the server for every request, with live data from the database, and kept in a cache for 10 minutes. The
+  price-list pages are `/shop/pest/<termite|cockroach|mosquito|rodent|fly|ant|bedbug>` and `/shop/brand/<envu|…>`.
+  Search engines get the full content (Hinglish guide, specs, FAQs) and Product structured data. The page data is
+  sent in `#pk-data`, so the browser's first render matches the HTML. Trade (PCO) prices are never included.
+- Each Rajasthan city page also has a "Pest control chemicals supply in &lt;city&gt;" section linking to the
+  price-list pages.
 - Add your Google Business Profile, Facebook and Instagram links to `socialProfiles` in
   `frontend/src/data/businessConfig.js`.
 

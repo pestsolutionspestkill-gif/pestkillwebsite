@@ -251,5 +251,7 @@ export const cityFaqs = (city, RATES) => {
         : `Book online or call us and we confirm a visit date and time slot for ${city.name} when you book. Commercial sites can also request a scheduled annual programme.` },
     { q: 'Is the treatment safe for children and pets?',
       a: 'Yes, when the instructions are followed. Tell us about children, pets, elderly people or anyone with asthma when you book. You get a Safe Home plan with what to do before the visit and when it is safe to go back into treated rooms.' },
+    { q: `Can pest control operators in ${city.name} buy chemicals from PestKill?`,
+      a: `Yes. Licensed PCOs in ${city.name} can open a PCO account, upload their licence and order Envu, Syngenta, Heranba, Arbuda and Kalyani products online at MRP or trade price. Orders are dispatched from Jaipur, and any delivery charge is confirmed before dispatch.` },
   ];
 };

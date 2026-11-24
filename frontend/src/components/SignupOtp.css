@@ -10,7 +10,7 @@
 .otp-input::placeholder { color: #C7C7CC; }
 .otp-step .btn { width: 100%; }
 .otp-links { display: flex; justify-content: space-between; gap: 10px; }
-.otp-links button { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 600; color: #0B8A5F; }
+.otp-links button { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 600; color: #086A49; }
 .otp-links button:disabled { color: #AEAEB2; }
-.otp-note { font-size: 0.8rem !important; color: #8E8E93 !important; }
-.field-hint { margin-top: 4px; font-size: 0.78rem; color: #8E8E93; }
+.otp-note { font-size: 0.8rem !important; color: #6E6E73 !important; }
+.field-hint { margin-top: 4px; font-size: 0.78rem; color: #6E6E73; }

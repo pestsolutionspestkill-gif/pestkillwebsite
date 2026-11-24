@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Phone, MessageCircle, Menu, X, ChevronDown, ShieldCheck, ArrowRight, Search, Clock, BadgeCheck, CalendarCheck, ShoppingCart, Store,
+  Phone, MessageCircle, Menu, X, ChevronDown, ArrowRight, Search, Clock, BadgeCheck, CalendarCheck, ShoppingCart, Store,
 } from 'lucide-react';
 import businessConfig from '../data/businessConfig';
 import { services, serviceGroups, sectors, pests } from '../data/catalog';
@@ -12,9 +12,9 @@ import './Navbar.css';
 
 export const Logo = ({ light = false }) => (
   <Link to="/" className={`logo ${light ? 'logo-light' : ''}`} aria-label="PestKill home">
-    <span className="logo-mark"><ShieldCheck size={20} strokeWidth={2.2} /></span>
+    <img className="logo-mark" src="/images/brand/pestkill-emblem-192.png" alt="" width="44" height="44" />
     <span className="logo-words">
-      <span className="logo-text">PestKill</span>
+      <span className="logo-text">Pest Kill</span>
       <span className="logo-sub">Pest Solutions</span>
     </span>
   </Link>
@@ -176,10 +176,10 @@ const Navbar = () => {
       <header className={`navbar ${scrolled ? 'scrolled' : ''} ${openMenu ? 'menu-open' : ''}`}>
         <div className="nav-utility">
           <div className="nav-utility-inner">
-            <div className="segment-tabs" role="tablist" aria-label="Audience">
-              <Link to="/" className={!isBusiness ? 'active' : ''}>For Home</Link>
-              <Link to="/business" className={isBusiness ? 'active' : ''}>For Business</Link>
-            </div>
+            <nav className="segment-tabs" aria-label="Audience">
+              <Link to="/" className={!isBusiness ? 'active' : ''} aria-current={!isBusiness ? 'page' : undefined}>For Home</Link>
+              <Link to="/business" className={isBusiness ? 'active' : ''} aria-current={isBusiness ? 'page' : undefined}>For Business</Link>
+            </nav>
             <div className="utility-meta">
               <span><BadgeCheck size={14} /> Licensed pest control operator</span>
               <span><Clock size={14} /> {workingHours}</span>
@@ -238,7 +238,7 @@ const Navbar = () => {
           <Link to="/" className={!isBusiness ? 'active' : ''}>For Home</Link>
           <Link to="/business" className={isBusiness ? 'active' : ''}>For Business</Link>
         </div>
-        <Link to="/shop" className="mobile-shop"><Store size={20} /><span><strong>PCO Shop</strong><small>Envu, Syngenta, Heranba, Arbuda — at MRP</small></span><ArrowRight size={18} /></Link>
+        <Link to="/shop" className="mobile-shop"><Store size={20} /><span><strong>PCO Shop</strong><small>Envu, Syngenta, Heranba, Arbuda, Kalyani</small></span><ArrowRight size={18} /></Link>
         <button type="button" className="mobile-search" onClick={() => { setMobileOpen(false); setSearchOpen(true); }}><Search size={18} /> Search services, pests, cities</button>
         {[
           { id: 'services', label: 'Services', items: services.map((s) => ({ name: s.name, path: s.path })) },

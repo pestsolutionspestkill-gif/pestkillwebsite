@@ -278,6 +278,8 @@ const SCHEMA = `
 
   ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified INTEGER NOT NULL DEFAULT 0;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_verified INTEGER NOT NULL DEFAULT 0;
+  -- Raised when the password changes, so every older login token stops working.
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version INTEGER NOT NULL DEFAULT 0;
   CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 
   CREATE TABLE IF NOT EXISTS email_otps (
@@ -345,6 +347,37 @@ const SCHEMA = `
   ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_price DOUBLE PRECISION;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_label TEXT;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS offer_ends TEXT;
+  -- Product page content, all entered by staff from the manufacturer's label and leaflet.
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS how_to_use TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS storage_info TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS faqs TEXT;              -- JSON [{ q, a }]
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS target_pests TEXT;      -- comma list, e.g. "termite,ant"
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS dose_per_litre DOUBLE PRECISION;      -- ml or g of product per litre of water (label rate)
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS solution_per_sqm DOUBLE PRECISION;    -- litres of diluted solution per m² (label rate)
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS dose_note TEXT;
+
+  -- Technical datasheets, safety data sheets and labels (PDF), downloadable from the product page.
+  CREATE TABLE IF NOT EXISTS product_documents (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    mime TEXT NOT NULL,
+    data BYTEA NOT NULL,
+    size INTEGER NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT ${NOW},
+    UNIQUE (product_id, kind)
+  );
+
+  -- Licence and GST certificate copies uploaded by PCO buyers for verification.
+  CREATE TABLE IF NOT EXISTS buyer_documents (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    mime TEXT NOT NULL,
+    data BYTEA NOT NULL,
+    size INTEGER NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT ${NOW},
+    PRIMARY KEY (user_id, kind)
+  );
   CREATE UNIQUE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
 
   CREATE TABLE IF NOT EXISTS product_images (
@@ -386,6 +419,11 @@ const SCHEMA = `
   ALTER TABLE order_items ADD COLUMN IF NOT EXISTS pack_size TEXT;
   CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
   CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+  -- Lookups used by "my complaints", stock/delete checks, pack-size variants and "my claims".
+  CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items(product_id);
+  CREATE INDEX IF NOT EXISTS idx_complaints_user ON complaints(user_id);
+  CREATE INDEX IF NOT EXISTS idx_products_brand_name ON products(brand, name);
+  CREATE INDEX IF NOT EXISTS idx_claims_user ON warranty_claims(user_id);
 `;
 
 export const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);

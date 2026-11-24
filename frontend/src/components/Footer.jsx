@@ -41,7 +41,7 @@ const Footer = () => {
 
         <div className="footer-grid">
           <div className="footer-about">
-            <Logo light />
+            <Logo />
             <p className="footer-tagline">{tagline}. Serving homes, hotels, hospitals and industries across Rajasthan, Delhi NCR and Uttar Pradesh.</p>
             <ul className="footer-trust">
               <li><BadgeCheck size={16} /> Licensed pest control operator{licenceNumber ? ` · Lic. ${licenceNumber}` : ''}</li>

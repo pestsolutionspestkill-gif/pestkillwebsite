@@ -44,7 +44,8 @@ const businessConfig = {
     "Envu",
     "Syngenta",
     "Heranba Industries",
-    "Arbuda Agrochemicals"
+    "Arbuda Agrochemicals",
+    "Kalyani"
   ],
   formulations: [
     "WP", "SC", "EC", "SL", "WG", "GR", "DP", "Gel", "Aerosol", "ULV", "Fumigants", "Baits"

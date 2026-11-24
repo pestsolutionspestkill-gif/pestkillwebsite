@@ -53,7 +53,7 @@ export const hasAbuse = (text) => {
   if (words.some((w) => EXACT_N.has(w))) return true;
   // Also catch letters separated by dots, stars, spaces or dashes: "f.u.c.k", "c h u t i y a".
   const joined = n.replace(/[^\p{L}\p{M}]+/gu, '');
-  const spaced = n.split(/[\s._*\-]+/).filter(Boolean);
+  const spaced = n.split(/[\s._*-]+/).filter(Boolean);
   if (spaced.length >= 3 && spaced.every((w) => w.length === 1) && EXACT_N.has(normalize(spaced.join('')))) return true;
   return ANYWHERE_N.some((w) => joined.includes(w));
 };

@@ -2,6 +2,7 @@ import express from 'express';
 import db, { audit, NOW, slugify } from '../db.js';
 import { requirePermission, optionalAuth, can, ah } from '../middleware/rbac.js';
 import { str, intId, ValidationError } from '../utils/validate.js';
+import { readDataUrl } from '../utils/files.js';
 
 const router = express.Router();
 const PACK_STYLES = ['bottle', 'jerrycan', 'gel', 'sachet', 'tub', 'box'];
@@ -10,6 +11,7 @@ const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
 
 const BASE_SQL = `SELECT p.id, p.slug, p.name, p.brand, p.technical, p.formulation, p.category, p.pack_size, p.pack_style,
   p.mrp, p.pco_price, p.offer_price, p.offer_label, p.offer_ends, p.mrp_note, p.mrp_verified, p.usage_info, p.description, p.stock, p.is_active, p.sort, p.updated_at,
+  p.how_to_use, p.storage_info, p.faqs, p.target_pests, p.dose_per_litre, p.solution_per_sqm, p.dose_note,
   pi.updated_at AS image_updated
   FROM products p LEFT JOIN product_images pi ON pi.product_id = p.id`;
 
@@ -23,8 +25,28 @@ export const bestPrice = (p, { pco }) => {
   return prices.length ? Math.min(...prices) : null;
 };
 
+/* ---------- Pests a product is used against ----------
+   Staff can set target_pests exactly; otherwise it is read from the name, usage and description. */
+export const PESTS = {
+  termite: { label: 'Termites', re: /termit|deemak|dimak|wood ?borer/i },
+  cockroach: { label: 'Cockroaches', re: /cockroach|roach/i },
+  mosquito: { label: 'Mosquitoes', re: /mosquito|larv|dengue|malaria/i },
+  rodent: { label: 'Rats & mice', re: /\brodent|\brats?\b|\bmice\b|\bmouse|brodifacoum|bromadiolone|zinc phosphide|wax ?block/i },
+  fly: { label: 'Flies', re: /\bfl(y|ies)\b|housefl/i },
+  ant: { label: 'Ants', re: /\bants?\b/i },
+  bedbug: { label: 'Bed bugs', re: /bed ?bugs?/i },
+};
+export const pestsFor = (p) => {
+  const set = String(p.target_pests || '').split(',').map((x) => x.trim()).filter((x) => PESTS[x]);
+  if (set.length) return set;
+  const text = [p.name, p.usage_info, p.description].filter(Boolean).join(' ');
+  return Object.keys(PESTS).filter((k) => PESTS[k].re.test(text));
+};
+const parseFaqs = (v) => { try { const a = JSON.parse(v || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
+
+// Approved and the licence has not expired (an expired licence must be renewed and re-checked).
 export const isApprovedBuyer = async (userId) => Boolean(userId
-  && await db.get("SELECT 1 FROM buyer_profiles WHERE user_id = ? AND status = 'approved'", userId));
+  && await db.get("SELECT 1 FROM buyer_profiles WHERE user_id = ? AND status = 'approved' AND (licence_valid_till IS NULL OR licence_valid_till >= ?)", userId, istToday()));
 
 // Public shape. PCO price only for approved buyers and staff; MRP notes only for staff.
 const shape = (p, { pco, staff }) => ({
@@ -44,8 +66,14 @@ const shape = (p, { pco, staff }) => ({
   stock: staff ? p.stock : (p.stock != null && p.stock <= 10 ? p.stock : null), // show "only N left"
   usage_info: p.usage_info,
   description: p.description,
+  pests: pestsFor(p),
+  how_to_use: p.how_to_use || null,
+  storage_info: p.storage_info || null,
+  faqs: parseFaqs(p.faqs),
+  // Label dose for the calculator; only present when staff have entered it from the label.
+  dose: p.dose_per_litre != null ? { per_litre: p.dose_per_litre, solution_per_sqm: p.solution_per_sqm, note: p.dose_note || null } : null,
   image_url: p.image_updated ? `/api/products/${p.id}/image?v=${encodeURIComponent(p.image_updated)}` : null,
-  ...(staff ? { offer_price: p.offer_price, offer_label: p.offer_label, offer_ends: p.offer_ends, is_active: p.is_active, mrp_note: p.mrp_note, mrp_verified: p.mrp_verified, sort: p.sort } : {}),
+  ...(staff ? { offer_price: p.offer_price, offer_label: p.offer_label, offer_ends: p.offer_ends, is_active: p.is_active, mrp_note: p.mrp_note, mrp_verified: p.mrp_verified, sort: p.sort, target_pests: p.target_pests } : {}),
 });
 
 const viewer = async (req) => {
@@ -53,8 +81,9 @@ const viewer = async (req) => {
   return { staff, pco: staff || await isApprovedBuyer(req.user?.id) };
 };
 
-router.get('/', optionalAuth, ah(async (req, res) => {
-  const v = await viewer(req);
+/** Product listing (also used by the website server to pre-render shop pages). */
+export const listProducts = async (query, v = { staff: false, pco: false }) => {
+  const req = { query };
   const where = [];
   const params = [];
   if (!(v.staff && req.query.all === '1')) where.push('p.is_active = 1');
@@ -62,7 +91,7 @@ router.get('/', optionalAuth, ah(async (req, res) => {
   if (req.query.category) { where.push('p.category = ?'); params.push(String(req.query.category).slice(0, 80)); }
   if (req.query.ids) {
     const ids = String(req.query.ids).split(',').map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
-    if (!ids.length) return res.json({ products: [], brands: [], categories: [] });
+    if (!ids.length) return { products: [], brands: [], categories: [], pests: [] };
     where.push(`p.id IN (${ids.map(() => '?').join(', ')})`); params.push(...ids);
   }
   if (req.query.q) {
@@ -71,12 +100,18 @@ router.get('/', optionalAuth, ah(async (req, res) => {
     params.push(q, q, q, q, q);
   }
   const order = { 'price-asc': 'p.mrp ASC NULLS LAST', 'price-desc': 'p.mrp DESC NULLS LAST', name: 'p.name ASC, p.mrp ASC' }[req.query.sort] || 'p.sort ASC, p.id ASC';
-  const rows = await db.all(`${BASE_SQL} ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY ${order} LIMIT 500`, ...params);
+  let rows = await db.all(`${BASE_SQL} ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY ${order} LIMIT 500`, ...params);
+  const pest = PESTS[req.query.pest] ? req.query.pest : null;
+  if (pest) rows = rows.filter((p) => pestsFor(p).includes(pest));
+  const all = await db.all('SELECT name, usage_info, description, target_pests FROM products WHERE is_active = 1');
+  const pests = Object.entries(PESTS).map(([key, x]) => ({ key, label: x.label, n: all.filter((p) => pestsFor(p).includes(key)).length })).filter((x) => x.n);
   const facets = await db.all('SELECT brand, category, COUNT(*)::int n FROM products WHERE is_active = 1 GROUP BY brand, category');
   const count = (key) => Object.entries(facets.reduce((m, f) => ({ ...m, [f[key]]: (m[f[key]] || 0) + f.n }), {}))
     .filter(([k]) => k && k !== 'null').map(([name, n]) => ({ name, n })).sort((a, b) => a.name.localeCompare(b.name));
-  res.json({ products: rows.map((p) => shape(p, v)), brands: count('brand'), categories: count('category') });
-}));
+  return { products: rows.map((p) => shape(p, v)), brands: count('brand'), categories: count('category'), pests };
+};
+
+router.get('/', optionalAuth, ah(async (req, res) => { res.json(await listProducts(req.query, await viewer(req))); }));
 
 router.get('/:id/image', ah(async (req, res) => {
   const img = await db.get('SELECT mime, data FROM product_images WHERE product_id = ?', intId(req.params.id));
@@ -85,16 +120,68 @@ router.get('/:id/image', ah(async (req, res) => {
   res.send(Buffer.from(img.data));
 }));
 
-router.get('/:key', optionalAuth, ah(async (req, res) => {
-  const v = await viewer(req);
-  const key = String(req.params.key);
+/* ---------- Datasheets (TDS), safety data sheets (MSDS) and labels ---------- */
+export const DOC_KINDS = { tds: 'Technical datasheet (TDS)', msds: 'Safety data sheet (MSDS)', label: 'Label & leaflet' };
+const docUrl = (productId, kind) => `/api/products/${productId}/documents/${kind}`;
+const documentsFor = async (id) => (await db.all('SELECT kind, size, uploaded_at FROM product_documents WHERE product_id = ? ORDER BY kind', id))
+  .map((d) => ({ ...d, title: DOC_KINDS[d.kind], url: docUrl(id, d.kind) }));
+
+router.get('/documents', ah(async (_req, res) => {
+  const rows = await db.all(`SELECT d.product_id, d.kind, d.size, d.uploaded_at, p.slug, p.name, p.brand, p.technical, p.pack_size
+    FROM product_documents d JOIN products p ON p.id = d.product_id WHERE p.is_active = 1 ORDER BY p.brand, p.name, d.kind`);
+  res.json(rows.map((r) => ({ ...r, title: DOC_KINDS[r.kind], url: docUrl(r.product_id, r.kind) })));
+}));
+
+router.get('/:id/documents/:kind', ah(async (req, res) => {
+  if (!DOC_KINDS[req.params.kind]) return res.status(404).json({ error: 'Unknown document.' });
+  const d = await db.get(`SELECT d.mime, d.data, p.slug FROM product_documents d JOIN products p ON p.id = d.product_id
+    WHERE d.product_id = ? AND d.kind = ? AND p.is_active = 1`, intId(req.params.id), req.params.kind);
+  if (!d) return res.status(404).json({ error: 'Document not found.' });
+  res.set({ 'Content-Type': d.mime, 'Content-Disposition': `inline; filename="${d.slug}-${req.params.kind}.pdf"`, 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
+  res.send(Buffer.from(d.data));
+}));
+
+router.put('/:id/documents/:kind', requirePermission('products.edit'), ah(async (req, res) => {
+  const id = intId(req.params.id);
+  if (!DOC_KINDS[req.params.kind]) throw new ValidationError('Choose TDS, MSDS or label.');
+  if (!await db.get('SELECT 1 FROM products WHERE id = ?', id)) return res.status(404).json({ error: 'Product not found.' });
+  const { mime, data } = readDataUrl(req.body?.dataUrl, { types: ['application/pdf'], maxBytes: 5 * 1024 * 1024, label: DOC_KINDS[req.params.kind] });
+  await db.run(`INSERT INTO product_documents (product_id, kind, mime, data, size, uploaded_at) VALUES (?, ?, ?, ?, ?, ${NOW})
+    ON CONFLICT (product_id, kind) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data, size = EXCLUDED.size, uploaded_at = EXCLUDED.uploaded_at`,
+  id, req.params.kind, mime, data, data.length);
+  audit(req, 'product.document', 'product', id, { kind: req.params.kind, bytes: data.length });
+  res.json(await documentsFor(id));
+}));
+
+router.delete('/:id/documents/:kind', requirePermission('products.edit'), ah(async (req, res) => {
+  const id = intId(req.params.id);
+  await db.run('DELETE FROM product_documents WHERE product_id = ? AND kind = ?', id, String(req.params.kind));
+  audit(req, 'product.document_removed', 'product', id, { kind: req.params.kind });
+  res.json(await documentsFor(id));
+}));
+
+/** One product with its pack sizes, equivalents and documents, or null. */
+export const productDetail = async (key, v = { staff: false, pco: false }) => {
+  key = String(key);
   const p = /^\d+$/.test(key)
     ? await db.get(`${BASE_SQL} WHERE p.id = ?`, Number(key))
     : await db.get(`${BASE_SQL} WHERE p.slug = ?`, key.slice(0, 100));
-  if (!p || (!p.is_active && !v.staff)) return res.status(404).json({ error: 'Product not found.' });
+  if (!p || (!p.is_active && !v.staff)) return null;
   // Other pack sizes of the same product.
   const variants = await db.all(`${BASE_SQL} WHERE p.brand = ? AND p.name = ? AND p.is_active = 1 ORDER BY p.mrp ASC NULLS LAST, p.id`, p.brand, p.name);
-  res.json({ ...shape(p, v), variants: variants.map((x) => ({ id: x.id, slug: x.slug, pack_size: x.pack_size, mrp: x.mrp })) });
+  // Alternatives with the same active ingredient from other products (one pack per product).
+  const equivalents = p.technical
+    ? await db.all(`SELECT DISTINCT ON (p.brand, p.name) p.id, p.slug, p.name, p.brand, p.pack_size, p.mrp, p.technical
+        FROM products p WHERE p.is_active = 1 AND lower(p.technical) = lower(?) AND NOT (p.brand = ? AND p.name = ?)
+        ORDER BY p.brand, p.name, p.mrp ASC NULLS LAST LIMIT 4`, p.technical, p.brand, p.name)
+    : [];
+  return { ...shape(p, v), variants: variants.map((x) => ({ id: x.id, slug: x.slug, pack_size: x.pack_size, mrp: x.mrp })), equivalents, documents: await documentsFor(p.id) };
+};
+
+router.get('/:key', optionalAuth, ah(async (req, res) => {
+  const p = await productDetail(req.params.key, await viewer(req));
+  if (!p) return res.status(404).json({ error: 'Product not found.' });
+  res.json(p);
 }));
 
 const money = (v, field) => {
@@ -140,6 +227,28 @@ const applyChanges = async (t, req, id, body) => {
   return changes;
 };
 
+const positive = (v, field, max) => {
+  if (v === null || v === '') return null;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0 || n > max) throw new ValidationError(`${field} must be a number between 0 and ${max}.`);
+  return n;
+};
+const readPests = (v) => {
+  const list = (Array.isArray(v) ? v : String(v || '').split(',')).map((x) => String(x).trim()).filter(Boolean);
+  const bad = list.find((x) => !PESTS[x]);
+  if (bad) throw new ValidationError(`Unknown pest "${bad}".`);
+  return list.length ? [...new Set(list)].join(',') : null;
+};
+const readFaqs = (v) => {
+  if (v === null || v === '') return null;
+  if (!Array.isArray(v) || v.length > 12) throw new ValidationError('Add at most 12 questions.');
+  const faqs = v.filter((x) => x && (x.q || x.a)).map((x, i) => ({
+    q: str(x.q, { field: `Question ${i + 1}`, min: 5, max: 200, required: true }),
+    a: str(x.a, { field: `Answer ${i + 1}`, min: 2, max: 1000, required: true }),
+  }));
+  return faqs.length ? JSON.stringify(faqs) : null;
+};
+
 const readFields = (b, { partial }) => {
   const f = {
     name: b.name !== undefined || !partial ? str(b.name, { field: 'Name', min: 2, max: 150, required: true }) : undefined,
@@ -158,6 +267,13 @@ const readFields = (b, { partial }) => {
     mrp_verified: b.mrpVerified !== undefined ? (b.mrpVerified ? 1 : 0) : undefined,
     usage_info: b.usage !== undefined ? str(b.usage, { field: 'Usage', max: 1000 }) : undefined,
     description: b.description !== undefined ? str(b.description, { field: 'Description', max: 4000 }) : undefined,
+    how_to_use: b.howToUse !== undefined ? str(b.howToUse, { field: 'How to use', max: 4000 }) : undefined,
+    storage_info: b.storageInfo !== undefined ? str(b.storageInfo, { field: 'Storage', max: 1500 }) : undefined,
+    faqs: b.faqs !== undefined ? readFaqs(b.faqs) : undefined,
+    target_pests: b.targetPests !== undefined ? readPests(b.targetPests) : undefined,
+    dose_per_litre: b.dosePerLitre !== undefined ? positive(b.dosePerLitre, 'Dose per litre', 1000) : undefined,
+    solution_per_sqm: b.solutionPerSqm !== undefined ? positive(b.solutionPerSqm, 'Solution per m²', 50) : undefined,
+    dose_note: b.doseNote !== undefined ? str(b.doseNote, { field: 'Dose note', max: 300 }) : undefined,
     is_active: b.isActive !== undefined ? (b.isActive ? 1 : 0) : undefined,
     sort: b.sort !== undefined ? Math.max(0, Math.min(100000, parseInt(b.sort, 10) || 0)) : undefined,
   };
@@ -203,12 +319,10 @@ router.put('/:id', requirePermission('products.edit', 'inventory.manage'), ah(as
 router.put('/:id/image', requirePermission('products.edit'), ah(async (req, res) => {
   const id = intId(req.params.id);
   if (!await db.get('SELECT 1 FROM products WHERE id = ?', id)) return res.status(404).json({ error: 'Product not found.' });
-  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(req.body?.dataUrl || ''));
-  if (!m || !IMAGE_TYPES.includes(m[1])) throw new ValidationError('Upload a JPG, PNG or WebP image.');
-  const data = Buffer.from(m[2], 'base64');
-  if (data.length > MAX_IMAGE_BYTES) throw new ValidationError('Image is too large (max 1.5 MB).');
+  // Type, size and real file content (magic bytes) are all checked.
+  const { mime, data } = readDataUrl(req.body?.dataUrl, { types: IMAGE_TYPES, maxBytes: MAX_IMAGE_BYTES, label: 'photo' });
   await db.run(`INSERT INTO product_images (product_id, mime, data, updated_at) VALUES (?, ?, ?, ${NOW})
-    ON CONFLICT (product_id) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data, updated_at = EXCLUDED.updated_at`, id, m[1], data);
+    ON CONFLICT (product_id) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data, updated_at = EXCLUDED.updated_at`, id, mime, data);
   audit(req, 'product.image', 'product', id, { bytes: data.length });
   res.json(shape(await db.get(`${BASE_SQL} WHERE p.id = ?`, id), { staff: true, pco: true }));
 }));

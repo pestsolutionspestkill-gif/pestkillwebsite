@@ -21,3 +21,28 @@ export const quoteLink = (p) => {
 };
 
 export const PAYMENT_LABELS = { cod: 'Cash on delivery', upi: 'UPI on confirmation', bank: 'Bank transfer (NEFT/IMPS)' };
+
+// Pests used for shop filters and product tags (same keys as the server).
+export const PEST_OPTIONS = [
+  { key: 'termite', label: 'Termites', hi: 'दीमक' },
+  { key: 'cockroach', label: 'Cockroaches', hi: 'कॉकरोच' },
+  { key: 'mosquito', label: 'Mosquitoes', hi: 'मच्छर' },
+  { key: 'rodent', label: 'Rats & mice', hi: 'चूहे' },
+  { key: 'fly', label: 'Flies', hi: 'मक्खी' },
+  { key: 'ant', label: 'Ants', hi: 'चींटी' },
+  { key: 'bedbug', label: 'Bed bugs', hi: 'खटमल' },
+];
+export const pestLabel = (key) => PEST_OPTIONS.find((p) => p.key === key)?.label || key;
+
+/**
+ * Dose calculator, using the label rate entered by staff:
+ * area (sq.ft.) → diluted solution (litres) → product needed (ml or g).
+ */
+export const SQFT_PER_SQM = 10.7639;
+export const calcDose = ({ areaSqft, perLitre, solutionPerSqm }) => {
+  const area = Number(areaSqft);
+  if (!(area > 0) || !(perLitre > 0) || !(solutionPerSqm > 0)) return null;
+  const sqm = area / SQFT_PER_SQM;
+  const solution = sqm * solutionPerSqm;
+  return { sqm, solution, product: solution * perLitre };
+};

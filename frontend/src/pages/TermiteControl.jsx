@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Phone, MapPin, Layers, TreeDeciduous, Bug, AlertTriangle } from 'lucide-react';
+import { Phone, Layers, TreeDeciduous, Bug, AlertTriangle } from 'lucide-react';
 import { RATES } from '../data/catalog';
 import './ServiceDetail.css';
 import CityLinks from '../components/CityLinks';

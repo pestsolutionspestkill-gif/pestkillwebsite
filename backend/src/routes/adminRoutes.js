@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import db, { PERMISSIONS, GRANTABLE, DEFAULT_MANAGER_PERMISSIONS, ROLES, permissionsFor, audit, NOW, IST_DATE } from '../db.js';
 import { ownerOnly, staffOnly, requirePermission, can, ah } from '../middleware/rbac.js';
-import { str, email, password, phone, oneOf, intId, ValidationError } from '../utils/validate.js';
+import { email, password, phone, oneOf, intId, ValidationError } from '../utils/validate.js';
 import { checkPersonName } from '../utils/antiAbuse.js';
 import { LEAD_STATUSES } from './leadRoutes.js';
 

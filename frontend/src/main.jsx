@@ -4,10 +4,12 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { PreloadProvider, readEmbeddedData } from './lib/preload';
 import './styles/index.css';
 
 const app = (
   <React.StrictMode>
+    <PreloadProvider data={readEmbeddedData()}>
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
@@ -15,6 +17,7 @@ const app = (
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>
+    </PreloadProvider>
   </React.StrictMode>
 );
 

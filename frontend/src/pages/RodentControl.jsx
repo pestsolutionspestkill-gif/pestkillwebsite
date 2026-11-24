@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Phone, MapPin, AlertCircle, Scissors, Volume2, AlertTriangle } from 'lucide-react';
+import { Phone, AlertCircle, Scissors, Volume2, AlertTriangle } from 'lucide-react';
 import RateCards from '../components/RateCards';
 import './ServiceDetail.css';
 import CityLinks from '../components/CityLinks';

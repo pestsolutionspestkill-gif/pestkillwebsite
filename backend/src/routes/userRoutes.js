@@ -10,6 +10,8 @@ import { mailConfigured, isProduction, sendMail, otpEmail } from '../utils/maile
 const router = express.Router();
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
 const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 8 });
+// Compared against when the email is unknown, so a login takes the same time either way.
+const DUMMY_HASH = bcrypt.hashSync('pestkill-timing-equaliser', 12);
 
 // Email OTP is on unless explicitly switched off (EMAIL_OTP=off, e.g. for automated tests).
 const otpRequired = () => String(process.env.EMAIL_OTP || 'on').toLowerCase() !== 'off';
@@ -78,7 +80,7 @@ router.post('/register', authLimiter, ah(async (req, res) => {
 router.post('/login', authLimiter, ah(async (req, res) => {
   const mail = email(req.body.email, { required: true });
   const user = await db.get('SELECT * FROM users WHERE email = ?', mail);
-  const ok = user && await bcrypt.compare(String(req.body.password || ''), user.password);
+  const ok = await bcrypt.compare(String(req.body.password || ''), user?.password || DUMMY_HASH) && Boolean(user);
   if (!ok) return res.status(401).json({ error: 'Incorrect email or password.' });
   if (!user.is_active) return res.status(403).json({ error: 'This account has been suspended. Please contact support.' });
   await db.run(`UPDATE users SET last_login = ${NOW} WHERE id = ?`, user.id);
@@ -108,9 +110,45 @@ router.put('/password', auth, authLimiter, ah(async (req, res) => {
     return res.status(400).json({ error: 'Your current password is incorrect.' });
   }
   const hash = await bcrypt.hash(password(req.body.newPassword), 12);
-  await db.run('UPDATE users SET password = ? WHERE id = ?', hash, user.id);
+  // Raising token_version signs out every other device; this device gets a fresh token.
+  const updated = await db.get('UPDATE users SET password = ?, token_version = token_version + 1 WHERE id = ? RETURNING *', hash, user.id);
   audit(req, 'auth.password_changed', 'user', user.id);
-  res.json({ message: 'Password updated.' });
+  res.json({ message: 'Password updated. Other devices have been signed out.', token: signToken(updated) });
+}));
+
+/* ---------- Forgot password (email code) ---------- */
+// Always answers the same way, so it cannot be used to find out which emails have accounts.
+router.post('/password/forgot', otpLimiter, ah(async (req, res) => {
+  const mail = email(req.body.email, { required: true });
+  const generic = { sent: true, message: 'If an account exists for this email, a 6-digit code has been sent to it.' };
+  const user = await db.get('SELECT id, name, is_active FROM users WHERE email = ?', mail);
+  if (!user || !user.is_active) return res.json(generic);
+  if (!mailConfigured() && isProduction()) {
+    console.error('Password reset email cannot be sent: set GMAIL_USER and GMAIL_APP_PASSWORD (or SMTP_*).');
+    return res.status(503).json({ error: 'Password reset by email is not available right now. Please contact us on WhatsApp.' });
+  }
+  let code;
+  try { code = await issueOtp(mail, 'reset'); } catch (e) {
+    if (e.status === 429) return res.json(generic); // resend limits apply silently
+    throw e;
+  }
+  if (mailConfigured()) {
+    try { await sendMail({ to: mail, ...otpEmail(code, user.name, 'reset') }); } catch (e) { console.error('Reset email failed:', e.message); }
+    return res.json(generic);
+  }
+  console.log(`[dev] Password reset code for ${mail}: ${code}`);
+  res.json({ ...generic, devCode: code });
+}));
+
+router.post('/password/reset', authLimiter, ah(async (req, res) => {
+  const mail = email(req.body.email, { required: true });
+  const newPassword = password(req.body.newPassword); // checked first, so a weak password does not use up an attempt
+  await verifyOtp(mail, 'reset', req.body.otp);
+  const hash = await bcrypt.hash(newPassword, 12);
+  const user = await db.get('UPDATE users SET password = ?, token_version = token_version + 1, email_verified = 1 WHERE email = ? AND is_active = 1 RETURNING *', hash, mail);
+  if (!user) return res.status(400).json({ error: 'This account cannot be reset. Please contact us.' });
+  audit({ ip: req.ip, user }, 'auth.password_reset', 'user', user.id);
+  res.json({ message: 'Password reset. You are now logged in.', user: await publicUser(user), token: signToken(user) });
 }));
 
 export default router;

@@ -16,7 +16,7 @@ const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, all) =>
 const ask = (q) => new Promise((resolve) => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   // Strip a BOM and the trailing \r that Windows terminals can add to input.
-  rl.question(q, (a) => { rl.close(); resolve(a.replace(/^﻿/, '').replace(/\r$/, '')); });
+  rl.question(q, (a) => { rl.close(); resolve(a.replace(/^\uFEFF/, '').replace(/\r$/, '')); });
 });
 
 try {

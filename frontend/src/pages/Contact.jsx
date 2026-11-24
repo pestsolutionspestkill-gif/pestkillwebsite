@@ -98,24 +98,24 @@ const Contact = () => {
                 <form onSubmit={handleSubmit} className="contact-form">
                   <h3>Send us a Message</h3>
                   <div className="form-group">
-                    <label className="form-label">Name *</label>
-                    <input type="text" name="name" className="form-input" value={formData.name} onChange={handleChange} required />
+                    <label className="form-label" htmlFor="c-name">Name *</label>
+                    <input type="text" name="name" id="c-name" className="form-input" value={formData.name} onChange={handleChange} required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Phone *</label>
-                    <input type="tel" name="phone" className="form-input" value={formData.phone} onChange={handleChange} required />
+                    <label className="form-label" htmlFor="c-phone">Phone *</label>
+                    <input type="tel" name="phone" id="c-phone" className="form-input" value={formData.phone} onChange={handleChange} required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Email</label>
-                    <input type="email" name="email" className="form-input" value={formData.email} onChange={handleChange} />
+                    <label className="form-label" htmlFor="c-email">Email</label>
+                    <input type="email" name="email" id="c-email" className="form-input" value={formData.email} onChange={handleChange} />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Subject *</label>
-                    <input type="text" name="subject" className="form-input" value={formData.subject} onChange={handleChange} required />
+                    <label className="form-label" htmlFor="c-subject">Subject *</label>
+                    <input type="text" name="subject" id="c-subject" className="form-input" value={formData.subject} onChange={handleChange} required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Message *</label>
-                    <textarea name="message" className="form-input" rows="5" value={formData.message} onChange={handleChange} required />
+                    <label className="form-label" htmlFor="c-message">Message *</label>
+                    <textarea name="message" id="c-message" className="form-input" rows="5" value={formData.message} onChange={handleChange} required />
                   </div>
                   {formError && <p className="form-error" role="alert">{formError}</p>}
                   <button type="submit" className="btn btn-primary" disabled={sending}><Send size={16} />{sending ? 'Sending…' : 'Send message'}</button>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Minus, Plus, Trash2, ShoppingBag, CheckCircle2, ArrowRight, Lock } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, CheckCircle2, ArrowRight, Lock, MessageCircle } from 'lucide-react';
+import businessConfig from '../data/businessConfig';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -83,7 +84,7 @@ const Cart = () => {
           <div className="cart-empty">
             <ShoppingBag size={44} />
             <h2>Your cart is empty</h2>
-            <p>Browse genuine professional products from Envu, Syngenta, Heranba and Arbuda.</p>
+            <p>Browse genuine professional products from Envu, Syngenta, Heranba, Arbuda and Kalyani.</p>
             <Link to="/shop" className="btn btn-primary">Go to shop <ArrowRight size={16} /></Link>
           </div>
         )}
@@ -151,6 +152,14 @@ const Cart = () => {
                 </form>
               )}
               {!approved && error && <p className="form-error">{error}</p>}
+              {rows.length > 0 && (
+                <a className="cart-wa" target="_blank" rel="noopener noreferrer"
+                  href={`https://wa.me/${businessConfig.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                    ['Hi PestKill, please send a quotation (proforma) for:', ...rows.map((r) => `• ${r.p.brand} ${r.p.name} ${r.p.pack_size} × ${r.qty}`), user?.name ? `Name: ${user.name}` : ''].filter(Boolean).join('\n'),
+                  )}`}>
+                  <MessageCircle size={16} /> Get a quotation on WhatsApp instead
+                </a>
+              )}
             </aside>
           </div>
         )}

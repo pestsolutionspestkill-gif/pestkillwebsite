@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
-import { Search, Plus, X, Upload, Trash2, AlertTriangle, CheckCircle, Phone, MapPin, BadgeCheck, Pencil } from 'lucide-react';
-import { api } from '../../lib/api';
+import { useEffect, useMemo, useState } from 'react';
+import { Search, Plus, X, Upload, Trash2, AlertTriangle, CheckCircle, Phone, MapPin, BadgeCheck, Pencil, FileText, Eye } from 'lucide-react';
+import { api, fileToDataUrl, openPrivateFile } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import PackShot from '../../components/PackShot';
-import { rupees, PAYMENT_LABELS, fmtEnds } from '../../lib/shop';
+import { rupees, PAYMENT_LABELS, fmtEnds, PEST_OPTIONS } from '../../lib/shop';
 import { useLoad, State, Badge, fmtDate, fmtDay, label } from './shared';
 
 const PACK_STYLES = ['bottle', 'jerrycan', 'gel', 'sachet', 'tub', 'box'];
@@ -37,7 +37,50 @@ const toForm = (p) => ({
   offerPrice: p?.offer_price ?? '', offerLabel: p?.offer_label || '', offerEnds: p?.offer_ends || '',
   mrpVerified: Boolean(p?.mrp_verified), stock: p?.stock ?? '', usage: p?.usage_info || '', description: p?.description || '',
   sort: p?.sort ?? 0, isActive: p ? Boolean(p.is_active) : true,
+  howToUse: p?.how_to_use || '', storageInfo: p?.storage_info || '', faqs: p?.faqs?.length ? p.faqs : [],
+  targetPests: p?.target_pests ? p.target_pests.split(',') : [],
+  dosePerLitre: p?.dose?.per_litre ?? '', solutionPerSqm: p?.dose?.solution_per_sqm ?? '', doseNote: p?.dose?.note || '',
 });
+
+const DOC_LABELS = { tds: 'Technical datasheet (TDS)', msds: 'Safety data sheet (MSDS)', label: 'Label & leaflet' };
+
+// PDF datasheets shown as downloads on the product page.
+const ProductDocs = ({ product, notify }) => {
+  const [docs, setDocs] = useState(null);
+  const [busy, setBusy] = useState('');
+  useEffect(() => { api(`/products/${product.id}`).then((d) => setDocs(d.documents || [])).catch(() => setDocs([])); }, [product.id]);
+  const upload = async (kind, file) => {
+    if (!file) return;
+    setBusy(kind);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setDocs(await api(`/products/${product.id}/documents/${kind}`, { method: 'PUT', body: { dataUrl } }));
+      notify(`${DOC_LABELS[kind]} uploaded`);
+    } catch (err) { notify(err.message, 'error'); }
+    setBusy('');
+  };
+  const remove = async (kind) => {
+    try { setDocs(await api(`/products/${product.id}/documents/${kind}`, { method: 'DELETE' })); notify('Removed'); } catch (err) { notify(err.message, 'error'); }
+  };
+  return (
+    <div className="doc-rows">
+      {Object.entries(DOC_LABELS).map(([kind, title]) => {
+        const d = docs?.find((x) => x.kind === kind);
+        return (
+          <div key={kind} className="doc-row">
+            <FileText size={16} />
+            <span>{title}{d ? <small> · {Math.max(1, Math.round(d.size / 1024))} KB</small> : <small> · not uploaded</small>}</span>
+            {d && <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-btn">View</a>}
+            <label className="text-btn">{busy === kind ? 'Uploading…' : d ? 'Replace' : 'Upload PDF'}
+              <input type="file" accept="application/pdf" hidden onChange={(e) => { upload(kind, e.target.files[0]); e.target.value = ''; }} />
+            </label>
+            {d && <button type="button" className="text-btn danger" onClick={() => remove(kind)}>Remove</button>}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 const ProductDrawer = ({ product, brands, categories, onClose, onSaved, onDeleted, notify }) => {
   const { can } = useAuth();
@@ -55,7 +98,8 @@ const ProductDrawer = ({ product, brands, categories, onClose, onSaved, onDelete
     try {
       const orNull = (v) => (v === '' ? null : v);
       const body = fullEdit
-        ? { ...form, mrp: orNull(form.mrp), pcoPrice: orNull(form.pcoPrice), offerPrice: orNull(form.offerPrice), offerLabel: orNull(form.offerLabel), offerEnds: orNull(form.offerEnds), stock: orNull(form.stock) }
+        ? { ...form, mrp: orNull(form.mrp), pcoPrice: orNull(form.pcoPrice), offerPrice: orNull(form.offerPrice), offerLabel: orNull(form.offerLabel), offerEnds: orNull(form.offerEnds), stock: orNull(form.stock),
+          dosePerLitre: orNull(form.dosePerLitre), solutionPerSqm: orNull(form.solutionPerSqm), faqs: form.faqs.filter((x) => x.q.trim() || x.a.trim()) }
         : { stock: orNull(form.stock) };
       const saved = p ? await api(`/products/${p.id}`, { method: 'PUT', body }) : await api('/products', { method: 'POST', body });
       notify(p ? 'Product saved' : 'Product added');
@@ -158,7 +202,43 @@ const ProductDrawer = ({ product, brands, categories, onClose, onSaved, onDelete
               <label>Used for<input value={form.usage} onChange={set('usage')} placeholder="Target pests and use" /></label>
               <label>Description<textarea rows="3" value={form.description} onChange={set('description')} /></label>
               <label className="check-row"><input type="checkbox" checked={form.isActive} onChange={set('isActive')} /> Show in shop</label>
+
+              <h4>Pests <small className="adm-muted">(for "Shop by pest"; leave all unticked to detect from the text)</small></h4>
+              <div className="pest-checks">
+                {PEST_OPTIONS.map((x) => (
+                  <label key={x.key} className="check-row"><input type="checkbox" checked={form.targetPests.includes(x.key)}
+                    onChange={(e) => setForm({ ...form, targetPests: e.target.checked ? [...form.targetPests, x.key] : form.targetPests.filter((k) => k !== x.key) })} /> {x.label}</label>
+                ))}
+              </div>
+
+              <h4>Product page</h4>
+              <label>How to use<textarea rows="4" value={form.howToUse} onChange={set('howToUse')} placeholder="Dilution, method and re-treatment interval, as on the label. One step per line." /></label>
+              <label>Storage &amp; shelf life<textarea rows="2" value={form.storageInfo} onChange={set('storageInfo')} placeholder="As on the label" /></label>
+
+              <h4>Dose calculator <small className="adm-muted">(enter only the rate printed on the label)</small></h4>
+              <div className="inv-grid three">
+                <label>Product per litre of water (ml or g)<input type="number" min="0" step="any" value={form.dosePerLitre} onChange={set('dosePerLitre')} placeholder="e.g. 2.5" /></label>
+                <label>Diluted solution per m² (litres)<input type="number" min="0" step="any" value={form.solutionPerSqm} onChange={set('solutionPerSqm')} placeholder="e.g. 5" /></label>
+                <label>Note<input value={form.doseNote} onChange={set('doseNote')} maxLength={300} placeholder="e.g. Post-construction, per label" /></label>
+              </div>
+
+              <h4>Questions &amp; answers</h4>
+              {form.faqs.map((x, i) => (
+                <div key={i} className="faq-edit">
+                  <input value={x.q} placeholder="Question" onChange={(e) => setForm({ ...form, faqs: form.faqs.map((y, j) => (j === i ? { ...y, q: e.target.value } : y)) })} />
+                  <textarea rows="2" value={x.a} placeholder="Answer" onChange={(e) => setForm({ ...form, faqs: form.faqs.map((y, j) => (j === i ? { ...y, a: e.target.value } : y)) })} />
+                  <button type="button" className="text-btn danger" onClick={() => setForm({ ...form, faqs: form.faqs.filter((_, j) => j !== i) })}>Remove</button>
+                </div>
+              ))}
+              {form.faqs.length < 12 && <button type="button" className="text-btn" onClick={() => setForm({ ...form, faqs: [...form.faqs, { q: '', a: '' }] })}><Plus size={14} /> Add question</button>}
             </fieldset>
+
+            {p && can('products.edit') && (
+              <>
+                <h4>Downloads <small className="adm-muted">(PDF, max 5 MB; shown on the product page and in the library)</small></h4>
+                <ProductDocs product={p} notify={notify} />
+              </>
+            )}
 
             <div className="drawer-foot">
               {p && can('products.delete') && <button type="button" className="text-btn danger" onClick={del}><Trash2 size={14} /> Delete</button>}
@@ -297,7 +377,7 @@ export const ShopProducts = ({ notify }) => {
   const [view, setView] = useState('');
   const [bulk, setBulk] = useState(false);
   const [open, setOpen] = useState(undefined); // undefined = closed, null = new
-  const products = data?.products || [];
+  const products = useMemo(() => data?.products || [], [data]);
   const brands = useMemo(() => [...new Set(products.map((p) => p.brand))].sort(), [products]);
   const categories = useMemo(() => [...new Set(products.map((p) => p.category))].sort(), [products]);
   const toCheck = products.filter((p) => p.mrp != null && !p.mrp_verified).length;
@@ -479,7 +559,15 @@ export const Buyers = ({ notify }) => {
                 <Badge value={b.status} />
               </header>
               <dl className="detail-list">
-                <div><dt>Licence no.</dt><dd><strong>{b.licence_no}</strong>{b.licence_valid_till ? ` · valid till ${fmtDay(b.licence_valid_till)}` : ''}</dd></div>
+                <div><dt>Licence no.</dt><dd><strong>{b.licence_no}</strong>{b.licence_valid_till ? ` · valid till ${fmtDay(b.licence_valid_till)}` : ''}{b.licence_expired && <span className="tag-danger"> Expired</span>}</dd></div>
+                <div><dt>Documents</dt><dd className="doc-links">
+                  {['licence', 'gst'].map((k) => (b.documents || []).includes(k) && (
+                    <button key={k} type="button" className="text-btn" onClick={() => openPrivateFile(`/buyers/${b.user_id}/documents/${k}`).catch((err) => notify(err.message, 'error'))}>
+                      <Eye size={14} /> {k === 'licence' ? 'View licence' : 'View GST certificate'}
+                    </button>
+                  ))}
+                  {!(b.documents || []).includes('licence') && <span className="tag-danger">No licence copy uploaded</span>}
+                </dd></div>
                 {b.gstin && <div><dt>GSTIN</dt><dd>{b.gstin}</dd></div>}
                 <div><dt>Address</dt><dd>{[b.address, b.city, b.state, b.pincode].filter(Boolean).join(', ')}</dd></div>
                 <div><dt>Applied</dt><dd>{fmtDate(b.applied_at)}{b.reviewed_at ? ` · reviewed ${fmtDate(b.reviewed_at)}${b.reviewed_by_name ? ` by ${b.reviewed_by_name}` : ''}` : ''}</dd></div>

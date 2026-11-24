@@ -1,5 +1,5 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { Bug, Zap, Shield, BedDouble, CloudRain, Leaf, Building2, HelpCircle, Sparkles, User, Phone, MessageCircle } from 'lucide-react';
+import { Bug, Zap, Shield, BedDouble, CloudRain, Leaf, Building2, HelpCircle, Sparkles, User } from 'lucide-react';
 import './Blog.css';
 
 const catColors = {

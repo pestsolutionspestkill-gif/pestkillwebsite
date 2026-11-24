@@ -1,0 +1,44 @@
+.px-wrap { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.px-pests { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.88rem; color: var(--muted); }
+.px-pests a { padding: 6px 12px; font-weight: 600; color: var(--emerald-700); background: var(--emerald-50); border-radius: 999px; }
+.px-pests a:hover { background: var(--emerald-100); }
+
+.px-section { background: #fff; border: 1px solid var(--line-soft); border-radius: 18px; }
+.px-section summary, .px-faq summary { display: flex; align-items: center; gap: 10px; padding: 16px 18px; font-weight: 600; cursor: pointer; list-style: none; }
+.px-section summary::-webkit-details-marker, .px-faq summary::-webkit-details-marker { display: none; }
+.px-section summary > svg:first-child { color: var(--emerald-600); }
+.px-chev { margin-left: auto; color: var(--muted); transition: transform 0.25s ease; }
+details[open] > summary .px-chev { transform: rotate(180deg); }
+.px-body { padding: 0 18px 18px; color: var(--ink-soft); }
+.px-body ol { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+
+.px-docs { display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0; }
+.px-docs a { display: flex; align-items: center; gap: 10px; padding: 12px 14px; font-weight: 600; color: var(--ink); background: var(--surface); border-radius: 12px; }
+.px-docs a:hover { color: var(--emerald-600); }
+.px-docs small { margin-left: auto; font-weight: 500; color: var(--muted); }
+
+.dose-calc { display: grid; gap: 14px; }
+.dose-calc label { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+.dose-calc input { padding: 12px 14px; font-size: 1rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.dose-out { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.dose-out > div { display: flex; flex-direction: column; gap: 4px; padding: 14px; background: var(--surface); border-radius: 14px; }
+.dose-out span { font-size: 0.8rem; color: var(--muted); }
+.dose-out strong { font-size: 1.05rem; letter-spacing: -0.02em; color: var(--ink); }
+.dose-out p { grid-column: 1 / -1; color: var(--muted); }
+.dose-note { display: flex; gap: 6px; font-size: 0.82rem; color: var(--muted); }
+.dose-note svg { flex-shrink: 0; margin-top: 3px; }
+
+.px-faq { margin-top: 26px; }
+.px-faq h2 { margin-bottom: 12px; font-size: clamp(1.3rem, 2.4vw, 1.7rem); letter-spacing: -0.03em; }
+.px-faq details { margin-bottom: 8px; background: #fff; border: 1px solid var(--line-soft); border-radius: 16px; }
+.px-faq details p { padding: 0 18px 16px; color: var(--ink-soft); }
+
+@media (max-width: 560px) { .dose-out { grid-template-columns: 1fr; } }
+
+.px-guide { display: flex; flex-direction: column; gap: 12px; line-height: 1.65; }
+.px-guide ul, .px-list { display: flex; flex-direction: column; gap: 6px; padding-left: 20px; }
+.px-guide-pests { display: flex; flex-wrap: wrap; gap: 8px; }
+.px-guide-pests a { display: flex; flex-direction: column; padding: 8px 14px; background: var(--emerald-50); border-radius: 12px; transition: background 0.2s ease; }
+.px-guide-pests a:hover { background: var(--emerald-100); }
+.px-guide-pests strong { font-size: 0.9rem; color: var(--emerald-700); }
+.px-guide-pests span { font-family: 'Noto Sans Devanagari', 'Inter', sans-serif; font-size: 0.8rem; color: var(--muted); }

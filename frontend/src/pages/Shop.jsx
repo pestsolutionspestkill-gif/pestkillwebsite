@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, ShoppingCart, Check, BadgeCheck, ShieldCheck, Truck, ReceiptText, SlidersHorizontal, X, MessageCircle, Clock } from 'lucide-react';
+import { Search, ShoppingCart, Check, BadgeCheck, ShieldCheck, Truck, ReceiptText, SlidersHorizontal, X, MessageCircle, Clock, Calculator, FileText, MapPin } from 'lucide-react';
+import businessConfig from '../data/businessConfig';
+import { PEST_LANDING, BRAND_LANDING } from '../data/shopLanding';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useBuyer } from '../hooks/useBuyer';
 import PackShot from '../components/PackShot';
-import { priceInfo, rupees, quoteLink, fmtEnds } from '../lib/shop';
+import { priceInfo, rupees, quoteLink, fmtEnds, PEST_OPTIONS, pestLabel } from '../lib/shop';
 import './Shop.css';
 
 export const BuyerBanner = () => {
@@ -57,7 +59,7 @@ export const Price = ({ product, large = false }) => {
   );
 };
 
-const ProductCard = ({ p }) => (
+export const ProductCard = ({ p }) => (
   <article className="pcard">
     <Link to={`/shop/${p.slug}`} className="pcard-media" aria-label={`${p.brand} ${p.name} ${p.pack_size}`}>
       <PackShot product={p} />
@@ -81,6 +83,7 @@ const Shop = () => {
   const [params, setParams] = useSearchParams();
   const brand = params.get('brand') || '';
   const category = params.get('category') || '';
+  const pest = params.get('pest') || '';
   const sort = params.get('sort') || '';
   const [q, setQ] = useState(params.get('q') || '');
   const [data, setData] = useState(null);
@@ -95,7 +98,7 @@ const Shop = () => {
 
   useEffect(() => { const t = setTimeout(() => { if ((params.get('q') || '') !== q) set('q', q.trim()); }, 300); return () => clearTimeout(t); }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const query = useMemo(() => new URLSearchParams(Object.entries({ brand, category, sort, q: params.get('q') || '' }).filter(([, v]) => v)).toString(), [brand, category, sort, params]);
+  const query = useMemo(() => new URLSearchParams(Object.entries({ brand, category, pest, sort, q: params.get('q') || '' }).filter(([, v]) => v)).toString(), [brand, category, pest, sort, params]);
   useEffect(() => {
     let live = true;
     setError('');
@@ -103,10 +106,17 @@ const Shop = () => {
     return () => { live = false; };
   }, [query]);
 
-  const activeFilters = [brand && ['brand', brand], category && ['category', category]].filter(Boolean);
+  const activeFilters = [pest && ['pest', pestLabel(pest)], brand && ['brand', brand], category && ['category', category]].filter(Boolean);
 
   const Filters = () => (
     <>
+      {data?.pests?.length > 0 && (
+        <div className="filter-group">
+          <h4>Pest</h4>
+          <button type="button" className={!pest ? 'active' : ''} onClick={() => set('pest', '')}>All pests</button>
+          {data.pests.map((x) => <button type="button" key={x.key} className={pest === x.key ? 'active' : ''} onClick={() => set('pest', x.key)}>{x.label} <span>{x.n}</span></button>)}
+        </div>
+      )}
       <div className="filter-group">
         <h4>Brand</h4>
         <button type="button" className={!brand ? 'active' : ''} onClick={() => set('brand', '')}>All brands</button>
@@ -126,7 +136,7 @@ const Shop = () => {
         <div className="container">
           <span className="eyebrow">PestKill PCO Store</span>
           <h1>Professional chemicals.<br /><span className="text-gradient">Genuine. At MRP or better.</span></h1>
-          <p>Authorised products from Envu, Syngenta, Heranba and Arbuda for licensed pest control operators.</p>
+          <p>Authorised products from Envu, Syngenta, Heranba, Arbuda and Kalyani for licensed pest control operators.</p>
           <div className="shop-trust">
             <span><BadgeCheck size={16} /> Genuine, sealed packs</span>
             <span><ReceiptText size={16} /> Invoice with every order</span>
@@ -137,6 +147,28 @@ const Shop = () => {
 
       <div className="container shop-wrap">
         <BuyerBanner />
+
+        <div className="shop-pests" role="list" aria-label="Shop by pest">
+          {PEST_OPTIONS.map((x) => (
+            <button type="button" role="listitem" key={x.key} className={pest === x.key ? 'active' : ''} onClick={() => set('pest', pest === x.key ? '' : x.key)}>
+              <strong>{x.label}</strong><span lang="hi">{x.hi}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="shop-tools">
+          <Link to="/shop/dose-calculator"><Calculator size={18} /><span><strong>Dose calculator</strong>How much product for your area</span></Link>
+          <Link to="/shop/library"><FileText size={18} /><span><strong>Datasheets &amp; MSDS</strong>Download TDS, MSDS and labels</span></Link>
+          <a href={`https://wa.me/${businessConfig.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hi PestKill, I need a bulk / trade price for: ')}`} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} /><span><strong>Bulk order</strong>Trade price on WhatsApp</span></a>
+          <Link to="/contact"><MapPin size={18} /><span><strong>Visit us in Jaipur</strong>Vidhyadhar Nagar · {businessConfig.workingHours}</span></Link>
+        </div>
+
+        <nav className="shop-pricelists" aria-label="Price lists">
+          <span>Price lists:</span>
+          {Object.entries(PEST_LANDING).map(([k, v]) => <Link key={k} to={`/shop/pest/${k}`}>{v.short}</Link>)}
+          {Object.entries(BRAND_LANDING).map(([k, v]) => <Link key={k} to={`/shop/brand/${k}`}>{v.name}</Link>)}
+        </nav>
+
         <div className="shop-toolbar">
           <label className="shop-search"><Search size={18} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search product, brand or active ingredient (e.g. Fipronil)" /></label>
           <select value={sort} onChange={(e) => set('sort', e.target.value)} aria-label="Sort">

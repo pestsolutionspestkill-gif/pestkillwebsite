@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom';
 import RouteSeo from './seo/RouteSeo';
-import { REDIRECTS } from './seo/meta';
+import Motion from './components/Motion';
+import { REDIRECTS } from './seo/redirects';
 import Navbar from './components/Navbar';
 import SmoothScroll from './components/SmoothScroll';
 import { FounderStrip } from './components/Founder';
@@ -21,6 +22,7 @@ const ServiceDetail = lazy(() => import('./pages/ServiceDetail'));
 const About = lazy(() => import('./pages/About'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Login = lazy(() => import('./pages/Login'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const Register = lazy(() => import('./pages/Register'));
 const Blog = lazy(() => import('./pages/Blog'));
 const BlogDetail = lazy(() => import('./pages/BlogDetail'));
@@ -30,6 +32,9 @@ const BedBugTreatment = lazy(() => import('./pages/BedBugTreatment'));
 const RodentControl = lazy(() => import('./pages/RodentControl'));
 const CityPage = lazy(() => import('./pages/CityPage'));
 const Shop = lazy(() => import('./pages/Shop'));
+const DoseCalculator = lazy(() => import('./pages/ShopTools').then((m) => ({ default: m.DoseCalculator })));
+const DocumentLibrary = lazy(() => import('./pages/ShopTools').then((m) => ({ default: m.DocumentLibrary })));
+const ShopLanding = lazy(() => import('./pages/ShopLanding'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Cart = lazy(() => import('./pages/Cart'));
 const PcoAccount = lazy(() => import('./pages/PcoAccount'));
@@ -59,6 +64,7 @@ function App() {
     <div className="app">
       <SmoothScroll />
       <RouteSeo />
+      {!consoleMode && <Motion />}
       {!consoleMode && <Navbar />}
       <main style={{ minHeight: '100vh', paddingTop: consoleMode ? 0 : 'var(--nav-h)' }}>
         <Suspense fallback={<PageLoading />}>
@@ -79,6 +85,7 @@ function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/dashboard/*" element={<Dashboard />} />
           <Route path="/admin/*" element={<Admin />} />
           <Route path="/blog" element={<Blog />} />
@@ -90,6 +97,10 @@ function App() {
           <Route path="/pest-control/:city" element={<CityPage />} />
           {Object.entries(REDIRECTS).map(([from, to]) => <Route key={from} path={from} element={<Navigate to={to} replace />} />)}
           <Route path="/shop" element={<Shop />} />
+          <Route path="/shop/pest/:key" element={<ShopLanding kind="pest" />} />
+          <Route path="/shop/brand/:key" element={<ShopLanding kind="brand" />} />
+          <Route path="/shop/dose-calculator" element={<DoseCalculator />} />
+          <Route path="/shop/library" element={<DocumentLibrary />} />
           <Route path="/shop/:slug" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/pco-account" element={<PcoAccount />} />
