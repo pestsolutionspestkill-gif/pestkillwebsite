@@ -428,3 +428,62 @@ fieldset.plain { display: contents; border: none; padding: 0; margin: 0; }
 .doc-row label.text-btn { cursor: pointer; }
 .doc-links { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .tag-danger { display: inline-block; padding: 2px 8px; font-size: 0.78rem; font-weight: 600; color: #B42318; background: #FEE4E2; border-radius: 999px; }
+
+/* Technical documents, dosage records, catalogue */
+.doc-manager, .dose-manager { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.doc-row > span { display: flex; flex-direction: column; }
+.doc-row small { color: #6E6E73; }
+.doc-form { display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #F5F5F7; border-radius: 14px; }
+.dose-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 12px 14px; background: #F5F5F7; border-left: 4px solid #F5B400; border-radius: 12px; }
+.dose-row.verified { border-left-color: #0A7A55; }
+.dose-row > div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.dose-row small { color: #6E6E73; }
+.dose-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.verify-box { flex-basis: 100%; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: #fff; border-radius: 12px; }
+.verify-box p { display: flex; gap: 6px; font-size: 0.86rem; color: #7A4B00; }
+.doc-admin-list { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
+.doc-product { margin: 4px 0 4px 2px; font-size: 0.8rem; }
+.cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cat-grid > p { grid-column: 1 / -1; }
+.cat-group { padding: 16px; }
+.cat-group h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.cat-group ul { display: flex; flex-direction: column; gap: 4px; padding: 0; list-style: none; }
+.cat-group li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; }
+.cat-group li:hover { background: #F5F5F7; }
+.cat-group li > span { flex: 1; font-weight: 600; }
+.cat-group li small { color: #6E6E73; }
+.cat-rename { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+.cat-rename input { flex: 1 1 200px; height: 38px; padding: 0 12px; border: 1px solid #D2D2D7; border-radius: 10px; }
+@media (max-width: 760px) { .cat-grid { grid-template-columns: 1fr; } }
+.prod-tech { grid-column: 1 / -1; min-width: 0; padding-top: 6px; border-top: 1px solid #E8E8ED; }
+.prod-tech h4 { margin: 14px 0 10px; }
+
+/* ---------- Registers: licences, standards, reference prices ---------- */
+.reg-intro { display: flex; align-items: center; gap: 6px; flex: 1; margin: 0 0 16px; }
+.lic-admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 18px; }
+.lic-admin, .std-admin { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.lic-admin header, .std-admin header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.lic-admin h3, .std-admin h3 { margin: 0; font-size: 1.02rem; }
+.std-admin header p { margin: 4px 0 0; color: #424245; font-size: .9rem; }
+.lic-admin-no { margin: 4px 0 0; font-family: ui-monospace, Consolas, monospace; font-weight: 700; color: #6E5314; letter-spacing: .02em; }
+.lic-admin-dl { margin: 0; display: grid; gap: 6px; }
+.lic-admin-dl div { display: grid; grid-template-columns: 130px 1fr; gap: 8px; font-size: .88rem; }
+.lic-admin-dl dt { color: #6E6E73; }
+.lic-admin-dl dd { margin: 0; }
+.lic-admin-dl a { display: inline-flex; align-items: center; gap: 4px; color: #075A3E; font-weight: 600; }
+.lic-admin-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.file-btn { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.std-admin-list { display: grid; gap: 14px; }
+.doc-form .check { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
+.ref-table td a { color: #1D1D1F; font-weight: 600; text-decoration: none; display: inline-flex; gap: 4px; align-items: center; }
+.ref-table td a:hover { color: #075A3E; }
+.ref-table em { color: #6E6E73; font-style: normal; font-size: .82rem; }
+.ref-editor { margin-top: 10px; }
+.diff-up { color: #B42318; font-weight: 600; }
+.diff-down { color: #075A3E; font-weight: 600; }
+@media (max-width: 560px) { .lic-admin-dl div { grid-template-columns: 1fr; gap: 0; } }
+.photo-source { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #F5F5F7; font-size: .85rem; }
+.photo-source label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: #6E6E73; }
+.photo-source input { padding: 8px 10px; border: 1px solid #D2D2D7; border-radius: 10px; font: inherit; }
+.photo-source em { color: #B42318; font-style: normal; }
+.photo-source a { color: #075A3E; }

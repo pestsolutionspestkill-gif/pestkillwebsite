@@ -1,12 +1,16 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import businessConfig from '../data/businessConfig';
 import { Phone, MessageCircle, Mail, MapPin, Clock, CheckCircle, Send } from 'lucide-react';
 import { submitLead } from '../lib/api';
 import './Contact.css';
+import Credentials, { LicenceLine } from '../components/Credentials';
 
 const Contact = () => {
   const { phoneNumber, whatsappNumber, email, officeAddress, workingHours } = businessConfig;
-  const [formData, setFormData] = useState({ name: '', phone: '', email: '', subject: '', message: '' });
+  // Links such as the home slider's bee hive and wildlife cards pre-fill the subject (?subject=...).
+  const [params] = useSearchParams();
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '', subject: (params.get('subject') || '').slice(0, 120), message: '' });
   const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -119,6 +123,8 @@ const Contact = () => {
                   </div>
                   {formError && <p className="form-error" role="alert">{formError}</p>}
                   <button type="submit" className="btn btn-primary" disabled={sending}><Send size={16} />{sending ? 'Sending…' : 'Send message'}</button>
+                  <LicenceLine kind="pco" />
+                  <LicenceLine kind="sale" />
                 </form>
               )}
             </div>
@@ -126,6 +132,8 @@ const Contact = () => {
         </div>
       </section>
       
+      <Credentials compact />
+
       {/* Google Map */}
       <section style={{padding: '60px 0', background: '#fafafa'}}>
         <div className="container">

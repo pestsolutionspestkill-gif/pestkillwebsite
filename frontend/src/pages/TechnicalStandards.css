@@ -1,0 +1,26 @@
+.std-hero { padding: calc(var(--nav-h) + 48px) 0 40px; background: linear-gradient(180deg, var(--emerald-50), var(--white)); }
+.std-hero h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 8px 0 12px; letter-spacing: -0.03em; }
+.std-hero p { max-width: 720px; color: var(--ink-soft); font-size: 1.05rem; margin: 0; }
+.std-wrap { max-width: 900px; }
+.std-note { display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; border-radius: var(--radius-md); background: #FFF8E6; border: 1px solid #F1DFA8; color: var(--gold-700); font-size: .92rem; margin: 0 0 24px; }
+.std-note svg { flex: none; margin-top: 2px; }
+.std-note a { color: inherit; font-weight: 600; }
+.std-loading { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+.std-list { display: grid; gap: 18px; }
+.std-card { padding: 22px; border-radius: var(--radius-lg); background: var(--white); border: 1px solid var(--line-soft); box-shadow: var(--shadow-sm); }
+.std-card header { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+.std-ico { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--emerald-50); color: var(--emerald-600); }
+.std-card h2 { font-size: 1.15rem; margin: 0 0 4px; font-family: ui-monospace, 'SF Mono', Consolas, monospace; letter-spacing: .01em; }
+.std-card header p { margin: 0; color: var(--ink-soft); }
+.std-card dl { margin: 0; display: grid; gap: 8px; }
+.std-card dl div { display: grid; grid-template-columns: 110px 1fr; gap: 10px; font-size: .92rem; }
+.std-card dt { color: var(--muted); }
+.std-card dd { margin: 0; color: var(--ink-soft); }
+.std-chip { display: inline-block; padding: 2px 10px; border-radius: var(--radius-full); font-size: .8rem; font-weight: 600; }
+.std-chip.is-ok { background: var(--emerald-100); color: var(--emerald-700); }
+.std-chip.is-info { background: #E7F0FB; color: #1E4E8C; }
+.std-chip.is-warn { background: #FFF1D6; color: var(--gold-700); }
+.std-src { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-weight: 600; color: var(--emerald-600); }
+.std-more { margin-top: 28px; color: var(--ink-soft); }
+.std-more a { color: var(--emerald-600); font-weight: 600; }
+@media (max-width: 560px) { .std-card dl div { grid-template-columns: 1fr; gap: 2px; } }

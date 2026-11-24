@@ -14,6 +14,7 @@ const post = RATES.termitePost;
 import { media, creditLine } from '../data/media';
 import './ServiceDetail.css';
 import './AntiTermitePiping.css';
+import Credentials from '../components/Credentials';
 
 const facts = [
   { icon: Clock, value: '10–15 yrs', label: 'Protection with refills' },
@@ -251,6 +252,8 @@ const AntiTermitePiping = () => {
           <p className="atp-note">Already built? See our <Link to="/termite-control">post-construction termite treatment</Link>.</p>
         </div>
       </section>
+
+      <Credentials only={['pco']} compact title="Licensed pest management service" intro="Treatment is carried out under our pest control licence by trained technicians." />
 
       <section className="cta-section">
         <div className="container">

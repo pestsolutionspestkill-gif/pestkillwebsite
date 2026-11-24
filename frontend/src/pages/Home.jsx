@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { pests, RATES, homeFrom } from '../data/catalog';
 import { FounderSection, founder } from '../components/Founder';
+import PestSlider from '../components/PestSlider';
+import Credentials from '../components/Credentials';
 import OnlyAtPestKill from '../components/OnlyAtPestKill';
 import { submitLead } from '../lib/api';
 import { media, pestMedia, sectorMedia } from '../data/media';
@@ -130,6 +132,8 @@ const Home = () => {
           </figure>
         </div>
       </section>
+
+      <PestSlider />
 
       {/* STATS */}
       <section className="stats-section">
@@ -382,6 +386,8 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      <Credentials />
 
       {/* BRANDS */}
       <section className="brands-strip">

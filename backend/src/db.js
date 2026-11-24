@@ -367,6 +367,104 @@ const SCHEMA = `
     uploaded_at TIMESTAMP DEFAULT ${NOW},
     UNIQUE (product_id, kind)
   );
+  -- Documents v2: several documents per type (e.g. certificates), with metadata and visibility.
+  ALTER TABLE product_documents DROP CONSTRAINT IF EXISTS product_documents_product_id_kind_key;
+  ALTER TABLE product_documents ADD COLUMN IF NOT EXISTS title TEXT;
+  ALTER TABLE product_documents ADD COLUMN IF NOT EXISTS description TEXT;
+  ALTER TABLE product_documents ADD COLUMN IF NOT EXISTS manufacturer TEXT;
+  ALTER TABLE product_documents ADD COLUMN IF NOT EXISTS version TEXT;
+  ALTER TABLE product_documents ADD COLUMN IF NOT EXISTS issue_date TEXT;
+  ALTER TABLE product_documents ADD COLUMN IF NOT EXISTS revision_date TEXT;
+  ALTER TABLE product_documents ADD COLUMN IF NOT EXISTS visibility TEXT NOT NULL DEFAULT 'public';
+  ALTER TABLE product_documents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;
+  ALTER TABLE product_documents ADD COLUMN IF NOT EXISTS uploaded_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+  CREATE INDEX IF NOT EXISTS idx_product_documents_product ON product_documents(product_id);
+
+  -- Label dosage data for the calculator. Only 'verified' records (with a source) produce quantities.
+  CREATE TABLE IF NOT EXISTS dose_records (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    activity TEXT NOT NULL,
+    method TEXT NOT NULL,
+    product_per_litre DOUBLE PRECISION,
+    rate_horizontal DOUBLE PRECISION,
+    rate_vertical DOUBLE PRECISION,
+    rate_running DOUBLE PRECISION,
+    product_per_1000l DOUBLE PRECISION,
+    bait_per_point DOUBLE PRECISION,
+    amount_unit TEXT NOT NULL DEFAULT 'ml',
+    notes TEXT,
+    source_document_id INTEGER REFERENCES product_documents(id) ON DELETE SET NULL,
+    source_note TEXT,
+    status TEXT NOT NULL DEFAULT 'unverified',
+    verified_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    verified_at TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT ${NOW},
+    updated_at TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS idx_dose_records_product ON dose_records(product_id);
+
+  -- Business licences shown on the website. Validity and authority are shown only once verified.
+  CREATE TABLE IF NOT EXISTS licences (
+    id SERIAL PRIMARY KEY,
+    key TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    number TEXT NOT NULL,
+    activity TEXT NOT NULL,
+    issuing_authority TEXT,
+    valid_from TEXT,
+    valid_until TEXT,
+    status TEXT NOT NULL DEFAULT 'unverified',
+    display INTEGER NOT NULL DEFAULT 1,
+    doc_mime TEXT,
+    doc_data BYTEA,
+    doc_size INTEGER,
+    sort INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT ${NOW}
+  );
+
+  -- Technical standards register (e.g. IS 6313), with where each fact was checked.
+  CREATE TABLE IF NOT EXISTS technical_references (
+    id SERIAL PRIMARY KEY,
+    code TEXT NOT NULL,
+    title TEXT NOT NULL,
+    edition TEXT,
+    amendment_status TEXT,
+    scope TEXT,
+    source_url TEXT,
+    source_note TEXT,
+    verification_status TEXT NOT NULL DEFAULT 'not_confirmed',
+    verified_on TEXT,
+    applies_to TEXT,
+    display INTEGER NOT NULL DEFAULT 1,
+    sort INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT ${NOW}
+  );
+  ALTER TABLE dose_records ADD COLUMN IF NOT EXISTS standard_id INTEGER REFERENCES technical_references(id) ON DELETE SET NULL;
+
+  -- Competitor / market reference prices. Kept apart from our own selling prices.
+  CREATE TABLE IF NOT EXISTS reference_prices (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+    source TEXT NOT NULL,
+    source_url TEXT NOT NULL,
+    ref_brand TEXT NOT NULL,
+    ref_name TEXT NOT NULL,
+    ref_pack TEXT,
+    displayed_price DOUBLE PRECISION,
+    displayed_mrp DOUBLE PRECISION,
+    price_status TEXT NOT NULL DEFAULT 'listed',
+    currency TEXT NOT NULL DEFAULT 'INR',
+    checked_on TEXT NOT NULL,
+    match_status TEXT NOT NULL DEFAULT 'review',
+    notes TEXT,
+    updated_at TIMESTAMP DEFAULT ${NOW},
+    UNIQUE (source_url, ref_pack)
+  );
+  CREATE INDEX IF NOT EXISTS idx_reference_prices_product ON reference_prices(product_id);
+
+  CREATE INDEX IF NOT EXISTS idx_dose_records_activity ON dose_records(activity, status);
 
   -- Licence and GST certificate copies uploaded by PCO buyers for verification.
   CREATE TABLE IF NOT EXISTS buyer_documents (
@@ -386,6 +484,10 @@ const SCHEMA = `
     data BYTEA NOT NULL,
     updated_at TIMESTAMP DEFAULT ${NOW}
   );
+  -- Where each product photo came from (genuine pack photo vs. illustration).
+  ALTER TABLE product_images ADD COLUMN IF NOT EXISTS source_url TEXT;
+  ALTER TABLE product_images ADD COLUMN IF NOT EXISTS credit TEXT;
+  ALTER TABLE product_images ADD COLUMN IF NOT EXISTS licence_note TEXT;
 
   CREATE TABLE IF NOT EXISTS buyer_profiles (
     user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -433,6 +535,29 @@ export const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-'
 // - adds new products and their official pack photos,
 // - refreshes products the owner has never edited (updated_at IS NULL),
 // - never touches products, prices or photos the owner changed in the console.
+// Licences, standards and reference prices: new rows only, never overwriting admin edits.
+const seedRegistry = async () => {
+  const { LICENCES, STANDARDS, REFERENCE_PRICES, REFERENCE_CHECKED_ON, REGISTRY_VERSION } = await import('./data/registry.js');
+  for (const l of LICENCES) {
+    await db.run('INSERT INTO licences (key, title, number, activity, sort) VALUES (?, ?, ?, ?, ?) ON CONFLICT (key) DO NOTHING', l.key, l.title, l.number, l.activity, l.sort);
+  }
+  const done = Number((await db.get("SELECT value FROM app_settings WHERE key = 'registry_version'"))?.value || 0);
+  if (done >= REGISTRY_VERSION) return;
+  for (const t of STANDARDS) {
+    if (await db.get('SELECT 1 FROM technical_references WHERE code = ?', t.code)) continue;
+    const keys = Object.keys(t);
+    await db.run(`INSERT INTO technical_references (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`, ...keys.map((k) => t[k]));
+  }
+  for (const p of REFERENCE_PRICES) {
+    const product = p.match ? await db.get('SELECT id FROM products WHERE brand = ? AND name = ? AND pack_size = ?', p.brand, p.match[0], p.match[1]) : null;
+    const status = p.price != null || p.mrp != null ? 'listed' : /enquiry/i.test(p.note || '') ? 'on_enquiry' : 'not_shown';
+    await db.run(`INSERT INTO reference_prices (product_id, source, source_url, ref_brand, ref_name, ref_pack, displayed_price, displayed_mrp, price_status, checked_on, match_status, notes)
+      VALUES (?, 'bharatpest.in', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (source_url, ref_pack) DO NOTHING`,
+    product?.id ?? null, p.url, p.brand, p.name, p.pack, p.price, p.mrp, status, REFERENCE_CHECKED_ON, product ? 'matched' : 'review', p.note || null);
+  }
+  await db.run("INSERT INTO app_settings (key, value) VALUES ('registry_version', ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", String(REGISTRY_VERSION));
+};
+
 const seedProducts = async () => {
   const { PRODUCT_SEED, CATALOG_VERSION, RETIRED_SLUGS } = await import('./data/productSeed.js');
   const done = Number((await db.get("SELECT value FROM app_settings WHERE key = 'catalog_version'"))?.value || 0);
@@ -456,6 +581,8 @@ const seedProducts = async () => {
       const file = path.join(imgDir, `${p.img}.webp`);
       if (fs.existsSync(file)) await db.run(`INSERT INTO product_images (product_id, mime, data, updated_at) VALUES (?, 'image/webp', ?, ${NOW})`, id, fs.readFileSync(file));
     }
+    // Catalogue pack photos are the manufacturers' official product images; record that once.
+    if (p.img) await db.run(`UPDATE product_images SET credit = ? WHERE product_id = ? AND credit IS NULL AND source_url IS NULL`, `${p.brand} official product image`, id);
   }
   for (const slug of RETIRED_SLUGS) await db.run('UPDATE products SET is_active = 0 WHERE slug = ? AND updated_at IS NULL', slug);
   await db.run("INSERT INTO app_settings (key, value) VALUES ('catalog_version', ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", String(CATALOG_VERSION));
@@ -481,6 +608,7 @@ export const initDb = async () => {
   await db.run("UPDATE users SET role = 'owner' WHERE role = 'admin'");
   await db.run("UPDATE users SET role = 'client' WHERE role = 'user' OR role IS NULL");
   await seedProducts();
+  await seedRegistry();
   return db;
 };
 

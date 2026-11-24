@@ -3,6 +3,8 @@ import db, { audit, NOW, slugify } from '../db.js';
 import { requirePermission, optionalAuth, can, ah } from '../middleware/rbac.js';
 import { str, intId, ValidationError } from '../utils/validate.js';
 import { readDataUrl } from '../utils/files.js';
+import { documentsFor } from './documentRoutes.js';
+import { verifiedDosesFor } from './doseRoutes.js';
 
 const router = express.Router();
 const PACK_STYLES = ['bottle', 'jerrycan', 'gel', 'sachet', 'tub', 'box'];
@@ -12,7 +14,7 @@ const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
 const BASE_SQL = `SELECT p.id, p.slug, p.name, p.brand, p.technical, p.formulation, p.category, p.pack_size, p.pack_style,
   p.mrp, p.pco_price, p.offer_price, p.offer_label, p.offer_ends, p.mrp_note, p.mrp_verified, p.usage_info, p.description, p.stock, p.is_active, p.sort, p.updated_at,
   p.how_to_use, p.storage_info, p.faqs, p.target_pests, p.dose_per_litre, p.solution_per_sqm, p.dose_note,
-  pi.updated_at AS image_updated
+  pi.updated_at AS image_updated, pi.source_url AS image_source, pi.credit AS image_credit, pi.licence_note AS image_licence
   FROM products p LEFT JOIN product_images pi ON pi.product_id = p.id`;
 
 // Indian calendar date (YYYY-MM-DD); offers run until the end of their last day in IST.
@@ -73,6 +75,8 @@ const shape = (p, { pco, staff }) => ({
   // Label dose for the calculator; only present when staff have entered it from the label.
   dose: p.dose_per_litre != null ? { per_litre: p.dose_per_litre, solution_per_sqm: p.solution_per_sqm, note: p.dose_note || null } : null,
   image_url: p.image_updated ? `/api/products/${p.id}/image?v=${encodeURIComponent(p.image_updated)}` : null,
+  // Where the photo came from (shown as a credit; empty until staff record it).
+  image_meta: p.image_updated ? { source_url: p.image_source || null, credit: p.image_credit || null, licence: p.image_licence || null } : null,
   ...(staff ? { offer_price: p.offer_price, offer_label: p.offer_label, offer_ends: p.offer_ends, is_active: p.is_active, mrp_note: p.mrp_note, mrp_verified: p.mrp_verified, sort: p.sort, target_pests: p.target_pests } : {}),
 });
 
@@ -89,6 +93,8 @@ export const listProducts = async (query, v = { staff: false, pco: false }) => {
   if (!(v.staff && req.query.all === '1')) where.push('p.is_active = 1');
   if (req.query.brand) { where.push('p.brand = ?'); params.push(String(req.query.brand).slice(0, 60)); }
   if (req.query.category) { where.push('p.category = ?'); params.push(String(req.query.category).slice(0, 80)); }
+  if (req.query.formulation) { where.push('p.formulation = ?'); params.push(String(req.query.formulation).slice(0, 20)); }
+  if (req.query.photo === 'missing') where.push('pi.product_id IS NULL');
   if (req.query.ids) {
     const ids = String(req.query.ids).split(',').map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
     if (!ids.length) return { products: [], brands: [], categories: [], pests: [] };
@@ -105,10 +111,10 @@ export const listProducts = async (query, v = { staff: false, pco: false }) => {
   if (pest) rows = rows.filter((p) => pestsFor(p).includes(pest));
   const all = await db.all('SELECT name, usage_info, description, target_pests FROM products WHERE is_active = 1');
   const pests = Object.entries(PESTS).map(([key, x]) => ({ key, label: x.label, n: all.filter((p) => pestsFor(p).includes(key)).length })).filter((x) => x.n);
-  const facets = await db.all('SELECT brand, category, COUNT(*)::int n FROM products WHERE is_active = 1 GROUP BY brand, category');
+  const facets = await db.all('SELECT brand, category, formulation, COUNT(*)::int n FROM products WHERE is_active = 1 GROUP BY brand, category, formulation');
   const count = (key) => Object.entries(facets.reduce((m, f) => ({ ...m, [f[key]]: (m[f[key]] || 0) + f.n }), {}))
     .filter(([k]) => k && k !== 'null').map(([name, n]) => ({ name, n })).sort((a, b) => a.name.localeCompare(b.name));
-  return { products: rows.map((p) => shape(p, v)), brands: count('brand'), categories: count('category'), pests };
+  return { products: rows.map((p) => shape(p, v)), brands: count('brand'), categories: count('category'), formulations: count('formulation'), pests };
 };
 
 router.get('/', optionalAuth, ah(async (req, res) => { res.json(await listProducts(req.query, await viewer(req))); }));
@@ -120,45 +126,25 @@ router.get('/:id/image', ah(async (req, res) => {
   res.send(Buffer.from(img.data));
 }));
 
-/* ---------- Datasheets (TDS), safety data sheets (MSDS) and labels ---------- */
-export const DOC_KINDS = { tds: 'Technical datasheet (TDS)', msds: 'Safety data sheet (MSDS)', label: 'Label & leaflet' };
-const docUrl = (productId, kind) => `/api/products/${productId}/documents/${kind}`;
-const documentsFor = async (id) => (await db.all('SELECT kind, size, uploaded_at FROM product_documents WHERE product_id = ? ORDER BY kind', id))
-  .map((d) => ({ ...d, title: DOC_KINDS[d.kind], url: docUrl(id, d.kind) }));
-
-router.get('/documents', ah(async (_req, res) => {
-  const rows = await db.all(`SELECT d.product_id, d.kind, d.size, d.uploaded_at, p.slug, p.name, p.brand, p.technical, p.pack_size
-    FROM product_documents d JOIN products p ON p.id = d.product_id WHERE p.is_active = 1 ORDER BY p.brand, p.name, d.kind`);
-  res.json(rows.map((r) => ({ ...r, title: DOC_KINDS[r.kind], url: docUrl(r.product_id, r.kind) })));
+/* ---------- Documents ----------
+   Managed in routes/documentRoutes.js (/api/documents). The old per-type URLs below keep working
+   for links shared earlier: they send the newest public document of that type. */
+router.get('/documents', optionalAuth, ah(async (req, res) => {
+  const rows = await db.all(`SELECT d.id, d.product_id, d.kind, d.title, d.version, d.size, COALESCE(d.updated_at, d.uploaded_at) AS updated_at,
+      p.slug, p.name, p.brand, p.technical, p.pack_size
+    FROM product_documents d JOIN products p ON p.id = d.product_id WHERE p.is_active = 1 AND d.visibility = 'public' ORDER BY p.brand, p.name, d.kind`);
+  res.json(rows.map((r) => ({ ...r, url: `/api/documents/${r.id}/file` })));
 }));
 
 router.get('/:id/documents/:kind', ah(async (req, res) => {
-  if (!DOC_KINDS[req.params.kind]) return res.status(404).json({ error: 'Unknown document.' });
-  const d = await db.get(`SELECT d.mime, d.data, p.slug FROM product_documents d JOIN products p ON p.id = d.product_id
-    WHERE d.product_id = ? AND d.kind = ? AND p.is_active = 1`, intId(req.params.id), req.params.kind);
+  const d = await db.get(`SELECT d.id FROM product_documents d JOIN products p ON p.id = d.product_id
+    WHERE d.product_id = ? AND d.kind = ? AND d.visibility = 'public' AND p.is_active = 1 ORDER BY COALESCE(d.updated_at, d.uploaded_at) DESC LIMIT 1`,
+  intId(req.params.id), String(req.params.kind).slice(0, 20));
   if (!d) return res.status(404).json({ error: 'Document not found.' });
-  res.set({ 'Content-Type': d.mime, 'Content-Disposition': `inline; filename="${d.slug}-${req.params.kind}.pdf"`, 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
-  res.send(Buffer.from(d.data));
+  res.redirect(302, `/api/documents/${d.id}/file`);
 }));
 
-router.put('/:id/documents/:kind', requirePermission('products.edit'), ah(async (req, res) => {
-  const id = intId(req.params.id);
-  if (!DOC_KINDS[req.params.kind]) throw new ValidationError('Choose TDS, MSDS or label.');
-  if (!await db.get('SELECT 1 FROM products WHERE id = ?', id)) return res.status(404).json({ error: 'Product not found.' });
-  const { mime, data } = readDataUrl(req.body?.dataUrl, { types: ['application/pdf'], maxBytes: 5 * 1024 * 1024, label: DOC_KINDS[req.params.kind] });
-  await db.run(`INSERT INTO product_documents (product_id, kind, mime, data, size, uploaded_at) VALUES (?, ?, ?, ?, ?, ${NOW})
-    ON CONFLICT (product_id, kind) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data, size = EXCLUDED.size, uploaded_at = EXCLUDED.uploaded_at`,
-  id, req.params.kind, mime, data, data.length);
-  audit(req, 'product.document', 'product', id, { kind: req.params.kind, bytes: data.length });
-  res.json(await documentsFor(id));
-}));
-
-router.delete('/:id/documents/:kind', requirePermission('products.edit'), ah(async (req, res) => {
-  const id = intId(req.params.id);
-  await db.run('DELETE FROM product_documents WHERE product_id = ? AND kind = ?', id, String(req.params.kind));
-  audit(req, 'product.document_removed', 'product', id, { kind: req.params.kind });
-  res.json(await documentsFor(id));
-}));
+const levelsFor = (v) => (v.staff ? ['public', 'pco', 'staff'] : v.pco ? ['public', 'pco'] : ['public']);
 
 /** One product with its pack sizes, equivalents and documents, or null. */
 export const productDetail = async (key, v = { staff: false, pco: false }) => {
@@ -175,7 +161,10 @@ export const productDetail = async (key, v = { staff: false, pco: false }) => {
         FROM products p WHERE p.is_active = 1 AND lower(p.technical) = lower(?) AND NOT (p.brand = ? AND p.name = ?)
         ORDER BY p.brand, p.name, p.mrp ASC NULLS LAST LIMIT 4`, p.technical, p.brand, p.name)
     : [];
-  return { ...shape(p, v), variants: variants.map((x) => ({ id: x.id, slug: x.slug, pack_size: x.pack_size, mrp: x.mrp })), equivalents, documents: await documentsFor(p.id) };
+  return { ...shape(p, v), variants: variants.map((x) => ({ id: x.id, slug: x.slug, pack_size: x.pack_size, mrp: x.mrp })), equivalents,
+    documents: await documentsFor(p.id, levelsFor(v)),
+    // Verified label dosage records (used by the dosage calculator).
+    doses: await verifiedDosesFor(p.id) };
 };
 
 router.get('/:key', optionalAuth, ah(async (req, res) => {
@@ -307,6 +296,18 @@ router.patch('/bulk', requirePermission('products.edit', 'inventory.manage'), ah
   res.json(rows.map((p) => shape(p, { staff: true, pco: true })));
 }));
 
+// Rename a brand or category on every product at once (catalogue tidy-up).
+router.patch('/rename', requirePermission('products.edit'), ah(async (req, res) => {
+  const field = req.body?.field === 'category' ? 'category' : req.body?.field === 'brand' ? 'brand' : null;
+  if (!field) throw new ValidationError('Choose brand or category.');
+  const from = str(req.body.from, { field: 'Current name', min: 1, max: 80, required: true });
+  const to = str(req.body.to, { field: 'New name', min: 2, max: 80, required: true });
+  const rows = await db.all(`UPDATE products SET ${field} = ?, updated_at = ${NOW} WHERE ${field} = ? RETURNING id`, to, from);
+  if (!rows.length) return res.status(404).json({ error: `No products use the ${field} "${from}".` });
+  audit(req, `product.rename_${field}`, 'product', null, { from, to, count: rows.length });
+  res.json({ updated: rows.length });
+}));
+
 // products.edit may change any field; inventory.manage may only change stock.
 router.put('/:id', requirePermission('products.edit', 'inventory.manage'), ah(async (req, res) => {
   const id = intId(req.params.id);
@@ -316,13 +317,31 @@ router.put('/:id', requirePermission('products.edit', 'inventory.manage'), ah(as
   res.json(shape(await db.get(`${BASE_SQL} WHERE p.id = ?`, id), { staff: true, pco: true }));
 }));
 
+const readImageMeta = (b) => {
+  const u = str(b.sourceUrl, { field: 'Photo source URL', max: 500 });
+  if (u && !/^https?:\/\/\S+$/.test(u)) throw new ValidationError('Photo source must be a web address.');
+  return { source_url: u, credit: str(b.credit, { field: 'Photo credit', max: 150 }), licence_note: str(b.licenceNote, { field: 'Usage permission', max: 300 }) };
+};
+
+// Edit where a photo came from without re-uploading it.
+router.patch('/:id/image', requirePermission('products.edit'), ah(async (req, res) => {
+  const id = intId(req.params.id);
+  const meta = readImageMeta(req.body || {});
+  const row = await db.get('UPDATE product_images SET source_url = ?, credit = ?, licence_note = ? WHERE product_id = ? RETURNING product_id', meta.source_url, meta.credit, meta.licence_note, id);
+  if (!row) return res.status(404).json({ error: 'This product has no photo yet.' });
+  audit(req, 'product.image_meta', 'product', id);
+  res.json(shape(await db.get(`${BASE_SQL} WHERE p.id = ?`, id), { staff: true, pco: true }));
+}));
+
 router.put('/:id/image', requirePermission('products.edit'), ah(async (req, res) => {
   const id = intId(req.params.id);
   if (!await db.get('SELECT 1 FROM products WHERE id = ?', id)) return res.status(404).json({ error: 'Product not found.' });
   // Type, size and real file content (magic bytes) are all checked.
   const { mime, data } = readDataUrl(req.body?.dataUrl, { types: IMAGE_TYPES, maxBytes: MAX_IMAGE_BYTES, label: 'photo' });
-  await db.run(`INSERT INTO product_images (product_id, mime, data, updated_at) VALUES (?, ?, ?, ${NOW})
-    ON CONFLICT (product_id) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data, updated_at = EXCLUDED.updated_at`, id, mime, data);
+  const meta = readImageMeta(req.body || {});
+  await db.run(`INSERT INTO product_images (product_id, mime, data, updated_at, source_url, credit, licence_note) VALUES (?, ?, ?, ${NOW}, ?, ?, ?)
+    ON CONFLICT (product_id) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data, updated_at = EXCLUDED.updated_at,
+      source_url = EXCLUDED.source_url, credit = EXCLUDED.credit, licence_note = EXCLUDED.licence_note`, id, mime, data, meta.source_url, meta.credit, meta.licence_note);
   audit(req, 'product.image', 'product', id, { bytes: data.length });
   res.json(shape(await db.get(`${BASE_SQL} WHERE p.id = ?`, id), { staff: true, pco: true }));
 }));

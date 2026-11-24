@@ -137,6 +137,97 @@ products without an MRP show "Price on request". Stock left empty means "not tra
 - **Catalogue version 5** adds Kalyani and other missing products. Packs without a known size show as
   "Standard pack". Reference MRPs are marked "Check" until you verify them against the pack.
 
+### Technical documents (SDS / MSDS, labels, TDS, certificates)
+
+- **Admin → Products → product → Technical documents**: upload PDF, JPG or PNG files (5 MB each).
+  - Each document has a type, title, manufacturer, version, issue and revision dates, a description and a
+    visibility setting: everyone, verified PCOs and staff, or staff only.
+  - You can replace a file with a newer revision or delete it. Deleting needs the `products.delete` permission.
+- **Admin → Technical documents** lists every document so you can search, edit, replace or delete it.
+- **Customers** see the type, version, last update and size, with **View** and **Download** buttons, on the
+  product page and in `/shop/library`.
+  - If nothing has been uploaded, the page says so and offers a WhatsApp request.
+  - Hidden documents return "not found".
+- API: `/api/documents`. Old `/api/products/:id/documents/:kind` links redirect to the newest public file.
+
+### Dosage calculator: verified label data only
+
+- Page: `/shop/dose-calculator`. Activities:
+  - termite pre-construction (plinth, perimeter, strip-trench or pit foundations);
+  - termite post-construction;
+  - cockroach, bed bug, general and mosquito residual spray;
+  - larvicide;
+  - rodent bait.
+- Metric and imperial units are supported. Derived measurements show as you type. Results include a breakdown,
+  water, pack count, cost (when the pack has a price) and a printable report.
+- **Any product** (the default when no verified record exists):
+  - Pick brand → product → pack from the live catalogue, filtered to the pest.
+  - Every dose figure is shown in an editable field, with its source underneath.
+  - Termite starting figures come from IS 6313 (Parts 2 and 3) : 2001, in `frontend/src/lib/doseReference.js`:
+    - 5 L/m² horizontal;
+    - 7.5 L/m² vertical;
+    - 2.25 L per running metre on the perimeter;
+    - drill holes about 300 mm apart, up to 1 L per hole.
+  - Chlorpyrifos EC dilution is worked out from the standard's 1.0% a.i. (20% EC → 50 ml/L).
+  - Chemicals the standard does not list (imidacloprid, bifenthrin, fipronil…) and all non-termite activities
+    are left empty, marked "Enter from the product label". Nothing is calculated until a figure is entered.
+- **Verified label data** (tab): records your team enters from the label and verifies, as below.
+- Staff enter verified rates from the product label under Admin → Products → product → *Label dosage*.
+  - A record is used only after an **owner or manager verifies it**. They must attach the uploaded label, TDS or
+    SDS, or write a source reference, and confirm that every number matches.
+  - Changing any number makes the record unverified again.
+  - Without verified data, the calculator works out the measurements only and shows "Technical verification
+    required".
+- The calculator logic is in `frontend/src/lib/doseEngine.js`, tested by `npm run test:unit` in `frontend/`.
+
+### Knowledge Centre, home slider and explore drawers
+
+- `/knowledge` has 13 species guides in English and Hindi. `?lang=hi` switches all the content, not just the
+  labels.
+  - Each guide covers identification, scientific name, life cycle, behaviour, habitat, signs, risks,
+    prevention, physical control, professional treatment and related products and services.
+  - The guide content is in `frontend/src/data/knowledge.js`.
+- **Home slider**: 12 pest categories. It has autoplay with pause, previous/next buttons, swipe, arrow keys and
+  dots. It respects reduced motion, and shows a fallback when a photo is missing.
+- **Explore drawers**: tabs on the left edge on desktop, or the *Explore* button in the bottom bar on phones.
+  - Brands come from the live catalogue.
+  - Pests show product counts.
+  - The professional roles are PCO, architect, builder and contractor. Each opens its resources and a project
+    enquiry form with the subject filled in.
+  - The drawer closes with Escape or a click outside, and keeps keyboard focus inside while open.
+- **Bottom bar on phones**: Home, Shop, Explore, Guides and Call. The product buy bar sits just above it.
+- **Admin → Brands & categories**: rename a brand or category on every product at once.
+
+### Licences, technical standards and reference prices
+
+- **Licences** (Admin → *Licences*, owner only):
+  - Pest Control Licence `PCO/Jaipur/DD/2025-26/68`, for services.
+  - Pesticide Sale Licence `SL/Jaipur/DD/2025-26/63`, for product sales.
+  - Where they appear:
+    - the *Licensed Operations & Professional Credentials* section on Home, About, city pages, Contact and
+      `/technical-standards`;
+    - the footer;
+    - the pest control licence on service pages and service enquiry and booking forms;
+    - the sale licence on the shop, product pages, cart/checkout and invoices.
+  - The numbers are also in `frontend/src/data/businessConfig.js`, so they are in the pre-rendered HTML.
+  - Issuing authority and validity are **shown only after you upload the licence copy and mark it verified**.
+    Changing the number, authority or dates, or replacing the copy, makes it unverified again.
+  - *View licence* appears only when a copy is uploaded. *Hide from website* removes a licence everywhere.
+- **Technical standards** (Admin → *Technical standards*; public page `/technical-standards`):
+  - IS 6313 Parts 1–3 are recorded from archived copies of the standards, with the source link.
+  - The 2022 editions mentioned in the brief could not be confirmed. They are stored as *Not confirmed* and kept
+    hidden.
+  - The page says plainly that listing a standard is not a claim of BIS certification.
+  - A label dose record can link to a standard for reference. Its rates still come from the label.
+- **Reference prices** (Admin → *Reference prices*): 88 market prices from bharatpest.in, checked 2026-11-24.
+  - Each entry stores the source URL, price/MRP, pack, date checked and match status.
+  - Only exact brand + name + pack matches were linked automatically (26). The rest are *Needs review*.
+  - The table compares with our MRP and selling price and exports CSV. Editing it **never changes our prices**.
+- **Product photos**: each photo stores credit, source URL and permission note. Edit these in the product drawer,
+  under the photo. Seeded catalogue photos are credited as the brand's official product image. *No photo* in
+  Admin → Products lists products still missing a photo.
+- **Shop formulation filter**: SC, EC, Gel and so on, alongside the pest, brand and category filters.
+
 ### Logo and motion
 
 - Logo files are in `frontend/public/images/brand/`: the emblem, the full logo, the favicon and the touch icon.

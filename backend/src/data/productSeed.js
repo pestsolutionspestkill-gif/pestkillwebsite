@@ -7,7 +7,7 @@
 // MRPs: only figures found on public listings are filled in, each marked unverified so the owner
 // checks it against the printed pack in Admin → Products. null = "Price on request".
 // `img` names a pack photo in ./product-images/<img>.webp (official brand images).
-export const CATALOG_VERSION = 5;
+export const CATALOG_VERSION = 6;
 
 // Seeded products that were replaced by corrected entries; hidden if never edited.
 export const RETIRED_SLUGS = ['arbuda-lambdar-10-wp-625-g'];
@@ -178,9 +178,9 @@ const LINES = [
 
 // Labelled MRPs from another distributor listing, used only where we have no MRP yet.
 const REFERENCE_MRP = {
-  'Heranba|Protex|1 L': 2100, 'Heranba|Baxstorm|1 L': 1000, 'Heranba|Fligon Plus|1 L': 3800, 'Heranba|Stormguard|500 ml': 2550,
+  'Heranba|Protex|1 L': 2100, 'Heranba|Baxstorm|1 L': 1000, 'Heranba|Stormguard|500 ml': 2550,
   'Heranba|Mantra Gel|35 g': 430, 'Heranba|Temper EC|1 L': 2500, 'Heranba|Delfog|1 L': 2350, 'Heranba|Aquaflow|1 L': 5400,
-  'Heranba|Strikon 10 CS|1 L': 3850, 'Heranba|Heraban-TC|1 L': 800, 'Heranba|Mantra TC|1 L': 3200, 'Heranba|Termifinn-TC|1 L': 850,
+  'Heranba|Heraban-TC|1 L': 800, 'Heranba|Mantra TC|1 L': 3200, 'Heranba|Termifinn-TC|1 L': 850,
   'Heranba|Reprove|500 ml': 925,
 };
 

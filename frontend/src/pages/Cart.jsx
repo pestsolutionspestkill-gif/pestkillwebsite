@@ -10,6 +10,7 @@ import PackShot from '../components/PackShot';
 import { BuyerBanner } from './Shop';
 import { priceInfo, rupees, PAYMENT_LABELS } from '../lib/shop';
 import './Shop.css';
+import { LicenceLine } from '../components/Credentials';
 
 const Cart = () => {
   const { lines, setQty, remove, clear } = useCart();
@@ -149,6 +150,7 @@ const Cart = () => {
                   {error && <p className="form-error">{error}</p>}
                   <button type="submit" className="btn btn-primary btn-block" disabled={busy || blocked.length > 0}>{busy ? 'Placing order…' : `Place order · ${rupees(total)}`}</button>
                   <p className="cart-tax">We confirm every order by phone before dispatch.</p>
+                  <LicenceLine kind="sale" />
                 </form>
               )}
               {!approved && error && <p className="form-error">{error}</p>}

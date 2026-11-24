@@ -10,6 +10,7 @@ import businessConfig from '../data/businessConfig';
 import { HOUSEHOLD_OPTIONS } from '../data/safeHome';
 import { services, serviceGroups, getService } from '../data/catalog';
 import './BookOnline.css';
+import { LicenceLine } from '../components/Credentials';
 
 const STEPS = ['Service', 'Property', 'Schedule', 'Your details', 'Review'];
 const SIZES = ['1BHK', '2BHK', '3BHK', '4BHK+ / Villa'];
@@ -358,6 +359,7 @@ const BookOnline = () => {
               <button type="button" className="btn btn-primary" onClick={confirm} disabled={submitting}>{submitting ? 'Confirming…' : <>Confirm booking <Check size={16} /></>}</button>
             )}
           </div>
+          <LicenceLine kind="pco" />
         </div>
 
         <aside className="book-summary">

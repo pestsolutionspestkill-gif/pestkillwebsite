@@ -1,0 +1,59 @@
+.ps-section { padding: 72px 0 56px; overflow: hidden; background: linear-gradient(180deg, #fff 0%, var(--surface) 100%); }
+.ps-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 28px; }
+.ps-head h2 { margin-top: 6px; font-size: clamp(1.8rem, 4vw, 2.8rem); letter-spacing: -0.045em; line-height: 1.08; }
+.ps-head .eyebrow { color: var(--gold-700); }
+.ps-controls { display: flex; gap: 8px; }
+.ps-btn { width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 50%; cursor: pointer; transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease; }
+.ps-btn:hover { border-color: var(--gold-500); transform: translateY(-1px); }
+.ps-btn:focus-visible, .ps-stage:focus-visible, .ps-dots button:focus-visible, .ps-cta:focus-visible { outline: 3px solid var(--gold-500); outline-offset: 3px; }
+
+/* The stage: slides are stacked and positioned by their distance (--d) from the active one. */
+.ps-stage { position: relative; height: clamp(400px, 52vw, 500px); perspective: 1400px; touch-action: pan-y; user-select: none; border-radius: 28px; }
+.ps-slide {
+  position: absolute; left: 50%; top: 0; width: min(560px, 74vw); height: 100%;
+  margin-left: calc(min(560px, 74vw) / -2);
+  overflow: hidden; color: #fff; background: #1D1D1F; border-radius: 26px; cursor: pointer;
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.55);
+  transform: translateX(calc(var(--d) * 64%)) scale(calc(1 - var(--ad) * 0.14)) rotateY(calc(var(--d) * -14deg));
+  opacity: calc(1 - var(--ad) * 0.38);
+  filter: saturate(calc(1 - var(--ad) * 0.35));
+  transition: transform 0.75s cubic-bezier(.2, .8, .2, 1), opacity 0.6s ease, filter 0.6s ease;
+  will-change: transform;
+}
+.ps-slide[data-hidden] { opacity: 0; pointer-events: none; }
+.ps-slide.is-active { cursor: default; }
+.ps-media { position: absolute; inset: 0; }
+.ps-media img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); transition: transform 6s ease; }
+.ps-slide.is-active .ps-media img { transform: scale(1); }
+.ps-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding-bottom: 30%; color: var(--gold-300);
+  background: radial-gradient(120% 90% at 30% 20%, #3A3A3C 0%, #1D1D1F 55%, #000 100%); }
+.ps-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.82) 100%); }
+.ps-body { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 6px; padding: 26px; }
+.ps-hi { font-family: 'Noto Sans Devanagari', 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--gold-300); }
+.ps-body h3 { font-size: clamp(1.5rem, 3vw, 2.1rem); letter-spacing: -0.035em; color: #fff; }
+.ps-body p { max-width: 420px; font-size: 0.98rem; color: rgba(255, 255, 255, 0.85); }
+.ps-cta { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 11px 18px; font-weight: 700; color: #1D1D1F; background: #fff; border-radius: 999px;
+  opacity: 0; transform: translateY(8px); transition: opacity 0.4s ease 0.25s, transform 0.4s ease 0.25s, background 0.2s ease; }
+.ps-slide.is-active .ps-cta { opacity: 1; transform: none; }
+.ps-cta:hover { background: var(--gold-300); }
+.ps-slide:not(.is-active) .ps-body p, .ps-slide:not(.is-active) .ps-hi { opacity: 0.6; }
+
+.ps-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 22px; }
+.ps-dots button { width: 9px; height: 9px; padding: 0; background: var(--line); border: 0; border-radius: 999px; cursor: pointer; transition: width 0.35s ease, background 0.35s ease; }
+.ps-dots button.on { width: 28px; background: var(--gold-500); }
+.ps-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 640px) {
+  .ps-section { padding: 40px 0 36px; }
+  .ps-head { margin-bottom: 18px; }
+  .ps-head h2 { font-size: 1.7rem; }
+  .ps-btn { width: 40px; height: 40px; }
+  .ps-stage { height: 400px; }
+  .ps-slide { width: 78vw; margin-left: -39vw; transform: translateX(calc(var(--d) * 84%)) scale(calc(1 - var(--ad) * 0.12)) rotateY(calc(var(--d) * -10deg)); }
+  .ps-body { padding: 18px; }
+  .ps-body p { font-size: 0.88rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ps-slide, .ps-media img, .ps-cta { transition: none; }
+}

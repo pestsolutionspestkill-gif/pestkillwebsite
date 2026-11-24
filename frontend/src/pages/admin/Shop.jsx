@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Search, Plus, X, Upload, Trash2, AlertTriangle, CheckCircle, Phone, MapPin, BadgeCheck, Pencil, FileText, Eye } from 'lucide-react';
-import { api, fileToDataUrl, openPrivateFile } from '../../lib/api';
+import { useMemo, useState } from 'react';
+import { Search, Plus, X, Upload, Trash2, AlertTriangle, CheckCircle, Phone, MapPin, BadgeCheck, Pencil, Eye } from 'lucide-react';
+import { api, openPrivateFile } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import PackShot from '../../components/PackShot';
 import { rupees, PAYMENT_LABELS, fmtEnds, PEST_OPTIONS } from '../../lib/shop';
 import { useLoad, State, Badge, fmtDate, fmtDay, label } from './shared';
+import { DocumentManager, DoseManager } from './Technical';
 
 const PACK_STYLES = ['bottle', 'jerrycan', 'gel', 'sachet', 'tub', 'box'];
 const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -39,45 +40,35 @@ const toForm = (p) => ({
   sort: p?.sort ?? 0, isActive: p ? Boolean(p.is_active) : true,
   howToUse: p?.how_to_use || '', storageInfo: p?.storage_info || '', faqs: p?.faqs?.length ? p.faqs : [],
   targetPests: p?.target_pests ? p.target_pests.split(',') : [],
-  dosePerLitre: p?.dose?.per_litre ?? '', solutionPerSqm: p?.dose?.solution_per_sqm ?? '', doseNote: p?.dose?.note || '',
 });
 
-const DOC_LABELS = { tds: 'Technical datasheet (TDS)', msds: 'Safety data sheet (MSDS)', label: 'Label & leaflet' };
 
-// PDF datasheets shown as downloads on the product page.
-const ProductDocs = ({ product, notify }) => {
-  const [docs, setDocs] = useState(null);
-  const [busy, setBusy] = useState('');
-  useEffect(() => { api(`/products/${product.id}`).then((d) => setDocs(d.documents || [])).catch(() => setDocs([])); }, [product.id]);
-  const upload = async (kind, file) => {
-    if (!file) return;
-    setBusy(kind);
+/** Where the product photo came from, so every pack photo has a recorded source. */
+const PhotoSource = ({ product, canEdit, notify, onSaved }) => {
+  const meta = product.image_meta || {};
+  const [f, setF] = useState(null);
+  const save = async (e) => {
+    e.preventDefault();
     try {
-      const dataUrl = await fileToDataUrl(file);
-      setDocs(await api(`/products/${product.id}/documents/${kind}`, { method: 'PUT', body: { dataUrl } }));
-      notify(`${DOC_LABELS[kind]} uploaded`);
+      onSaved(await api(`/products/${product.id}/image`, { method: 'PATCH', body: { sourceUrl: f.sourceUrl || null, credit: f.credit || null, licenceNote: f.licenceNote || null } }));
+      notify('Photo source saved'); setF(null);
     } catch (err) { notify(err.message, 'error'); }
-    setBusy('');
   };
-  const remove = async (kind) => {
-    try { setDocs(await api(`/products/${product.id}/documents/${kind}`, { method: 'DELETE' })); notify('Removed'); } catch (err) { notify(err.message, 'error'); }
-  };
+  if (f) return (
+    <form className="photo-source" onSubmit={save}>
+      <label>Credit<input value={f.credit} onChange={(e) => setF({ ...f, credit: e.target.value })} maxLength={150} placeholder="e.g. Envu official product image / Own photo" /></label>
+      <label>Source URL<input type="url" value={f.sourceUrl} onChange={(e) => setF({ ...f, sourceUrl: e.target.value })} maxLength={500} placeholder="https://" /></label>
+      <label>Permission<input value={f.licenceNote} onChange={(e) => setF({ ...f, licenceNote: e.target.value })} maxLength={300} placeholder="e.g. Distributor media kit, permission dated…" /></label>
+      <div className="prod-photo-actions">
+        <button type="button" className="btn btn-outline btn-sm" onClick={() => setF(null)}>Cancel</button>
+        <button type="submit" className="btn btn-primary btn-sm">Save source</button>
+      </div>
+    </form>
+  );
   return (
-    <div className="doc-rows">
-      {Object.entries(DOC_LABELS).map(([kind, title]) => {
-        const d = docs?.find((x) => x.kind === kind);
-        return (
-          <div key={kind} className="doc-row">
-            <FileText size={16} />
-            <span>{title}{d ? <small> · {Math.max(1, Math.round(d.size / 1024))} KB</small> : <small> · not uploaded</small>}</span>
-            {d && <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-btn">View</a>}
-            <label className="text-btn">{busy === kind ? 'Uploading…' : d ? 'Replace' : 'Upload PDF'}
-              <input type="file" accept="application/pdf" hidden onChange={(e) => { upload(kind, e.target.files[0]); e.target.value = ''; }} />
-            </label>
-            {d && <button type="button" className="text-btn danger" onClick={() => remove(kind)}>Remove</button>}
-          </div>
-        );
-      })}
+    <div className="photo-source">
+      <small><strong>Photo source:</strong> {meta.credit || <em>not recorded</em>}{meta.source_url ? <> · <a href={meta.source_url} target="_blank" rel="noopener noreferrer">link</a></> : ''}{meta.licence ? ` · ${meta.licence}` : ''}</small>
+      {canEdit && <button type="button" className="text-btn" onClick={() => setF({ credit: meta.credit || '', sourceUrl: meta.source_url || '', licenceNote: meta.licence || '' })}>Edit source</button>}
     </div>
   );
 };
@@ -86,6 +77,7 @@ const ProductDrawer = ({ product, brands, categories, onClose, onSaved, onDelete
   const { can } = useAuth();
   const [p, setP] = useState(product);
   const [form, setForm] = useState(toForm(product));
+  const [docs, setDocs] = useState([]);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fullEdit = can('products.edit') || (!product && can('products.create'));
@@ -99,7 +91,7 @@ const ProductDrawer = ({ product, brands, categories, onClose, onSaved, onDelete
       const orNull = (v) => (v === '' ? null : v);
       const body = fullEdit
         ? { ...form, mrp: orNull(form.mrp), pcoPrice: orNull(form.pcoPrice), offerPrice: orNull(form.offerPrice), offerLabel: orNull(form.offerLabel), offerEnds: orNull(form.offerEnds), stock: orNull(form.stock),
-          dosePerLitre: orNull(form.dosePerLitre), solutionPerSqm: orNull(form.solutionPerSqm), faqs: form.faqs.filter((x) => x.q.trim() || x.a.trim()) }
+          faqs: form.faqs.filter((x) => x.q.trim() || x.a.trim()) }
         : { stock: orNull(form.stock) };
       const saved = p ? await api(`/products/${p.id}`, { method: 'PUT', body }) : await api('/products', { method: 'POST', body });
       notify(p ? 'Product saved' : 'Product added');
@@ -153,7 +145,8 @@ const ProductDrawer = ({ product, brands, categories, onClose, onSaved, onDelete
                 {p.image_url && <button type="button" className="text-btn danger" onClick={removeImage}>Remove photo</button>}
               </div>
             )}
-            <small className="adm-muted">{p ? 'Drag a photo here or use the button. A clear photo of the pack with the MRP visible works best.' : 'Save the product first, then upload a photo.'}</small>
+            <small className="adm-muted">{p ? 'Drag a photo here or use the button. Use only your own photo or the manufacturer’s official image you have permission to use.' : 'Save the product first, then upload a photo.'}</small>
+            {p?.image_url && <PhotoSource product={p} canEdit={can('products.edit')} notify={notify} onSaved={(saved) => { setP(saved); onSaved(saved); }} />}
           </div>
 
           <form className="inv-form" onSubmit={save}>
@@ -215,13 +208,6 @@ const ProductDrawer = ({ product, brands, categories, onClose, onSaved, onDelete
               <label>How to use<textarea rows="4" value={form.howToUse} onChange={set('howToUse')} placeholder="Dilution, method and re-treatment interval, as on the label. One step per line." /></label>
               <label>Storage &amp; shelf life<textarea rows="2" value={form.storageInfo} onChange={set('storageInfo')} placeholder="As on the label" /></label>
 
-              <h4>Dose calculator <small className="adm-muted">(enter only the rate printed on the label)</small></h4>
-              <div className="inv-grid three">
-                <label>Product per litre of water (ml or g)<input type="number" min="0" step="any" value={form.dosePerLitre} onChange={set('dosePerLitre')} placeholder="e.g. 2.5" /></label>
-                <label>Diluted solution per m² (litres)<input type="number" min="0" step="any" value={form.solutionPerSqm} onChange={set('solutionPerSqm')} placeholder="e.g. 5" /></label>
-                <label>Note<input value={form.doseNote} onChange={set('doseNote')} maxLength={300} placeholder="e.g. Post-construction, per label" /></label>
-              </div>
-
               <h4>Questions &amp; answers</h4>
               {form.faqs.map((x, i) => (
                 <div key={i} className="faq-edit">
@@ -233,19 +219,20 @@ const ProductDrawer = ({ product, brands, categories, onClose, onSaved, onDelete
               {form.faqs.length < 12 && <button type="button" className="text-btn" onClick={() => setForm({ ...form, faqs: [...form.faqs, { q: '', a: '' }] })}><Plus size={14} /> Add question</button>}
             </fieldset>
 
-            {p && can('products.edit') && (
-              <>
-                <h4>Downloads <small className="adm-muted">(PDF, max 5 MB; shown on the product page and in the library)</small></h4>
-                <ProductDocs product={p} notify={notify} />
-              </>
-            )}
-
             <div className="drawer-foot">
               {p && can('products.delete') && <button type="button" className="text-btn danger" onClick={del}><Trash2 size={14} /> Delete</button>}
               <button type="button" className="btn btn-outline btn-sm" onClick={onClose}>Close</button>
               <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>{busy ? 'Saving…' : p ? 'Save changes' : 'Add product'}</button>
             </div>
           </form>
+          {p && can('products.edit') && (
+            <section className="prod-tech">
+              <h4>Technical documents <small className="adm-muted">(SDS, label, TDS, certificates · PDF/JPG/PNG up to 5 MB)</small></h4>
+              <DocumentManager product={p} notify={notify} onChange={setDocs} />
+              <h4>Label dosage for the calculator</h4>
+              <DoseManager product={p} docs={docs} notify={notify} />
+            </section>
+          )}
         </div>
       </aside>
     </div>

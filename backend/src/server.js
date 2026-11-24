@@ -21,6 +21,9 @@ import invoiceRoutes from './routes/invoiceRoutes.js';
 import buyerRoutes from './routes/buyerRoutes.js';
 import claimRoutes from './routes/claimRoutes.js';
 import verifyRoutes from './routes/verifyRoutes.js';
+import documentRoutes from './routes/documentRoutes.js';
+import doseRoutes from './routes/doseRoutes.js';
+import { licenceRouter, standardRouter, referencePriceRouter } from './routes/registryRoutes.js';
 import { ah, setJwtSecret } from './middleware/rbac.js';
 import { mountWebsite } from './seo.js';
 
@@ -83,7 +86,7 @@ const imageJson = express.json({ limit: '2.5mb' });
 // PDF datasheets and licence copies: up to 5 MB files, about 6.7 MB as base64.
 const documentJson = express.json({ limit: '7mb' });
 app.use((req, res, next) => {
-  if (/^\/api\/(products\/\d+\/documents\/[a-z]+|buyers\/documents\/[a-z]+)$/.test(req.path)) return documentJson(req, res, next);
+  if (/^\/api\/(products\/\d+\/documents\/[a-z]+|buyers\/documents\/[a-z]+|documents|documents\/\d+|licences\/\d+\/document)$/.test(req.path)) return documentJson(req, res, next);
   return (/^\/api\/(products\/\d+\/image|jobs\/\d+\/photos)$/.test(req.path) ? imageJson : smallJson)(req, res, next);
 });
 
@@ -100,6 +103,11 @@ app.use('/api/invoices', invoiceRoutes);
 app.use('/api/buyers', buyerRoutes);
 app.use('/api/claims', claimRoutes);
 app.use('/api/verify', verifyRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/doses', doseRoutes);
+app.use('/api/licences', licenceRouter);
+app.use('/api/standards', standardRouter);
+app.use('/api/reference-prices', referencePriceRouter);
 
 app.get('/api/health', ah(async (_req, res) => {
   await db.get('SELECT 1');

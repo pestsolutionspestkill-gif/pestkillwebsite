@@ -8,8 +8,14 @@ const businessConfig = {
   googleMapEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3502.567974718769!3d75.924789!3d26.924789!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzbCsDU1JzQ2LjYiTiA3NcKwNTUnMjQuMk4!5e0!3m2!1sen!2sin!4v1600000000000",
   googleMapLink: "https://www.google.com/maps/search/F-52+Balaji+Tower+Vidhyadhar+Nagar+Jaipur",
   workingHours: "Mon-Sat: 9:00 AM - 7:00 PM",
-  // Pest control licence issued by the Agriculture Department. Leave empty to show "available on request".
-  licenceNumber: "",
+  // Business licences, exactly as printed on the licences. Shown site-wide; the owner manages
+  // visibility, the licence copy and the verified authority/validity in Admin → Licences.
+  licenceNumber: "PCO/Jaipur/DD/2025-26/68",
+  saleLicenceNumber: "SL/Jaipur/DD/2025-26/63",
+  licences: [
+    { key: "pco", title: "Pest Control Licence", number: "PCO/Jaipur/DD/2025-26/68", activity: "Pest management services" },
+    { key: "sale", title: "Pesticide Sale Licence", number: "SL/Jaipur/DD/2025-26/63", activity: "Sale of pesticides" }
+  ],
   // Official social / directory profile URLs (Google Business Profile, Facebook, Instagram, Justdial…).
   // Added to the search structured data as "sameAs"; list only profiles you own.
   socialProfiles: [],

@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom';
 import RouteSeo from './seo/RouteSeo';
 import Motion from './components/Motion';
+import ExploreDrawer from './components/ExploreDrawer';
+import BottomNav from './components/BottomNav';
 import { REDIRECTS } from './seo/redirects';
 import Navbar from './components/Navbar';
 import SmoothScroll from './components/SmoothScroll';
@@ -32,9 +34,12 @@ const BedBugTreatment = lazy(() => import('./pages/BedBugTreatment'));
 const RodentControl = lazy(() => import('./pages/RodentControl'));
 const CityPage = lazy(() => import('./pages/CityPage'));
 const Shop = lazy(() => import('./pages/Shop'));
-const DoseCalculator = lazy(() => import('./pages/ShopTools').then((m) => ({ default: m.DoseCalculator })));
+const DoseCalculator = lazy(() => import('./pages/DosageCalculator'));
 const DocumentLibrary = lazy(() => import('./pages/ShopTools').then((m) => ({ default: m.DocumentLibrary })));
+const KnowledgeIndex = lazy(() => import('./pages/Knowledge').then((m) => ({ default: m.KnowledgeIndex })));
+const KnowledgeGuide = lazy(() => import('./pages/Knowledge').then((m) => ({ default: m.KnowledgeGuide })));
 const ShopLanding = lazy(() => import('./pages/ShopLanding'));
+const TechnicalStandards = lazy(() => import('./pages/TechnicalStandards'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Cart = lazy(() => import('./pages/Cart'));
 const PcoAccount = lazy(() => import('./pages/PcoAccount'));
@@ -75,6 +80,9 @@ function App() {
           <Route path="/services/:slug" element={<ServiceDetail />} />
           <Route path="/book" element={<BookOnline />} />
           <Route path="/pests" element={<PestLibrary />} />
+          <Route path="/knowledge" element={<KnowledgeIndex />} />
+          <Route path="/knowledge/:slug" element={<KnowledgeGuide />} />
+          <Route path="/technical-standards" element={<TechnicalStandards />} />
           <Route path="/pests/:slug" element={<PestDetail />} />
           <Route path="/business" element={<Business />} />
           <Route path="/business/:slug" element={<SectorPage />} />
@@ -115,6 +123,8 @@ function App() {
       </main>
       {!consoleMode && !hasFounderSection && <FounderStrip />}
       {!consoleMode && <Footer />}
+      {!consoleMode && <ExploreDrawer />}
+      {!consoleMode && <BottomNav />}
     </div>
   );
 }

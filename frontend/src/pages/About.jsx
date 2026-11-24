@@ -4,6 +4,7 @@ import { Phone, Mail, MapPin, ShieldCheck, Leaf, Award, Users, ArrowRight } from
 import { media } from '../data/media';
 import { FounderSection } from '../components/Founder';
 import './About.css';
+import Credentials from '../components/Credentials';
 
 const values = [
   { icon: ShieldCheck, title: 'Integrity', text: 'Honest inspections, written quotations and no unnecessary treatments.' },
@@ -49,6 +50,8 @@ const About = () => {
       </section>
 
       <FounderSection />
+
+      <Credentials id="credentials" />
 
       <section className="section">
         <div className="container">

@@ -6,6 +6,7 @@ import { scrollToId } from '../components/SmoothScroll';
 import { submitLead } from '../lib/api';
 import { RATES, sqftLabel, homeFrom } from '../data/catalog';
 import './Services.css';
+import Credentials, { LicenceLine } from '../components/Credentials';
 
 const Services = () => {
   const { serviceCoverage } = businessConfig;
@@ -185,6 +186,8 @@ const Services = () => {
         </div>
       </section>
 
+      <Credentials only={['pco']} />
+
       {/* Form */}
       <section className="form-section section">
         <div className="container">
@@ -208,6 +211,7 @@ const Services = () => {
                 {formError && <p className="form-error" role="alert">{formError}</p>}
                 <button type="submit" className="btn btn-primary" disabled={sending}>{sending ? 'Sending…' : 'Get Free Quote'}</button>
                 <p style={{fontSize: '0.85rem', color: '#666', marginTop: '12px', textAlign: 'center'}}>We respond within 15 minutes</p>
+                <LicenceLine kind="pco" />
               </form>
             )}
           </div>

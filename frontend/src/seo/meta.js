@@ -14,6 +14,7 @@ import { extraServices } from '../data/extraServices';
 import { CITIES, REGIONS, getCity, cityPath, cityFaqs } from '../data/rajasthan';
 import { BLOG_INDEX, getBlogMeta } from '../data/blogIndex';
 import { HOME_FAQS } from '../data/homeFaqs';
+import { GUIDES, getGuide } from '../data/knowledge';
 import { PEST_LANDING, BRAND_LANDING, landingApiPath, SHOP_LANDING_PATHS } from '../data/shopLanding';
 import { pestMedia, serviceMedia, sectorMedia, media } from '../data/media';
 
@@ -156,6 +157,16 @@ const STATIC = {
     description: 'How to identify termites, cockroaches, bed bugs, rodents, mosquitoes, flies, ants and more. Signs, health risks, prevention tips and the right treatment.',
     crumbs: [{ name: 'Pest library', path: '/pests' }],
   },
+  '/knowledge': {
+    title: 'Pest Knowledge Centre: Identify Pests in English & Hindi | PestKill',
+    description: 'Species guides for German and American cockroaches, termites, Aedes, Culex and Anopheles mosquitoes, rodents, bed bugs and more: signs, life cycle, risks and treatment.',
+    crumbs: [{ name: 'Knowledge Centre', path: '/knowledge' }],
+  },
+  '/technical-standards': {
+    title: 'Anti-Termite Standards (IS 6313) Reference | PestKill',
+    description: 'Indian Standards for anti-termite measures in buildings (IS 6313 Parts 1 to 3): scope, edition and how each detail was checked. Plus our pest control and pesticide sale licences.',
+    crumbs: [{ name: 'Technical standards', path: '/technical-standards' }],
+  },
   '/pest-identifier': {
     title: 'Pest Identifier: Which Pest Is It? Free 30-Second Check | PestKill',
     description: 'Kaunsa keeda hai? Answer five quick questions to find out which pest you have, how serious it is and what it costs to treat. Free, no sign-up.',
@@ -209,7 +220,7 @@ const STATIC = {
   },
   '/shop/dose-calculator': {
     title: 'Pesticide Dose Calculator for PCOs | PestKill Shop',
-    description: 'Enter the area to treat and get the diluted solution and product quantity, worked out from the rate printed on each product label.',
+    description: 'Termite pre- and post-construction, cockroach, mosquito, larvicide and rodent calculations: areas, solution, product, packs and cost from verified label data. Printable report.',
     crumbs: [{ name: 'PCO shop', path: '/shop' }, { name: 'Dose calculator', path: '/shop/dose-calculator' }],
   },
   '/shop/library': {
@@ -299,6 +310,21 @@ const dynamicPage = (path) => {
       schema: [article, breadcrumb([{ name: 'Blog', path: '/blog' }, { name: post.title, path }])],
     };
   }
+  if ((m = /^\/knowledge\/([a-z-]+)$/.exec(path))) {
+    const g = getGuide(m[1]);
+    if (!g) return null;
+    return {
+      title: `${g.en.name} (${g.scientific.split(/[,(]/)[0].trim()}): Identification & Control | PestKill`,
+      description: clip(`${g.en.summary} Signs, life cycle, risks, prevention and treatment, in English and Hindi.`),
+      image: pestMedia[g.image]?.src,
+      type: 'article',
+      schema: [
+        { '@context': 'https://schema.org', '@type': 'Article', headline: `${g.en.name}: identification and control`, about: { '@type': 'Thing', name: g.en.name, alternateName: g.scientific },
+          inLanguage: ['en-IN', 'hi-IN'], author: { '@type': 'Organization', name: 'PestKill Pest Solutions' }, publisher: { '@id': BUSINESS_ID }, mainEntityOfPage: abs(path) },
+        breadcrumb([{ name: 'Knowledge Centre', path: '/knowledge' }, { name: g.en.name, path }]),
+      ],
+    };
+  }
   if ((m = /^\/shop\/(pest|brand)\/([a-z]+)$/.exec(path))) {
     const [, kind, key] = m;
     const info = kind === 'pest' ? PEST_LANDING[key] : BRAND_LANDING[key];
@@ -368,6 +394,7 @@ export const PRERENDER_PATHS = [
   ...pests.map((p) => `/pests/${p.slug}`),
   ...sectors.map((s) => `/business/${s.slug}`),
   ...BLOG_INDEX.map((p) => `/blog/${p.slug}`),
+  ...GUIDES.map((g) => `/knowledge/${g.slug}`),
 ];
 
 /** Database-backed pages rendered by the server on request (listed in the sitemap too). */

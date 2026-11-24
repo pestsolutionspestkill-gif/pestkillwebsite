@@ -6,6 +6,7 @@ import { RATES, getPest, getService, sqftLabel } from '../data/catalog';
 import { pestMedia } from '../data/media';
 import businessConfig from '../data/businessConfig';
 import './CityPage.css';
+import Credentials from '../components/Credentials';
 
 const inr = (n) => `₹${n.toLocaleString('en-IN')}`;
 const HINDI_PESTS = 'दीमक, कॉकरोच, खटमल, चूहे और मच्छर';
@@ -139,6 +140,8 @@ const CityPage = () => {
           )}
         </div>
       </section>
+
+      <Credentials />
 
       <section className="section-sm bg-surface">
         <div className="container city-faq-wrap">

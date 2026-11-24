@@ -3,6 +3,7 @@ import { Phone, AlertCircle, Check } from 'lucide-react';
 import RateCards from '../components/RateCards';
 import './ServiceDetail.css';
 import CityLinks from '../components/CityLinks';
+import Credentials from '../components/Credentials';
 
 const CockroachControl = () => {
   return (
@@ -182,6 +183,8 @@ const CockroachControl = () => {
           </div>
         </div>
       </section>
+
+      <Credentials only={['pco']} compact title="Licensed pest management service" intro="Treatment is carried out under our pest control licence by trained technicians." />
 
       <section className="cta-section">
         <div className="container">

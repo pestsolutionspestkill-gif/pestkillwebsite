@@ -42,3 +42,18 @@ details[open] > summary .px-chev { transform: rotate(180deg); }
 .px-guide-pests a:hover { background: var(--emerald-100); }
 .px-guide-pests strong { font-size: 0.9rem; color: var(--emerald-700); }
 .px-guide-pests span { font-family: 'Noto Sans Devanagari', 'Inter', sans-serif; font-size: 0.8rem; color: var(--muted); }
+
+/* Technical documents and dosage */
+.px-docs li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; background: var(--surface); border-radius: 12px; }
+.px-doc-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.px-doc-meta strong { font-size: 0.94rem; color: var(--ink); }
+.px-doc-meta span { font-size: 0.8rem; color: var(--muted); }
+.px-doc-actions { display: flex; gap: 8px; }
+.px-doc-actions a { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 0.84rem; font-weight: 600; color: var(--emerald-700); background: #fff; border: 1px solid var(--line-soft); border-radius: 999px; }
+.px-doc-actions a:hover { border-color: var(--emerald-500); }
+.px-empty { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.9rem; color: #7A4B00; }
+.px-empty a { font-weight: 600; color: var(--emerald-700); }
+.px-dose-list { display: flex; flex-direction: column; gap: 8px; padding: 0; list-style: none; }
+.px-dose-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.px-dose-list svg { color: var(--emerald-600); }
+.px-dose-link { margin-left: auto; padding: 6px 12px; font-size: 0.84rem; font-weight: 700; color: #fff; background: var(--emerald-500); border-radius: 999px; }

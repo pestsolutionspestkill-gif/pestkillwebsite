@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, MessageSquareWarning, Briefcase, Users, UserCog, KeyRound, ScrollText,
   LogOut, Search, X, Phone, MessageCircle, Mail, MapPin, RefreshCw, Trash2, Plus, Lock, ShieldCheck, CheckCircle,
-  BarChart3, CalendarDays, Wrench, ReceiptText, Award, Package, ShoppingBag, Store, RotateCcw,
+  BarChart3, CalendarDays, Wrench, ReceiptText, Award, Package, ShoppingBag, Store, RotateCcw, FileText, Tags, BadgeCheck, BookOpen, IndianRupee,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, waLink } from '../lib/api';
@@ -15,7 +15,9 @@ import MyJobs from './admin/MyJobs';
 import Invoices from './admin/Invoices';
 import { ShopProducts, ShopOrders, Buyers } from './admin/Shop';
 import Claims from './admin/Claims';
+import { DocumentsAdmin, CatalogueAdmin } from './admin/Technical';
 import JobPhotos from './admin/JobPhotos';
+import { LicencesAdmin, StandardsAdmin, ReferencePricesAdmin } from './admin/Registry';
 import './Admin.css';
 
 const COMPLAINT_STATUSES = ['pending', 'in_progress', 'resolved', 'closed'];
@@ -547,6 +549,11 @@ const Admin = () => {
     { id: 'invoices', label: 'Invoices', icon: ReceiptText, show: can('invoices.manage') },
     { id: 'orders', label: 'Shop orders', icon: ShoppingBag, show: can('orders.view') || can('orders.manage') },
     { id: 'products', label: 'Products', icon: Package, show: can('products.view') || can('products.edit') || can('inventory.manage') },
+    { id: 'documents', label: 'Technical documents', icon: FileText, show: can('products.edit') },
+    { id: 'catalogue', label: 'Brands & categories', icon: Tags, show: can('products.edit') },
+    { id: 'reference-prices', label: 'Reference prices', icon: IndianRupee, show: can('products.view') || can('products.edit') },
+    { id: 'licences', label: 'Licences', icon: BadgeCheck, show: can('settings.manage') },
+    { id: 'standards', label: 'Technical standards', icon: BookOpen, show: can('settings.manage') },
     { id: 'buyers', label: 'PCO buyers', icon: Store, show: can('buyers.manage') },
     { id: 'complaints', label: 'Complaints', icon: MessageSquareWarning, show: can('complaints.manage') },
     { id: 'applications', label: 'Applications', icon: Briefcase, show: can('careers.manage') },
@@ -615,6 +622,11 @@ const Admin = () => {
             {current.id === 'claims' && <Claims notify={notify} />}
             {current.id === 'orders' && <ShopOrders notify={notify} />}
             {current.id === 'products' && <ShopProducts notify={notify} />}
+            {current.id === 'documents' && <DocumentsAdmin notify={notify} />}
+            {current.id === 'catalogue' && <CatalogueAdmin notify={notify} />}
+            {current.id === 'reference-prices' && <ReferencePricesAdmin notify={notify} />}
+            {current.id === 'licences' && <LicencesAdmin notify={notify} />}
+            {current.id === 'standards' && <StandardsAdmin notify={notify} />}
             {current.id === 'buyers' && <Buyers notify={notify} />}
             {current.id === 'complaints' && <Complaints notify={notify} />}
             {current.id === 'applications' && <Applications notify={notify} />}

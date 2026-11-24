@@ -10,6 +10,7 @@ import { useBuyer } from '../hooks/useBuyer';
 import PackShot from '../components/PackShot';
 import { priceInfo, rupees, quoteLink, fmtEnds, PEST_OPTIONS, pestLabel } from '../lib/shop';
 import './Shop.css';
+import Credentials, { LicenceLine } from '../components/Credentials';
 
 export const BuyerBanner = () => {
   const { user } = useAuth();
@@ -84,21 +85,24 @@ const Shop = () => {
   const brand = params.get('brand') || '';
   const category = params.get('category') || '';
   const pest = params.get('pest') || '';
+  const formulation = params.get('formulation') || '';
   const sort = params.get('sort') || '';
   const [q, setQ] = useState(params.get('q') || '');
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // Built from the address bar itself: navigations render in a transition, so the hook's copy can lag
+  // behind and quick taps on several filters would otherwise undo each other.
   const set = (key, value) => {
-    const next = new URLSearchParams(params);
+    const next = new URLSearchParams(typeof window === 'undefined' ? params : window.location.search);
     if (value) next.set(key, value); else next.delete(key);
     setParams(next, { replace: true });
   };
 
   useEffect(() => { const t = setTimeout(() => { if ((params.get('q') || '') !== q) set('q', q.trim()); }, 300); return () => clearTimeout(t); }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const query = useMemo(() => new URLSearchParams(Object.entries({ brand, category, pest, sort, q: params.get('q') || '' }).filter(([, v]) => v)).toString(), [brand, category, pest, sort, params]);
+  const query = useMemo(() => new URLSearchParams(Object.entries({ brand, category, pest, formulation, sort, q: params.get('q') || '' }).filter(([, v]) => v)).toString(), [brand, category, pest, formulation, sort, params]);
   useEffect(() => {
     let live = true;
     setError('');
@@ -106,7 +110,7 @@ const Shop = () => {
     return () => { live = false; };
   }, [query]);
 
-  const activeFilters = [pest && ['pest', pestLabel(pest)], brand && ['brand', brand], category && ['category', category]].filter(Boolean);
+  const activeFilters = [pest && ['pest', pestLabel(pest)], brand && ['brand', brand], category && ['category', category], formulation && ['formulation', formulation]].filter(Boolean);
 
   const Filters = () => (
     <>
@@ -127,6 +131,13 @@ const Shop = () => {
         <button type="button" className={!category ? 'active' : ''} onClick={() => set('category', '')}>All categories</button>
         {data?.categories.map((c) => <button type="button" key={c.name} className={category === c.name ? 'active' : ''} onClick={() => set('category', c.name)}>{c.name} <span>{c.n}</span></button>)}
       </div>
+      {data?.formulations?.some((f) => f.name) && (
+        <div className="filter-group">
+          <h4>Formulation</h4>
+          <button type="button" className={!formulation ? 'active' : ''} onClick={() => set('formulation', '')}>All formulations</button>
+          {data.formulations.filter((f) => f.name).map((f) => <button type="button" key={f.name} className={formulation === f.name ? 'active' : ''} onClick={() => set('formulation', f.name)}>{f.name} <span>{f.n}</span></button>)}
+        </div>
+      )}
     </>
   );
 
@@ -142,6 +153,7 @@ const Shop = () => {
             <span><ReceiptText size={16} /> Invoice with every order</span>
             <span><Truck size={16} /> Dispatched from Jaipur</span>
           </div>
+          <LicenceLine kind="sale" />
         </div>
       </section>
 
@@ -194,6 +206,8 @@ const Shop = () => {
           </div>
         </div>
       </div>
+
+      <Credentials only={['sale']} compact title="Licensed pesticide dealer" intro="Products in this store are sold under our pesticide sale licence, only to licensed pest control operators." />
 
       {filtersOpen && (
         <div className="filter-sheet" onClick={() => setFiltersOpen(false)}>

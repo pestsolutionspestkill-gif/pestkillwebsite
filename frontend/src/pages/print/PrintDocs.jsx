@@ -40,7 +40,7 @@ const Toolbar = ({ back }) => (
 );
 
 const Letterhead = ({ title, number, date }) => {
-  const { businessName, officeAddress, phoneNumber, email, gstin, licenceNumber } = businessConfig;
+  const { businessName, officeAddress, phoneNumber, email, gstin, licenceNumber, saleLicenceNumber } = businessConfig;
   return (
     <header className="doc-head">
       <div className="doc-brand">
@@ -51,6 +51,7 @@ const Letterhead = ({ title, number, date }) => {
           <span>{phoneNumber} · {email}</span>
           {gstin && <span>GSTIN: {gstin}</span>}
           {licenceNumber && <span>Pest Control Licence: {licenceNumber}</span>}
+          {saleLicenceNumber && <span>Pesticide Sale Licence: {saleLicenceNumber}</span>}
         </div>
       </div>
       <div className="doc-title">

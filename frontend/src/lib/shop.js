@@ -33,16 +33,3 @@ export const PEST_OPTIONS = [
   { key: 'bedbug', label: 'Bed bugs', hi: 'खटमल' },
 ];
 export const pestLabel = (key) => PEST_OPTIONS.find((p) => p.key === key)?.label || key;
-
-/**
- * Dose calculator, using the label rate entered by staff:
- * area (sq.ft.) → diluted solution (litres) → product needed (ml or g).
- */
-export const SQFT_PER_SQM = 10.7639;
-export const calcDose = ({ areaSqft, perLitre, solutionPerSqm }) => {
-  const area = Number(areaSqft);
-  if (!(area > 0) || !(perLitre > 0) || !(solutionPerSqm > 0)) return null;
-  const sqm = area / SQFT_PER_SQM;
-  const solution = sqm * solutionPerSqm;
-  return { sqm, solution, product: solution * perLitre };
-};

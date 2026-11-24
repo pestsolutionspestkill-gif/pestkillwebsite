@@ -11,6 +11,7 @@ import ProductExtras from '../components/ProductExtras';
 import { BuyerBanner, AddToCart, Price } from './Shop';
 import { priceInfo, rupees } from '../lib/shop';
 import './Shop.css';
+import { LicenceLine } from '../components/Credentials';
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -62,6 +63,7 @@ const ProductDetail = () => {
             }}>
             <PackShot product={p} />
             {!p.image_url && <span className="pd-media-note">Illustration — the delivered pack carries the manufacturer's label, batch and expiry.</span>}
+            {p.image_url && p.image_meta?.credit && <span className="pd-media-note">Photo: {p.image_meta.credit}</span>}
           </div>
 
           <div className="pd-info">
@@ -124,6 +126,7 @@ const ProductDetail = () => {
               <ShieldAlert size={18} />
               <p>For professional use by licensed pest control operators. Read the label and leaflet before use, wear protective equipment, and keep away from children, food and animals.</p>
             </div>
+            <LicenceLine kind="sale" />
 
             <ProductExtras product={p} />
           </div>

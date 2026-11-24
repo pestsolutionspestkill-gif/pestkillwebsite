@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import businessConfig from '../data/businessConfig';
-import { Phone, MessageCircle, Mail, MapPin, Clock, ArrowRight, ShieldCheck, Award, Leaf, BadgeCheck } from 'lucide-react';
+import { LicenceLine } from './Credentials';
+import { Phone, MessageCircle, Mail, MapPin, Clock, ArrowRight, ShieldCheck, Award, Leaf } from 'lucide-react';
 import { Logo } from './Navbar';
 import { services as catalogServices } from '../data/catalog';
 import './Footer.css';
@@ -10,6 +11,9 @@ const quickLinks = [
   { label: 'Book Online', path: '/book' },
   { label: 'For Business', path: '/business' },
   { label: 'Pest Library', path: '/pests' },
+  { label: 'Knowledge Centre', path: '/knowledge' },
+  { label: 'Technical standards', path: '/technical-standards' },
+  { label: 'Dosage calculator', path: '/shop/dose-calculator' },
   { label: 'Integrated Pest Management', path: '/integrated-pest-management' },
   { label: 'About Us', path: '/about' },
   { label: 'Locations', path: '/locations' },
@@ -21,7 +25,7 @@ const quickLinks = [
 const cities = CITIES.slice(0, 8).map((c) => ({ label: c.name, path: cityPath(c.slug) })).concat({ label: 'All Rajasthan cities', path: '/locations' });
 
 const Footer = () => {
-  const { businessName, tagline, phoneNumber, whatsappNumber, email, officeAddress, workingHours, googleMapLink, brands, licenceNumber } = businessConfig;
+  const { businessName, tagline, phoneNumber, whatsappNumber, email, officeAddress, workingHours, googleMapLink, brands } = businessConfig;
   const wa = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`;
 
   return (
@@ -44,7 +48,8 @@ const Footer = () => {
             <Logo />
             <p className="footer-tagline">{tagline}. Serving homes, hotels, hospitals and industries across Rajasthan, Delhi NCR and Uttar Pradesh.</p>
             <ul className="footer-trust">
-              <li><BadgeCheck size={16} /> Licensed pest control operator{licenceNumber ? ` · Lic. ${licenceNumber}` : ''}</li>
+              <li><LicenceLine kind="pco" /></li>
+              <li><LicenceLine kind="sale" /></li>
               <li><ShieldCheck size={16} /> Govt. approved chemicals</li>
               <li><Award size={16} /> Up to 10-year warranty</li>
               <li><Leaf size={16} /> Family & pet safe methods</li>

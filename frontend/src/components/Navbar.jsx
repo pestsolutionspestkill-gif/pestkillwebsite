@@ -31,7 +31,7 @@ const companyLinks = [
 const MENUS = [
   { id: 'services', label: 'Services', match: ['/services', '/termite-control', '/cockroach-control', '/bed-bug-treatment', '/rodent-control'] },
   { id: 'business', label: 'For Business', match: ['/business', '/integrated-pest-management'] },
-  { id: 'pests', label: 'Pest Library', match: ['/pests', '/pest-identifier'] },
+  { id: 'pests', label: 'Pest Library', match: ['/pests', '/pest-identifier', '/knowledge'] },
   { id: 'company', label: 'Company', match: ['/about', '/locations', '/careers', '/blog', '/contact'] },
 ];
 
@@ -105,6 +105,7 @@ const PestsPanel = () => (
       <h4>Pest Identifier</h4>
       <p>Answer five quick questions — get the likely pest, how serious it is and the price to treat it.</p>
       <Link to="/pest-identifier" className="btn btn-primary btn-sm">Identify my pest <ArrowRight size={14} /></Link>
+      <Link to="/knowledge" className="mega-kc-link">Knowledge Centre: species guides in English &amp; हिन्दी <ArrowRight size={14} /></Link>
     </div>
   </div>
 );
@@ -243,7 +244,7 @@ const Navbar = () => {
         {[
           { id: 'services', label: 'Services', items: services.map((s) => ({ name: s.name, path: s.path })) },
           { id: 'business', label: 'For Business', items: [{ name: 'Commercial solutions', path: '/business' }, { name: 'Integrated Pest Management', path: '/integrated-pest-management' }, ...sectors.map((s) => ({ name: s.name, path: `/business/${s.slug}` }))] },
-          { id: 'pests', label: 'Pest Library', items: [{ name: 'Pest Identifier — what is it?', path: '/pest-identifier' }, { name: 'All pests', path: '/pests' }, ...pests.map((p) => ({ name: p.name, path: `/pests/${p.slug}` }))] },
+          { id: 'pests', label: 'Pest Library', items: [{ name: 'Pest Identifier — what is it?', path: '/pest-identifier' }, { name: 'Knowledge Centre (English / हिन्दी)', path: '/knowledge' }, { name: 'All pests', path: '/pests' }, ...pests.map((p) => ({ name: p.name, path: `/pests/${p.slug}` }))] },
           { id: 'company', label: 'Company', items: companyLinks },
         ].map((sec) => (
           <div key={sec.id} className={`mobile-sec ${mobileSection === sec.id ? 'open' : ''}`}>

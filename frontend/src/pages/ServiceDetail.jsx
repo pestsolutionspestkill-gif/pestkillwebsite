@@ -7,6 +7,7 @@ import { getService } from '../data/catalog';
 import { serviceMedia, creditLine } from '../data/media';
 import { submitLead } from '../lib/api';
 import './ServiceDetail.css';
+import Credentials, { LicenceLine } from '../components/Credentials';
 
 const baseServices = {
   'termite-control': {
@@ -322,6 +323,8 @@ const ServiceDetail = () => {
         </div>
       </section>
 
+      <Credentials only={['pco']} compact title="Licensed pest management service" intro="Every treatment is carried out under our pest control licence by trained technicians." />
+
       <section className="section" id="quote">
         <div className="container">
           <div className="sd-quote">
@@ -348,6 +351,7 @@ const ServiceDetail = () => {
                   <textarea className="form-input" rows="3" placeholder="Describe your pest problem" value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} />
                   {formError && <p className="form-error" role="alert">{formError}</p>}
                   <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={sending}>{sending ? 'Sending…' : <>Get Free Quote <ArrowRight size={18} /></>}</button>
+                  <LicenceLine kind="pco" />
                 </form>
               )}
             </div>

@@ -194,3 +194,5 @@
   .floating-actions { right: 16px; bottom: 16px; }
   .float-btn { width: 50px; height: 50px; }
 }
+.mega-kc-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 0.86rem; font-weight: 600; color: var(--gold-300); }
+.mega-kc-link:hover { color: #fff; }

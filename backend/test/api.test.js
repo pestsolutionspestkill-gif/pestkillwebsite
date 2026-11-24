@@ -341,19 +341,100 @@ test('shop: pest filter, product page content, dose rate and datasheet downloads
   assert.equal((await call('PUT', `/products/${prod.id}`, { dosePerLitre: -1 }, O)).s, 400);
 
   const pdf = `data:application/pdf;base64,${Buffer.from('%PDF-1.4\n% tds\n').toString('base64')}`;
-  assert.equal((await call('PUT', `/products/${prod.id}/documents/tds`, { dataUrl: `data:application/pdf;base64,${Buffer.from('hello').toString('base64')}` }, O)).s, 400, 'not a real PDF');
-  r = await call('PUT', `/products/${prod.id}/documents/tds`, { dataUrl: pdf }, O);
-  assert.equal(r.s, 200);
+  const doc = { productId: prod.id, kind: 'tds', title: 'Technical datasheet', version: '2.1' };
+  assert.equal((await call('POST', '/documents', { ...doc, dataUrl: `data:application/pdf;base64,${Buffer.from('hello').toString('base64')}` }, O)).s, 400, 'not a real PDF');
+  r = await call('POST', '/documents', { ...doc, dataUrl: pdf }, O);
+  assert.equal(r.s, 201, JSON.stringify(r.j));
   const C = await register('Curious Client', 'curious@example.com');
-  assert.equal((await call('PUT', `/products/${prod.id}/documents/msds`, { dataUrl: pdf }, C)).s, 403, 'clients cannot upload');
+  assert.equal((await call('POST', '/documents', { ...doc, kind: 'msds', dataUrl: pdf }, C)).s, 403, 'clients cannot upload');
 
   const page = await call('GET', `/products/${prod.slug}`);
   assert.equal(page.j.documents[0].kind, 'tds');
+  assert.equal(page.j.documents[0].version, '2.1');
   assert.equal(page.j.faqs[0].q, 'Is it odourless?');
-  const file = await fetch(`${B}/products/${prod.id}/documents/tds`);
+  const old = await fetch(`${B}/products/${prod.id}/documents/tds`, { redirect: 'manual' });
+  assert.equal(old.status, 302, 'old links redirect to the new file URL');
+  const file = await fetch(`${SITE}${page.j.documents[0].url}`);
   assert.equal(file.headers.get('content-type'), 'application/pdf');
-  const lib = await call('GET', '/products/documents');
+  const lib = await call('GET', '/documents');
   assert.ok(lib.j.some((d) => d.product_id === prod.id && d.kind === 'tds'));
+});
+
+test('technical documents: metadata, visibility, replace, download name and delete', async () => {
+  const prod = (await call('GET', '/products?brand=Envu')).j.products[0];
+  const pdf = (t) => `data:application/pdf;base64,${Buffer.from(`%PDF-1.4\n% ${t}\n`).toString('base64')}`;
+  let r = await call('POST', '/documents', { productId: prod.id, kind: 'msds', title: 'Safety data sheet', manufacturer: 'Envu', version: '1.0',
+    issueDate: '2025-01-10', revisionDate: '2024-01-01', dataUrl: pdf('sds') }, O);
+  assert.equal(r.s, 400, 'revision date before issue date');
+  r = await call('POST', '/documents', { productId: prod.id, kind: 'msds', title: 'Safety data sheet', manufacturer: 'Envu', version: '1.0',
+    issueDate: '2025-01-10', revisionDate: '2025-06-01', dataUrl: pdf('sds') }, O);
+  assert.equal(r.s, 201);
+  const sds = r.j;
+  r = await call('POST', '/documents', { productId: prod.id, kind: 'certificate', title: 'Registration certificate', visibility: 'pco', dataUrl: pdf('cert') }, O);
+  const cert = r.j;
+  r = await call('POST', '/documents', { productId: prod.id, kind: 'other', title: 'Internal price note', visibility: 'staff', dataUrl: pdf('staff') }, O);
+  const internal = r.j;
+
+  const publicList = (await call('GET', `/documents?productId=${prod.id}`)).j.map((d) => d.id);
+  assert.ok(publicList.includes(sds.id) && !publicList.includes(cert.id) && !publicList.includes(internal.id), 'visitors see public documents only');
+  assert.equal((await fetch(`${B}/documents/${cert.id}/file`)).status, 404, 'PCO-only file hidden from visitors');
+  const staffList = (await call('GET', `/documents?productId=${prod.id}`, null, O)).j.map((d) => d.id);
+  assert.ok(staffList.includes(cert.id) && staffList.includes(internal.id));
+
+  const dl = await fetch(`${B}/documents/${sds.id}/file?download=1`);
+  assert.match(dl.headers.get('content-disposition'), /^attachment; filename=".*-msds-v1\.0\.pdf"$/);
+  r = await call('PATCH', `/documents/${sds.id}`, { version: '1.1', revisionDate: '2025-09-01', dataUrl: pdf('sds v1.1') }, O);
+  assert.equal(r.j.version, '1.1');
+  assert.match(await (await fetch(`${B}/documents/${sds.id}/file`)).text(), /sds v1\.1/, 'file replaced');
+
+  const M = await register('Doc Manager', 'docmanager@example.com');
+  const mId = (await call('GET', '/admin/users?q=docmanager@example.com', null, O)).j[0].id;
+  await call('PATCH', `/admin/users/${mId}`, { role: 'manager' }, O);
+  await call('PUT', `/admin/managers/${mId}/permissions`, { permissions: ['products.view', 'products.edit'] }, O);
+  assert.equal((await call('DELETE', `/documents/${internal.id}`, null, M)).s, 403, 'deleting needs products.delete');
+  assert.equal((await call('DELETE', `/documents/${internal.id}`, null, O)).s, 200);
+  assert.equal((await fetch(`${B}/documents/${internal.id}/file`, { headers: { Authorization: `Bearer ${O}` } })).status, 404);
+});
+
+test('dosage records: only verified label data reaches the calculator', async () => {
+  const prod = (await call('GET', '/products?q=Premise')).j.products.find((p) => p.pack_size === '1 L');
+  let r = await call('POST', '/doses', { productId: prod.id, activity: 'termite_pre', method: 'Soil treatment' }, O);
+  assert.equal(r.s, 400, 'a dilution and at least one rate are required');
+  r = await call('POST', '/doses', { productId: prod.id, activity: 'termite_pre', method: 'Soil treatment as per label',
+    productPerLitre: 2, rateHorizontal: 5, rateRunning: 7.5, amountUnit: 'ml' }, O);
+  assert.equal(r.s, 201, JSON.stringify(r.j));
+  const rec = r.j;
+  assert.equal(rec.status, 'unverified');
+  let calc = await call('GET', '/doses/calculator?activity=termite_pre');
+  assert.equal(calc.j.records.length, 0, 'unverified data is never offered');
+  assert.equal(calc.j.pending, 1);
+
+  assert.equal((await call('POST', `/doses/${rec.id}/verify`, { confirm: true }, O)).s, 400, 'a source is required');
+  assert.equal((await call('POST', `/doses/${rec.id}/verify`, { sourceNote: 'Label revision 3, printed on 1 L pack', confirm: false }, O)).s, 400, 'explicit confirmation required');
+  const C = await register('Not Staff', 'notstaff@example.com');
+  assert.equal((await call('POST', `/doses/${rec.id}/verify`, { sourceNote: 'Label revision 3', confirm: true }, C)).s, 403);
+  r = await call('POST', `/doses/${rec.id}/verify`, { sourceNote: 'Label revision 3, printed on 1 L pack', confirm: true }, O);
+  assert.equal(r.j.status, 'verified');
+  calc = await call('GET', '/doses/calculator?activity=termite_pre');
+  assert.equal(calc.j.records.length, 1);
+  assert.ok(calc.j.records[0].packs.some((p) => p.pack_size === '1 L'), 'pack sizes for the pack calculation');
+  assert.equal((await call('GET', `/products/${prod.slug}`)).j.doses.length, 1);
+
+  r = await call('PATCH', `/doses/${rec.id}`, { rateHorizontal: 4 }, O);
+  assert.equal(r.j.status, 'unverified', 'changing a number needs re-verification');
+  assert.equal((await call('GET', '/doses/calculator?activity=termite_pre')).j.records.length, 0);
+  assert.equal((await call('DELETE', `/doses/${rec.id}`, null, O)).s, 200);
+});
+
+test('catalogue: rename a brand or category on all products', async () => {
+  const before = (await call('GET', '/products?category=Adjuvants')).j.products.length;
+  assert.ok(before > 0);
+  let r = await call('PATCH', '/products/rename', { field: 'category', from: 'Adjuvants', to: 'Spray Adjuvants' }, O);
+  assert.equal(r.j.updated, before);
+  assert.equal((await call('GET', '/products?category=Spray%20Adjuvants')).j.products.length, before);
+  r = await call('PATCH', '/products/rename', { field: 'category', from: 'Spray Adjuvants', to: 'Adjuvants' }, O);
+  assert.equal(r.s, 200);
+  assert.equal((await call('PATCH', '/products/rename', { field: 'brand', from: 'Nope', to: 'X Brand' }, O)).s, 404);
 });
 
 test('search engines: product and shop landing pages are rendered with full content', { skip: !builtSite && 'run "npm run build" in frontend first' }, async () => {
@@ -435,4 +516,59 @@ test('uploads: images are checked by content, not just by declared type', async 
   assert.equal(r.s, 400, 'a script disguised as a PNG is rejected');
   const svg = await call('PUT', `/products/${p.id}/image`, { dataUrl: `data:image/svg+xml;base64,${Buffer.from('<svg/>').toString('base64')}` }, O);
   assert.equal(svg.s, 400, 'SVG (can carry scripts) is not accepted');
+});
+
+test('licences: exact numbers, validity hidden until verified, copy required to verify', async () => {
+  let r = await call('GET', '/licences');
+  const byKey = Object.fromEntries(r.j.map((l) => [l.key, l]));
+  assert.equal(byKey.pco.number, 'PCO/Jaipur/DD/2025-26/68');
+  assert.equal(byKey.sale.number, 'SL/Jaipur/DD/2025-26/63');
+  assert.equal(byKey.pco.has_document, false);
+  assert.equal(byKey.pco.valid_until, undefined, 'no validity shown before verification');
+
+  r = await call('PATCH', `/licences/${byKey.pco.id}`, { issuingAuthority: 'Test authority', validFrom: '2025-04-01', validUntil: '2026-03-31' }, O);
+  assert.equal(r.s, 200);
+  assert.equal((await call('PATCH', `/licences/${byKey.pco.id}`, { status: 'verified' }, O)).s, 400, 'a licence copy is needed first');
+  const C = await register('Licence Viewer', 'licview@example.com');
+  assert.equal((await call('PATCH', `/licences/${byKey.pco.id}`, { status: 'verified' }, C)).s, 403);
+  r = await call('PUT', `/licences/${byKey.pco.id}/document`, { dataUrl: `data:application/pdf;base64,${Buffer.from('%PDF-1.4\n% licence\n').toString('base64')}` }, O);
+  assert.equal(r.s, 200);
+  r = await call('PATCH', `/licences/${byKey.pco.id}`, { status: 'verified' }, O);
+  assert.equal(r.j.status, 'verified');
+  const pub = (await call('GET', '/licences')).j.find((l) => l.key === 'pco');
+  assert.equal(pub.valid_until, '2026-03-31');
+  assert.equal((await fetch(`${SITE}${pub.document_url}`)).headers.get('content-type'), 'application/pdf');
+  r = await call('PATCH', `/licences/${byKey.pco.id}`, { validUntil: '2027-03-31' }, O);
+  assert.equal(r.j.status, 'unverified', 'changing validity needs a new verification');
+  await call('PATCH', `/licences/${byKey.pco.id}`, { issuingAuthority: null, validFrom: null, validUntil: null }, O);
+});
+
+test('standards register and reference prices', async () => {
+  const pub = (await call('GET', '/standards')).j;
+  assert.ok(pub.some((s) => s.code === 'IS 6313 (Part 2) : 2001' && s.verification_status === 'archived_copy'));
+  assert.ok(!pub.some((s) => /2022/.test(s.code)), 'unconfirmed editions are not published');
+  const all = (await call('GET', '/standards/all', null, O)).j;
+  assert.ok(all.some((s) => /2022/.test(s.code) && s.verification_status === 'not_confirmed'));
+  assert.equal((await call('POST', '/standards', { code: 'IS X', title: 'Test', sourceUrl: 'ftp://x' }, O)).s, 400, 'https sources only');
+
+  const refs = (await call('GET', '/reference-prices', null, O)).j;
+  assert.equal(refs.length, 88);
+  const premise = refs.find((x) => x.ref_name === 'Premise SC');
+  assert.equal(premise.match_status, 'matched');
+  assert.equal(premise.our_pack, '1 L');
+  assert.equal(premise.displayed_price, 3900);
+  assert.equal(refs.find((x) => x.ref_name === 'FLIGON').match_status, 'review', 'different names are never auto-matched');
+  assert.equal((await call('GET', '/reference-prices')).s, 401, 'staff only');
+  const before = (await call('GET', '/products?q=Premise')).j.products.find((p) => p.pack_size === '1 L').mrp;
+  const r = await call('PATCH', `/reference-prices/${premise.id}`, { displayedPrice: 3800 }, O);
+  assert.equal(r.j.displayed_price, 3800);
+  assert.equal((await call('GET', '/products?q=Premise')).j.products.find((p) => p.pack_size === '1 L').mrp, before, 'our own price is never changed');
+});
+
+test('shop: formulation filter and missing-photo list', async () => {
+  const sc = (await call('GET', '/products?formulation=SC')).j;
+  assert.ok(sc.products.length > 0 && sc.products.every((p) => p.formulation === 'SC'));
+  assert.ok(sc.formulations.some((f) => f.name === 'SC'));
+  const missing = (await call('GET', '/products?photo=missing')).j.products;
+  assert.ok(missing.every((p) => p.image_url === null));
 });
