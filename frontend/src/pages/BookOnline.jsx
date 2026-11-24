@@ -7,6 +7,7 @@ import {
   Phone, ShieldCheck, BadgeCheck, MessageCircle, CheckCircle,
 } from 'lucide-react';
 import businessConfig from '../data/businessConfig';
+import { HOUSEHOLD_OPTIONS } from '../data/safeHome';
 import { services, serviceGroups, getService } from '../data/catalog';
 import './BookOnline.css';
 
@@ -63,6 +64,7 @@ const BookOnline = () => {
   const [property, setProperty] = useState({ type: 'home', size: '2BHK', area: '' });
   const [schedule, setSchedule] = useState({ date: null, slot: '' });
   const [details, setDetails] = useState({ name: '', phone: '', email: '', address: '', city: 'Jaipur', notes: '' });
+  const [household, setHousehold] = useState({});
   const [errors, setErrors] = useState({});
   const [bookingRef, setBookingRef] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -136,6 +138,7 @@ const BookOnline = () => {
         address: details.address,
         city: details.city,
         message: details.notes,
+        household,
         source: 'book-online',
       }, { whatsappNumber, whatsappText: msg });
       setBookingRef(result.ref || 'whatsapp');
@@ -309,8 +312,19 @@ const BookOnline = () => {
                     {errors.address && <span className="field-error">{errors.address}</span>}
                   </div>
                   <div className="form-group span-2">
+                    <span className="form-label">Safe Home plan <span className="optional">(optional — who lives at home?)</span></span>
+                    <div className="household-chips">
+                      {HOUSEHOLD_OPTIONS.map(({ key, label, icon: Icon }) => (
+                        <button type="button" key={key} className={household[key] ? 'on' : ''} aria-pressed={Boolean(household[key])} onClick={() => setHousehold({ ...household, [key]: !household[key] })}>
+                          <Icon size={15} /> {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="household-note">We'll tailor the treatment and send you a personalised preparation & safe re-entry plan.</p>
+                  </div>
+                  <div className="form-group span-2">
                     <label className="form-label" htmlFor="b-notes">Anything we should know? <span className="optional">(optional)</span></label>
-                    <textarea id="b-notes" className="form-input" rows="3" placeholder="Where you see the pests, how long, pets or children at home…" value={details.notes} onChange={(e) => setDetails({ ...details, notes: e.target.value })} />
+                    <textarea id="b-notes" className="form-input" rows="3" placeholder="Where you see the pests, and since when…" value={details.notes} onChange={(e) => setDetails({ ...details, notes: e.target.value })} />
                   </div>
                 </div>
               </>

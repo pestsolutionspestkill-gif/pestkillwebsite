@@ -1,5 +1,7 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, useLocation, Link } from 'react-router-dom';
+import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom';
+import RouteSeo from './seo/RouteSeo';
+import { REDIRECTS } from './seo/meta';
 import Navbar from './components/Navbar';
 import SmoothScroll from './components/SmoothScroll';
 import { FounderStrip } from './components/Founder';
@@ -26,18 +28,13 @@ const TermiteControl = lazy(() => import('./pages/TermiteControl'));
 const CockroachControl = lazy(() => import('./pages/CockroachControl'));
 const BedBugTreatment = lazy(() => import('./pages/BedBugTreatment'));
 const RodentControl = lazy(() => import('./pages/RodentControl'));
-const Jaipur = lazy(() => import('./pages/Jaipur'));
-const Jodhpur = lazy(() => import('./pages/Jodhpur'));
-const Udaipur = lazy(() => import('./pages/Udaipur'));
-const Kota = lazy(() => import('./pages/Kota'));
-const Ajmer = lazy(() => import('./pages/Ajmer'));
-const Bikaner = lazy(() => import('./pages/Bikaner'));
-const Alwar = lazy(() => import('./pages/Alwar'));
-const Bharatpur = lazy(() => import('./pages/Bharatpur'));
+const CityPage = lazy(() => import('./pages/CityPage'));
 const Shop = lazy(() => import('./pages/Shop'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Cart = lazy(() => import('./pages/Cart'));
 const PcoAccount = lazy(() => import('./pages/PcoAccount'));
+const PestIdentifier = lazy(() => import('./pages/PestIdentifier'));
+const Verify = lazy(() => import('./pages/Verify'));
 // Staff console, customer account and print pages load on demand, keeping the public site light.
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Admin = lazy(() => import('./pages/Admin'));
@@ -61,6 +58,7 @@ function App() {
   return (
     <div className="app">
       <SmoothScroll />
+      <RouteSeo />
       {!consoleMode && <Navbar />}
       <main style={{ minHeight: '100vh', paddingTop: consoleMode ? 0 : 'var(--nav-h)' }}>
         <Suspense fallback={<PageLoading />}>
@@ -68,7 +66,6 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />
           <Route path="/services/anti-termite-piping" element={<AntiTermitePiping />} />
-          <Route path="/anti-termite-piping" element={<AntiTermitePiping />} />
           <Route path="/services/:slug" element={<ServiceDetail />} />
           <Route path="/book" element={<BookOnline />} />
           <Route path="/pests" element={<PestLibrary />} />
@@ -90,18 +87,15 @@ function App() {
           <Route path="/cockroach-control" element={<CockroachControl />} />
           <Route path="/bed-bug-treatment" element={<BedBugTreatment />} />
           <Route path="/rodent-control" element={<RodentControl />} />
-          <Route path="/jaipur" element={<Jaipur />} />
-          <Route path="/jodhpur" element={<Jodhpur />} />
-          <Route path="/udaipur" element={<Udaipur />} />
-          <Route path="/kota" element={<Kota />} />
-          <Route path="/ajmer" element={<Ajmer />} />
-          <Route path="/bikaner" element={<Bikaner />} />
-          <Route path="/alwar" element={<Alwar />} />
-          <Route path="/bharatpur" element={<Bharatpur />} />
+          <Route path="/pest-control/:city" element={<CityPage />} />
+          {Object.entries(REDIRECTS).map(([from, to]) => <Route key={from} path={from} element={<Navigate to={to} replace />} />)}
           <Route path="/shop" element={<Shop />} />
           <Route path="/shop/:slug" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/pco-account" element={<PcoAccount />} />
+          <Route path="/pest-identifier" element={<PestIdentifier />} />
+          <Route path="/verify" element={<Verify />} />
+          <Route path="/verify/:ref" element={<Verify />} />
           <Route path="/print/invoice/:id" element={<PrintInvoice />} />
           <Route path="/print/certificate/:ref" element={<PrintCertificate />} />
           <Route path="*" element={<NotFound />} />

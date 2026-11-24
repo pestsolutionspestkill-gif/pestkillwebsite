@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { refineHead } from '../seo/RouteSeo';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ChevronRight, Minus, Plus, ShieldAlert, BadgeCheck, ReceiptText, Truck, Zap } from 'lucide-react';
 import { api } from '../lib/api';
@@ -22,6 +23,11 @@ const ProductDetail = () => {
     api(`/products/${encodeURIComponent(slug)}`).then((d) => live && setP(d)).catch((e) => live && setError(e.message));
     return () => { live = false; };
   }, [slug]);
+
+  // Page title for client-side visits (the server already sends it on a direct load).
+  useEffect(() => {
+    if (p) refineHead({ title: `${[p.brand, p.name, p.pack_size].filter(Boolean).join(' ')} | PCO Shop | PestKill` });
+  }, [p]);
 
   if (error) return <div className="container pd-state"><h2>Product not found</h2><p>{error}</p><Link to="/shop" className="btn btn-primary">Back to shop</Link></div>;
   if (!p) return <div className="container pd-state"><span className="spinner" /></div>;

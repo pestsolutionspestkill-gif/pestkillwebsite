@@ -10,6 +10,9 @@ const businessConfig = {
   workingHours: "Mon-Sat: 9:00 AM - 7:00 PM",
   // Pest control licence issued by the Agriculture Department. Leave empty to show "available on request".
   licenceNumber: "",
+  // Official social / directory profile URLs (Google Business Profile, Facebook, Instagram, Justdial…).
+  // Added to the search structured data as "sameAs"; list only profiles you own.
+  socialProfiles: [],
   // GST registration number. When set, invoices are titled "Tax Invoice" and show it.
   gstin: "",
   services: [

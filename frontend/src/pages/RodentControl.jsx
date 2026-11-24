@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Phone, MapPin, AlertCircle, Scissors, Volume2, AlertTriangle } from 'lucide-react';
 import RateCards from '../components/RateCards';
 import './ServiceDetail.css';
+import CityLinks from '../components/CityLinks';
 
 const RodentControl = () => {
   return (
@@ -108,13 +109,7 @@ const RodentControl = () => {
             </div>
 
             <h3>Cities We Serve</h3>
-            <div className="cities-grid">
-              <Link to="/jaipur" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Jaipur</Link>
-              <Link to="/jodhpur" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Jodhpur</Link>
-              <Link to="/udaipur" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Udaipur</Link>
-              <Link to="/kota" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Kota</Link>
-              <Link to="/ajmer" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Ajmer</Link>
-            </div>
+            <CityLinks />
           </div>
         </div>
       </section>

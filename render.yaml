@@ -16,6 +16,14 @@ services:
         value: "1"
       - key: DATABASE_URL            # Neon → Connection string (starts with postgresql://, includes sslmode=require)
         sync: false
+      - key: GMAIL_USER              # Gmail address that sends sign-up codes, e.g. pestsolutionspestkill@gmail.com
+        sync: false
+      - key: GMAIL_APP_PASSWORD      # 16-character Google App Password (not your normal Gmail password)
+        sync: false
+      - key: SITE_URL                # Your public address, e.g. https://www.pestkill.in (used in sitemap and canonical links)
+        sync: false
+      - key: GOOGLE_SITE_VERIFICATION # Optional: the content="..." code from Google Search Console (HTML tag method)
+        sync: false
       - key: OWNER_NAME
         sync: false
       - key: OWNER_EMAIL

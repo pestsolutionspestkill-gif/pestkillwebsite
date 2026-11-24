@@ -4,6 +4,7 @@ import express from 'express';
 import db, { audit, NOW } from '../db.js';
 import { auth, requirePermission, ah } from '../middleware/rbac.js';
 import { str, oneOf, intId, ValidationError } from '../utils/validate.js';
+import { checkFirmName } from '../utils/antiAbuse.js';
 
 const router = express.Router();
 const STATUSES = ['pending', 'approved', 'rejected'];
@@ -14,7 +15,7 @@ const readApplication = (b) => {
   const pincode = str(b.pincode, { field: 'PIN code', max: 6 });
   if (pincode && !/^[1-9][0-9]{5}$/.test(pincode)) throw new ValidationError('Enter a valid 6-digit PIN code.');
   return {
-    firm_name: str(b.firmName, { field: 'Firm name', min: 2, max: 120, required: true }),
+    firm_name: checkFirmName(b.firmName, 'Firm name'),
     licence_no: str(b.licenceNo, { field: 'Pest control licence number', min: 3, max: 80, required: true }),
     licence_valid_till: str(b.licenceValidTill, { field: 'Licence validity', max: 20 }),
     gstin,

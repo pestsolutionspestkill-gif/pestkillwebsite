@@ -71,7 +71,10 @@ export const ah = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)
 // Minimal in-memory rate limiter for public form endpoints.
 export const rateLimit = ({ windowMs, max }) => {
   const hits = new Map();
+  // Automated tests may switch limits off; never possible in production.
+  const disabled = process.env.NODE_ENV === 'test' && process.env.RATE_LIMITS === 'off';
   return (req, res, next) => {
+    if (disabled) return next();
     const now = Date.now();
     const key = req.ip;
     const entry = hits.get(key);

@@ -3,7 +3,8 @@ import { API_URL } from '../config';
 const TOKEN_KEY = 'pk_token';
 
 export const tokenStore = {
-  get: () => localStorage.getItem(TOKEN_KEY),
+  // Guarded so the pages can also be pre-rendered on the server, where there is no localStorage.
+  get: () => { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } },
   set: (t) => localStorage.setItem(TOKEN_KEY, t),
   clear: () => localStorage.removeItem(TOKEN_KEY),
 };

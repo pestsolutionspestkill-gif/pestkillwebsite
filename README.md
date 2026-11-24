@@ -72,6 +72,25 @@ Permissions are checked on the server for every request, and changes apply immed
 Customers see bookings and invoices linked to their account (bookings made while signed in,
 or invoices created from those bookings).
 
+## Sign-up checks
+
+- **Email OTP:** a 6-digit code is emailed before the account is created (valid 10 minutes, 5 tries,
+  resend after 60 s, max 5 codes/hour per email, rate-limited per IP; stored only as a hash). Free with
+  Gmail: set `GMAIL_USER` and `GMAIL_APP_PASSWORD` (Google Account → Security → 2-Step Verification →
+  App passwords). Locally without these, the code is shown on screen; the live site refuses sign-ups
+  until they are set.
+- **Real emails only:** temporary inboxes (mailinator, yopmail, 10minutemail…) and common typos
+  (gmial.com) are rejected; on the live site the domain must accept mail (DNS MX check).
+- **Real mobiles only:** exactly 10 digits starting 6–9 (optional +91), no fakes like 9999999999 /
+  9876543210 / 9898989898, and one account per number.
+- **Abuse filter:** names, firm names, booking/career forms and complaints reject abusive words in
+  English, Hinglish and Devanagari (including tricks like ch00tiya, f.u.c.k), fake names (test, asdf),
+  names with numbers, and staff-looking names (Admin, PestKill). Real names such as Gandhi, Shital or
+  Chodankar are not affected. Word lists: `backend/src/utils/antiAbuse.js`.
+- SMS OTP for mobile numbers can be added later (Fast2SMS / MSG91); the `phone_verified` column is ready.
+
+Run the backend tests with `npm test` in `backend/`.
+
 ## PCO shop
 
 `/shop` sells professional products (Envu, Syngenta, Heranba, Arbuda) to **licensed pest control
@@ -98,6 +117,51 @@ The catalogue (`backend/src/data/productSeed.js`, 144 packs) and the official br
 products are added; products you have edited in the console are never overwritten. MRPs taken from public
 listings are marked **"Check"** until you tick "I have checked this MRP against the printed pack";
 products without an MRP show "Price on request". Stock left empty means "not tracked".
+
+## Customer trust features
+
+- **Warranty Wallet**: in *My account*, each completed booking shows how many warranty days are left, based on
+  the warranty you enter when you complete the job (for example "90 days" or "1 year"). While the warranty is
+  active, the customer can ask for a free re-treatment with one tap. Requests appear in
+  **Admin → Warranty claims**, where you can schedule a visit, mark it resolved, or decline it with a note.
+  Only one claim per booking can be open at a time.
+- **Service proof photos**: technicians add before and after photos from **My jobs**. Managers add them from the
+  booking drawer. The limit is 8 photos per job. Customers see the photos, the visit report and the products used
+  under *Service proof*.
+- **QR-verified certificates**: each treatment certificate has a QR code that opens `/verify/<booking ref>`.
+  The page shows whether the certificate is genuine and gives the service, date and warranty. The customer's
+  name is partly hidden and the phone number and address are never shown.
+- **Pest Identifier** (`/pest-identifier`): five quick questions give the likely pest, how serious it is, and
+  the starting price. Customers can then book or send a photo on WhatsApp.
+- **Safe Home plan**: when booking, customers can tick kids, pets, elders, pregnancy, asthma or an aquarium. Their
+  booking then shows a prep checklist and a suggested re-entry time. This is general guidance. The technician's
+  advice and the product label always come first.
+
+Run `npm test` in `backend/` to run the API tests, which cover these features.
+
+## Search engines (SEO)
+
+- **Pre-rendered pages**: `npm run build` in `frontend/` builds the app, then renders every public page (about
+  100) to plain HTML (`scripts/prerender.mjs`). Google, Bing, WhatsApp and Facebook see the full content, title
+  and description without running JavaScript. React then takes over the same HTML in the browser.
+- **One source for page metadata**: `frontend/src/seo/meta.js` sets each page's title, description, canonical
+  link and structured data (LocalBusiness, Service with prices, FAQ, BreadcrumbList, BlogPosting, Product). The
+  browser, the pre-renderer and the sitemap all read from it.
+- **Rajasthan city pages**: `frontend/src/data/rajasthan.js` holds the city pages at `/pest-control/<city>`.
+  Each page shows local pests, the peak season, prices, areas covered, nearby cities, FAQs and a Hindi section.
+  To add a city, add an entry to that file. To remove one, delete its entry. The old URLs (`/jaipur`, `/kota`, …)
+  permanently redirect to the new pages.
+- **Server** (`backend/src/seo.js`):
+  - `/sitemap.xml` lists the pages and the shop products. `/robots.txt` points to the sitemap.
+  - Unknown pages return a real 404.
+  - URLs with a trailing slash and moved URLs redirect with a 301.
+  - Product pages get their title and description from the database.
+- **Settings on Render**:
+  - Set `SITE_URL` to your final address, for example `https://www.your-domain.in`. Requests to any other host,
+    such as `*.onrender.com`, then redirect to it, and the sitemap and canonical links use it.
+  - Optionally, set `GOOGLE_SITE_VERIFICATION` to verify the site in Google Search Console.
+- Add your Google Business Profile, Facebook and Instagram links to `socialProfiles` in
+  `frontend/src/data/businessConfig.js`.
 
 ## Where website forms go
 

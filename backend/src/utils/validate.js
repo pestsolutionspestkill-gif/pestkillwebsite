@@ -1,3 +1,5 @@
+import { checkMobile } from './antiAbuse.js';
+
 export class ValidationError extends Error {
   constructor(message) {
     super(message);
@@ -13,10 +15,13 @@ export const str = (value, { field, min = 0, max = 500, required = false } = {})
   return v || null;
 };
 
+// Exactly 10 digits (optional +91/91/0 prefix), starting 6–9, and not an obvious fake number.
 export const phone = (value) => {
-  const digits = String(value || '').replace(/\D/g, '').slice(-10);
-  if (!/^[6-9]\d{9}$/.test(digits)) throw new ValidationError('Please enter a valid 10-digit mobile number.');
-  return digits;
+  try {
+    return checkMobile(value);
+  } catch (e) {
+    throw new ValidationError(e.message);
+  }
 };
 
 export const email = (value, { required = false } = {}) => {

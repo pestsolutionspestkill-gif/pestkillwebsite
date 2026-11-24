@@ -1,5 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { Bug, Zap, Shield, BedDouble, CloudRain, Leaf, Building2, HelpCircle, Sparkles, User, Phone, MessageCircle } from 'lucide-react';
 import './Blog.css';
 
@@ -898,13 +897,8 @@ Call us or book online for inspection.`,
 
 const BlogDetail = () => {
   const { slug } = useParams();
-  const [post, setPost] = useState(null);
-
-  useEffect(() => {
-    setPost(blogPosts[slug] || Object.values(blogPosts)[0]);
-  }, [slug]);
-
-  if (!post) return <div className="blog-detail">Loading...</div>;
+  const post = blogPosts[slug];
+  if (!post) return <Navigate to="/blog" replace />;
 
   const paragraphs = post.content.split('\n\n').filter(p => p.trim());
 

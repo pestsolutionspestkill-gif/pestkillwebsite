@@ -1,0 +1,26 @@
+.only-section { background: #fff; }
+.only-head { max-width: 760px; margin: 0 auto 36px; text-align: center; }
+.only-head h2 { margin: 10px 0 12px; font-size: clamp(2rem, 4.6vw, 3.2rem); font-weight: 700; letter-spacing: -0.045em; line-height: 1.08; }
+.only-head p { font-size: 1.06rem; color: var(--muted); }
+
+.only-hero { display: flex; align-items: center; gap: 20px; margin-bottom: 18px; padding: 26px 28px; color: #fff; background: #000; border-radius: 26px; transition: transform 0.3s var(--ease); }
+.only-hero:hover { transform: translateY(-3px); }
+.only-hero-icon { width: 64px; height: 64px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: #000; background: linear-gradient(135deg, #2FD08F, #12B5A5); border-radius: 18px; }
+.only-hero > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.only-hero strong { font-size: clamp(1.2rem, 2.4vw, 1.6rem); letter-spacing: -0.03em; color: #fff; }
+.only-hero > div span { color: rgba(255,255,255,0.7); }
+.only-hero-cta { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 12px 20px; font-weight: 600; color: #000; background: #fff; border-radius: 999px; }
+
+.only-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.only-card { display: flex; flex-direction: column; gap: 10px; padding: 24px; background: #F5F5F7; border-radius: 22px; transition: transform 0.3s var(--ease), background 0.3s ease; }
+.only-card:hover { transform: translateY(-3px); background: #EEF9F4; }
+.only-icon { width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; color: #2FD08F; background: #1D1D1F; border-radius: 14px; }
+.only-card h3 { font-size: 1.15rem; letter-spacing: -0.025em; }
+.only-card p { flex: 1; font-size: 0.92rem; color: var(--ink-soft); }
+
+@media (max-width: 1024px) { .only-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 720px) {
+  .only-hero { flex-direction: column; align-items: flex-start; }
+  .only-hero-cta { width: 100%; justify-content: center; }
+  .only-grid { grid-template-columns: 1fr; }
+}

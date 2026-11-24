@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import db, { PERMISSIONS, GRANTABLE, DEFAULT_MANAGER_PERMISSIONS, ROLES, permissionsFor, audit, NOW, IST_DATE } from '../db.js';
 import { ownerOnly, staffOnly, requirePermission, can, ah } from '../middleware/rbac.js';
 import { str, email, password, phone, oneOf, intId, ValidationError } from '../utils/validate.js';
+import { checkPersonName } from '../utils/antiAbuse.js';
 import { LEAD_STATUSES } from './leadRoutes.js';
 
 const router = express.Router();
@@ -43,7 +44,7 @@ router.post('/users', requirePermission('users.create', 'users.assign_roles'), a
   if (role !== 'client' && !can(req.user, 'users.assign_roles')) throw forbidden('Only the owner can create staff accounts.');
   if (role === 'client' && !can(req.user, 'users.create')) throw forbidden('You cannot create client accounts.');
 
-  const name = str(req.body.name, { field: 'Name', min: 2, max: 80, required: true });
+  const name = checkPersonName(req.body.name, 'Name');
   const mail = email(req.body.email, { required: true });
   const mobile = phone(req.body.phone);
   const pass = password(req.body.password);
@@ -70,7 +71,7 @@ router.patch('/users/:id', requirePermission('users.edit', 'users.assign_roles')
   if (target.role === 'owner' && target.id !== req.user.id) throw forbidden('Owner accounts cannot be edited by others.');
 
   const changes = {};
-  if (req.body.name !== undefined) changes.name = str(req.body.name, { field: 'Name', min: 2, max: 80, required: true });
+  if (req.body.name !== undefined) changes.name = checkPersonName(req.body.name, 'Name');
   if (req.body.phone !== undefined) changes.phone = phone(req.body.phone);
   if (req.body.isActive !== undefined) {
     if (id === req.user.id) throw new ValidationError('You cannot suspend your own account.');

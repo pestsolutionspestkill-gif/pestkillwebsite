@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, MessageSquareWarning, Briefcase, Users, UserCog, KeyRound, ScrollText,
   LogOut, Search, X, Phone, MessageCircle, Mail, MapPin, RefreshCw, Trash2, Plus, Lock, ShieldCheck, CheckCircle,
-  BarChart3, CalendarDays, Wrench, ReceiptText, Award, Package, ShoppingBag, Store,
+  BarChart3, CalendarDays, Wrench, ReceiptText, Award, Package, ShoppingBag, Store, RotateCcw,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, waLink } from '../lib/api';
@@ -14,6 +14,8 @@ import Schedule from './admin/Schedule';
 import MyJobs from './admin/MyJobs';
 import Invoices from './admin/Invoices';
 import { ShopProducts, ShopOrders, Buyers } from './admin/Shop';
+import Claims from './admin/Claims';
+import JobPhotos from './admin/JobPhotos';
 import './Admin.css';
 
 const COMPLAINT_STATUSES = ['pending', 'in_progress', 'resolved', 'closed'];
@@ -140,7 +142,7 @@ const Bookings = ({ notify, onInvoice }) => {
       </State>
 
       {open && (
-        <LeadDrawer
+        <LeadDrawer notify={notify}
           key={open.id}
           lead={open}
           staff={staff.data || []}
@@ -160,7 +162,7 @@ const Bookings = ({ notify, onInvoice }) => {
 
 const toLocalInput = (s) => { if (!s) return ''; const d = new Date(s); if (Number.isNaN(d)) return ''; const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
 
-const LeadDrawer = ({ lead, staff, canAssign, canManage, canDelete, canInvoice, onInvoice, onClose, onSave, onDelete }) => {
+const LeadDrawer = ({ lead, staff, canAssign, canManage, canDelete, canInvoice, onInvoice, onClose, onSave, onDelete, notify }) => {
   const [notes, setNotes] = useState(lead.internal_notes || '');
   const [when, setWhen] = useState(toLocalInput(lead.scheduled_at));
   const [job, setJob] = useState({ amount: lead.amount ?? '', areaSqft: lead.area_sqft ?? '', warranty: lead.warranty || '' });
@@ -233,6 +235,7 @@ const LeadDrawer = ({ lead, staff, canAssign, canManage, canDelete, canInvoice, 
               {lead.completion_notes && <p className="visit-report"><strong>Visit report:</strong> {lead.completion_notes}{lead.chemicals_used ? ` · ${lead.chemicals_used}` : ''}</p>}
             </div>
           )}
+          {canManage && <JobPhotos jobId={lead.id} notify={notify} />}
           <div className="drawer-docs">
             {canInvoice && <button type="button" className="btn btn-sm btn-outline" onClick={onInvoice}><ReceiptText size={14} /> Create invoice</button>}
             {lead.status === 'completed' && <a className="btn btn-sm btn-outline" href={`/print/certificate/${lead.ref}`} target="_blank" rel="noopener noreferrer"><Award size={14} /> Certificate</a>}
@@ -540,6 +543,7 @@ const Admin = () => {
     { id: 'analytics', label: 'Analytics', icon: BarChart3, show: can('reports.view') },
     { id: 'bookings', label: 'Bookings', icon: CalendarCheck, show: can('services.view') || can('services.assign') },
     { id: 'schedule', label: 'Schedule', icon: CalendarDays, show: can('services.view') || can('services.assign') },
+    { id: 'claims', label: 'Warranty claims', icon: RotateCcw, show: can('services.view') || can('services.assign') || can('services.manage') },
     { id: 'invoices', label: 'Invoices', icon: ReceiptText, show: can('invoices.manage') },
     { id: 'orders', label: 'Shop orders', icon: ShoppingBag, show: can('orders.view') || can('orders.manage') },
     { id: 'products', label: 'Products', icon: Package, show: can('products.view') || can('products.edit') || can('inventory.manage') },
@@ -608,6 +612,7 @@ const Admin = () => {
             {current.id === 'bookings' && <Bookings notify={notify} onInvoice={(l) => { setInvoiceLead(l); setActive('invoices'); }} />}
             {current.id === 'schedule' && <Schedule onOpen={() => setActive('bookings')} />}
             {current.id === 'invoices' && <Invoices notify={notify} prefillLead={invoiceLead} clearPrefill={() => setInvoiceLead(null)} />}
+            {current.id === 'claims' && <Claims notify={notify} />}
             {current.id === 'orders' && <ShopOrders notify={notify} />}
             {current.id === 'products' && <ShopProducts notify={notify} />}
             {current.id === 'buyers' && <Buyers notify={notify} />}

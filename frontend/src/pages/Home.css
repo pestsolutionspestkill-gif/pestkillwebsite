@@ -1,7 +1,7 @@
 /* ================= HERO (Apple-style, centred on white) ================= */
 .home .hero { padding: 96px 0 0; background: var(--white); text-align: center; }
 .home .hero-center { max-width: 920px; }
-.home .hero-kicker { display: block; margin-bottom: 14px; font-size: 1.2rem; font-weight: 600; color: var(--emerald-600); letter-spacing: -0.015em; }
+.home .hero-kicker { display: block; margin-bottom: 14px; font-size: 1.2rem; line-height: 1.3; font-weight: 600; color: var(--emerald-600); letter-spacing: -0.015em; }
 .home .hero-title { font-size: clamp(3.2rem, 9vw, 7rem); line-height: 1.02; letter-spacing: -0.05em; font-weight: 700; margin-bottom: 22px; }
 .home .hero-subtitle { max-width: 640px; margin: 0 auto 32px; font-size: clamp(1.15rem, 2vw, 1.5rem); line-height: 1.35; letter-spacing: -0.02em; color: var(--muted); }
 .home .hero-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 28px; margin-bottom: 22px; }

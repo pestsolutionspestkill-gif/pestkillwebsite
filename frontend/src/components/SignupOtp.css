@@ -1,0 +1,16 @@
+.otp-step { display: flex; flex-direction: column; align-items: stretch; gap: 14px; text-align: center; }
+.otp-icon { align-self: center; width: 56px; height: 56px; display: inline-flex; align-items: center; justify-content: center; border-radius: 16px; color: #2FD08F; background: #1D1D1F; }
+.otp-step h2 { font-size: 1.7rem; letter-spacing: -0.035em; }
+.otp-step > p { color: #6E6E73; font-size: 0.96rem; }
+.otp-step > p strong { color: #1D1D1F; word-break: break-all; }
+.otp-dev { padding: 10px 12px; font-size: 0.86rem !important; color: #8A5A00 !important; background: #FFF6E0; border-radius: 12px; }
+.otp-input { height: 64px; padding: 0 12px; font-size: 2rem; font-weight: 700; letter-spacing: 0.55em; text-align: center; text-indent: 0.55em; font-variant-numeric: tabular-nums;
+  color: #1D1D1F; background: #F5F5F7; border: 2px solid transparent; border-radius: 16px; }
+.otp-input:focus { outline: none; border-color: #0E9F6E; background: #fff; box-shadow: 0 0 0 4px rgba(14,159,110,0.14); }
+.otp-input::placeholder { color: #C7C7CC; }
+.otp-step .btn { width: 100%; }
+.otp-links { display: flex; justify-content: space-between; gap: 10px; }
+.otp-links button { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 600; color: #0B8A5F; }
+.otp-links button:disabled { color: #AEAEB2; }
+.otp-note { font-size: 0.8rem !important; color: #8E8E93 !important; }
+.field-hint { margin-top: 4px; font-size: 0.78rem; color: #8E8E93; }

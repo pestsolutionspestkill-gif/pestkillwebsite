@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { CalendarCheck, MessageSquareWarning, Package, UserRound, LogOut, Plus, ArrowRight, CheckCircle, ReceiptText, Award, Printer, Store } from 'lucide-react';
 import { useBuyer } from '../hooks/useBuyer';
+import Bookings from './dashboard/Bookings';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
 import './Dashboard.css';
@@ -18,31 +19,6 @@ const useList = (path) => {
   return { ...state, setState, reload: load };
 };
 
-const Bookings = () => {
-  const { data, error } = useList('/leads/mine');
-  if (!data) return <p className="dash-muted">Loading…</p>;
-  if (error) return <p className="form-error">{error}</p>;
-  if (!data.length) return <div className="empty-state">No bookings yet. <Link to="/book">Book a service</Link> and track it here.</div>;
-  return (
-    <div className="dash-list">
-      {data.map((b) => (
-        <article key={b.ref} className="dash-card">
-          <div className="dash-card-main">
-            <span className="dash-ref">{b.ref}</span>
-            <h3>{b.service || label(b.type)}</h3>
-            <p>{[b.property, b.preferred_date && `Preferred ${b.preferred_date}`, b.preferred_slot].filter(Boolean).join(' · ') || 'Inspection request'}</p>
-          </div>
-          <div className="dash-card-side">
-            <Badge value={b.status} />
-            {b.estimate && <strong>{b.estimate}</strong>}
-            <small>{b.scheduled_at ? `Visit ${fmt(b.scheduled_at)}` : `Requested ${fmt(b.created_at)}`}</small>
-            {b.status === 'completed' && <a className="dash-doc-link" href={`/print/certificate/${b.ref}`} target="_blank" rel="noopener noreferrer"><Award size={14} /> Treatment certificate</a>}
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-};
 
 const Complaints = () => {
   const { data, error, reload } = useList('/complaints/my-complaints');

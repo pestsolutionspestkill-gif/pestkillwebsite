@@ -3,6 +3,17 @@ import crypto from 'crypto';
 import db, { audit, NOW } from '../db.js';
 import { auth, optionalAuth, requirePermission, ownerOnly, rateLimit, can, ah } from '../middleware/rbac.js';
 import { str, phone, email, oneOf, intId, ValidationError } from '../utils/validate.js';
+import { checkPersonName, checkCleanText } from '../utils/antiAbuse.js';
+import { warrantyStatus } from '../utils/warranty.js';
+
+// Who lives at the property, for the Safe Home plan: only these yes/no flags are stored.
+const HOUSEHOLD_KEYS = ['kids', 'pets', 'elderly', 'pregnant', 'asthma', 'aquarium'];
+const readHousehold = (h) => {
+  if (!h || typeof h !== 'object') return null;
+  const flags = Object.fromEntries(HOUSEHOLD_KEYS.filter((k) => h[k] === true).map((k) => [k, true]));
+  return Object.keys(flags).length ? JSON.stringify(flags) : null;
+};
+export const parseHousehold = (s) => { try { return s ? JSON.parse(s) : null; } catch { return null; } };
 
 const router = express.Router();
 const TYPES = ['booking', 'inspection', 'contact', 'quote'];
@@ -29,14 +40,15 @@ router.post('/', publicLimiter, optionalAuth, ah(async (req, res) => {
     preferred_date: str(b.preferredDate, { field: 'Date', max: 40 }),
     preferred_slot: str(b.preferredSlot, { field: 'Time slot', max: 60 }),
     estimate: str(b.estimate, { field: 'Estimate', max: 80 }),
-    name: str(b.name, { field: 'Name', min: 2, max: 80, required: true }),
+    name: checkPersonName(b.name, 'Name'),
     phone: phone(b.phone),
     email: email(b.email),
     address: str(b.address, { field: 'Address', max: 300 }),
     city: str(b.city, { field: 'City', max: 60 }),
-    message: str(b.message, { field: 'Message', max: 2000 }),
+    message: checkCleanText(str(b.message, { field: 'Message', max: 2000 }), 'Message'),
     source: str(b.source, { field: 'Source', max: 120 }),
     user_id: req.user?.role === 'client' ? req.user.id : null,
+    household: readHousehold(b.household),
   };
   if (lead.type === 'booking' && (!lead.service || !lead.preferred_date)) throw new ValidationError('Please choose a service and date.');
   const cols = Object.keys(lead);
@@ -46,9 +58,37 @@ router.post('/', publicLimiter, optionalAuth, ah(async (req, res) => {
 
 // Client: own bookings. Linked by account only — phone numbers are not verified,
 // so matching on phone would let anyone see a stranger's bookings.
+// Includes the warranty wallet (days left), the latest warranty claim and whether service proof exists.
 router.get('/mine', auth, ah(async (req, res) => {
-  res.json(await db.all(`SELECT ref, type, service, property, preferred_date, preferred_slot, estimate, status, scheduled_at, created_at
-    FROM leads WHERE user_id = ? ORDER BY created_at DESC`, req.user.id));
+  const rows = await db.all(`SELECT l.id, l.ref, l.type, l.service, l.property, l.preferred_date, l.preferred_slot, l.estimate, l.status, l.scheduled_at,
+      l.created_at, l.completed_at, l.warranty, l.household, l.completion_notes IS NOT NULL AS has_report,
+      (SELECT COUNT(*)::int FROM job_photos p WHERE p.lead_id = l.id) AS photo_count,
+      (SELECT row_to_json(c) FROM (SELECT id, status, issue, scheduled_at, admin_note, created_at FROM warranty_claims WHERE lead_id = l.id ORDER BY id DESC LIMIT 1) c) AS last_claim
+    FROM leads l WHERE l.user_id = ? ORDER BY l.created_at DESC`, req.user.id);
+  res.json(rows.map(({ id, household, last_claim: claim, ...l }) => ({
+    ...l,
+    household: parseHousehold(household),
+    warranty_status: l.status === 'completed' ? warrantyStatus(l) : null,
+    last_claim: typeof claim === 'string' ? JSON.parse(claim) : claim,
+  })));
+}));
+
+// Service proof for the customer (or staff): visit report, products used and before/after photos.
+router.get('/:ref/proof', auth, ah(async (req, res) => {
+  const lead = await db.get(`SELECT l.id, l.ref, l.user_id, l.assigned_to, l.technician_id, l.service, l.status, l.completed_at, l.scheduled_at,
+      l.completion_notes, l.chemicals_used, l.warranty, t.name AS technician_name
+    FROM leads l LEFT JOIN users t ON t.id = l.technician_id WHERE l.ref = ?`, String(req.params.ref).slice(0, 40));
+  const allowed = lead && ((req.user.role === 'client' && lead.user_id === req.user.id)
+    || can(req.user, 'services.assign') || lead.assigned_to === req.user.id || lead.technician_id === req.user.id);
+  if (!allowed) return res.status(404).json({ error: 'Booking not found.' });
+  const photos = await db.all('SELECT id, kind, mime, data, created_at FROM job_photos WHERE lead_id = ? ORDER BY id', lead.id);
+  const { id, user_id: u, assigned_to: a, technician_id: t, ...rest } = lead;
+  res.json({
+    ...rest,
+    technician_name: lead.technician_name ? lead.technician_name.split(' ')[0] : null,
+    warranty_status: lead.status === 'completed' ? warrantyStatus(lead) : null,
+    photos: photos.map((p) => ({ id: p.id, kind: p.kind, created_at: p.created_at, url: `data:${p.mime};base64,${Buffer.from(p.data).toString('base64')}` })),
+  });
 }));
 
 // Staff: owners and managers with services.assign see everything; other managers see only their assignments.

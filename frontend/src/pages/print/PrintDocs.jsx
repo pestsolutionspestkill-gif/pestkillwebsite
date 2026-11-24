@@ -135,6 +135,13 @@ export const PrintCertificate = () => {
   const { ref } = useParams();
   const { isStaff } = useAuth();
   const { data: c, error } = useDoc(`/leads/${ref}/certificate`);
+  // QR code that opens the public verification page for this certificate.
+  const verifyUrl = `${window.location.origin}/verify/${ref}`;
+  const [qr, setQr] = useState('');
+  useEffect(() => {
+    import('qrcode').then(({ default: QRCode }) => QRCode.toDataURL(verifyUrl, { margin: 1, width: 240, color: { dark: '#1D1D1F', light: '#FFFFFF' } }))
+      .then(setQr).catch(() => setQr(''));
+  }, [verifyUrl]);
   return (
     <Guard>
       <div className="doc-page">
@@ -158,6 +165,12 @@ export const PrintCertificate = () => {
               {c.notes && <p className="cert-notes"><strong>Treatment report:</strong> {c.notes}</p>}
               <p className="cert-terms">The warranty is valid when the treated areas are not structurally altered and the customer reports any recurrence promptly. Free re-treatment is provided within the warranty period after inspection.</p>
               <footer className="cert-foot">
+                {qr && (
+                  <div className="cert-qr">
+                    <img src={qr} alt={`QR code to verify certificate ${c.number}`} />
+                    <span>Scan to verify<br /><strong>{verifyUrl.replace(/^https?:\/\//, '')}</strong></span>
+                  </div>
+                )}
                 <img src={founder.portrait} alt="" className="cert-photo" />
                 <div className="doc-sign"><span>Authorised signatory</span><strong>{founder.name}</strong><span>{founder.title}, {founder.company}</span></div>
               </footer>

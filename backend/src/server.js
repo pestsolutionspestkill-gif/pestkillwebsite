@@ -3,7 +3,6 @@ import './env.js';
 import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
@@ -20,7 +19,10 @@ import orderRoutes from './routes/orderRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
 import buyerRoutes from './routes/buyerRoutes.js';
+import claimRoutes from './routes/claimRoutes.js';
+import verifyRoutes from './routes/verifyRoutes.js';
 import { ah, setJwtSecret } from './middleware/rbac.js';
+import { mountWebsite } from './seo.js';
 
 const PORT = process.env.PORT || 5000;
 // The website is served from this same server, so same-origin calls need no CORS entry.
@@ -28,6 +30,7 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   ...(process.env.CLIENT_ORIGIN || 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173').split(','),
   process.env.RENDER_EXTERNAL_URL || '',
+  process.env.SITE_URL || '',
 ].map((o) => o.trim().replace(/\/$/, '')).filter(Boolean);
 
 // Owner login from environment variables (for hosts without a shell, e.g. Render).
@@ -77,7 +80,7 @@ app.use('/api', cors({ origin: (origin, cb) => cb(null, !origin || allowedOrigin
 // Product photo uploads (owner console) may be up to ~2 MB as base64; everything else stays small.
 const smallJson = express.json({ limit: '100kb' });
 const imageJson = express.json({ limit: '2.5mb' });
-app.use((req, res, next) => (/^\/api\/products\/\d+\/image$/.test(req.path) ? imageJson : smallJson)(req, res, next));
+app.use((req, res, next) => (/^\/api\/(products\/\d+\/image|jobs\/\d+\/photos)$/.test(req.path) ? imageJson : smallJson)(req, res, next));
 
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
@@ -90,6 +93,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/buyers', buyerRoutes);
+app.use('/api/claims', claimRoutes);
+app.use('/api/verify', verifyRoutes);
 
 app.get('/api/health', ah(async (_req, res) => {
   await db.get('SELECT 1');
@@ -99,19 +104,9 @@ app.get('/api/health', ah(async (_req, res) => {
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found.' }));
 
 // Production: serve the built website (frontend/dist) from the same server, so one
-// Render/host service runs the whole site. Unknown paths fall back to index.html (SPA routes).
+// Render/host service runs the whole site. See seo.js for pre-rendered pages, sitemap and redirects.
 const distDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
-if (fs.existsSync(path.join(distDir, 'index.html'))) {
-  app.use(express.static(distDir, {
-    index: false,
-    setHeaders: (res, file) => {
-      if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache');
-      else if (file.includes(`${path.sep}assets${path.sep}`)) res.set('Cache-Control', 'public, max-age=31536000, immutable'); // hashed build files
-      else res.set('Cache-Control', 'public, max-age=604800');
-    },
-  }));
-  app.get('*', (_req, res) => { res.set('Cache-Control', 'no-cache'); res.sendFile(path.join(distDir, 'index.html')); });
-}
+await mountWebsite(app, distDir);
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {

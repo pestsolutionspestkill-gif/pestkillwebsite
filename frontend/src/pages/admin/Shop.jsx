@@ -10,7 +10,7 @@ const PACK_STYLES = ['bottle', 'jerrycan', 'gel', 'sachet', 'tub', 'box'];
 const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
 
 // Shrinks a photo in the browser before upload (max 900 px, WebP) so it stays small in the database.
-const resizeImage = (file) => new Promise((resolve, reject) => {
+export const resizeImage = (file) => new Promise((resolve, reject) => {
   if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { reject(new Error('Choose a JPG, PNG or WebP photo.')); return; }
   const img = new Image();
   img.onload = () => {

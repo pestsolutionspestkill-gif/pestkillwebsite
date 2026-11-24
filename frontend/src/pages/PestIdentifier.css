@@ -1,0 +1,57 @@
+.pid-page { min-height: calc(100vh - var(--nav-h)); padding: 56px 20px 96px; background: radial-gradient(110% 70% at 50% 0%, #fff 0%, #F5F5F7 70%); }
+.pid-hero { max-width: 760px; margin: 0 auto 32px; text-align: center; }
+.pid-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.82rem; font-weight: 600; color: #0A7A55; background: #EEF9F4; border-radius: 999px; }
+.pid-hero h1 { margin: 16px 0 12px; font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700; letter-spacing: -0.045em; line-height: 1.06; }
+.pid-hero p { font-size: 1.08rem; color: var(--muted); }
+
+.pid-card { max-width: 860px; margin: 0 auto; padding: 32px; background: #fff; border-radius: 28px; box-shadow: 0 30px 80px -50px rgba(0,0,0,0.35); }
+.pid-progress { height: 4px; margin-bottom: 26px; background: #F0F0F2; border-radius: 4px; overflow: hidden; }
+.pid-progress span { display: block; height: 100%; background: var(--grad); border-radius: 4px; transition: width 0.4s var(--ease); }
+.pid-q { margin-bottom: 22px; text-align: center; }
+.pid-step { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--emerald-600); }
+.pid-q h2 { margin: 6px 0 4px; font-size: clamp(1.7rem, 3.6vw, 2.4rem); letter-spacing: -0.04em; }
+.pid-q p { color: var(--muted); }
+
+.pid-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; animation: pidIn 0.35s var(--ease) both; }
+.pid-options.many { grid-template-columns: repeat(2, 1fr); }
+@keyframes pidIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.pid-options button { display: flex; align-items: center; gap: 12px; padding: 16px; text-align: left; font-size: 0.98rem; font-weight: 500; color: var(--ink);
+  background: #F5F5F7; border: 2px solid transparent; border-radius: 18px; transition: transform 0.2s var(--ease), border-color 0.2s ease, background 0.2s ease; }
+.pid-options button:hover { transform: translateY(-2px); background: #EEF9F4; }
+.pid-options button.on { border-color: var(--emerald-500); background: #EEF9F4; }
+.pid-options button > span { width: 44px; height: 44px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--emerald-600); background: #fff; border-radius: 12px; }
+.pid-back { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; font-size: 0.9rem; font-weight: 600; color: var(--muted); }
+.pid-back:hover { color: var(--ink); }
+
+.pid-result { display: flex; flex-direction: column; gap: 22px; animation: pidIn 0.45s var(--ease) both; }
+.pid-result-head { display: flex; gap: 22px; align-items: center; }
+.pid-result-head img { width: 150px; height: 150px; flex-shrink: 0; object-fit: cover; border-radius: 22px; }
+.pid-result-head h2 { margin: 4px 0 8px; font-size: clamp(2rem, 4vw, 2.8rem); letter-spacing: -0.045em; }
+.pid-result-head p { margin-top: 8px; color: var(--ink-soft); }
+.pid-level { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; font-size: 0.84rem; font-weight: 700; border-radius: 999px; }
+.pid-level.low { color: #0A7A55; background: #EEF9F4; }
+.pid-level.mid { color: #8A5A00; background: #FFF6E0; }
+.pid-level.high { color: #B42318; background: #FDECEA; }
+.pid-alt { padding: 12px 16px; font-size: 0.92rem; color: var(--ink-soft); background: #F5F5F7; border-radius: 14px; }
+.pid-alt a { font-weight: 600; color: var(--emerald-700); }
+.pid-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pid-cols > div { padding: 18px; background: #F5F5F7; border-radius: 18px; }
+.pid-cols h3 { margin-bottom: 8px; font-size: 1rem; }
+.pid-cols ul { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 0.92rem; color: var(--ink-soft); }
+.pid-price { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 20px; color: #fff; background: #1D1D1F; border-radius: 20px; }
+.pid-price span { display: block; font-size: 0.8rem; color: rgba(255,255,255,0.6); }
+.pid-price strong { display: block; margin-top: 4px; font-size: 1.25rem; letter-spacing: -0.02em; }
+.pid-price small { display: block; margin-top: 4px; font-size: 0.78rem; color: rgba(255,255,255,0.6); }
+.pid-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.pid-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.pid-foot .pid-back { margin: 0; }
+.pid-disclaimer { font-size: 0.8rem; color: #8E8E93; }
+
+@media (max-width: 760px) {
+  .pid-card { padding: 20px; border-radius: 22px; }
+  .pid-options, .pid-options.many { grid-template-columns: 1fr; }
+  .pid-result-head { flex-direction: column; align-items: flex-start; }
+  .pid-result-head img { width: 100%; height: 180px; }
+  .pid-cols, .pid-price { grid-template-columns: 1fr; }
+  .pid-actions .btn { width: 100%; }
+}

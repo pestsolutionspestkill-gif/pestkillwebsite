@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Phone, MapPin, Clock, Navigation, CheckCircle, Play } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useLoad, State, Badge, fmtDate } from './shared';
+import JobPhotos from './JobPhotos';
 
 const JobCard = ({ job, onSaved, notify }) => {
   const [notes, setNotes] = useState(job.completion_notes || '');
@@ -50,6 +51,7 @@ const JobCard = ({ job, onSaved, notify }) => {
       ) : (
         <p className="job-done-note"><CheckCircle size={15} /> Completed {fmtDate(job.completed_at)} · {job.chemicals_used || 'no chemicals noted'}</p>
       )}
+      <JobPhotos jobId={job.id} notify={notify} />
       <a className="job-map-link" href={maps} target="_blank" rel="noopener noreferrer"><MapPin size={13} /> Open in Google Maps</a>
     </article>
   );

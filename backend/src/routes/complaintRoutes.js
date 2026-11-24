@@ -2,13 +2,14 @@ import express from 'express';
 import db, { audit, NOW } from '../db.js';
 import { auth, requirePermission, ah } from '../middleware/rbac.js';
 import { str, oneOf, intId } from '../utils/validate.js';
+import { checkCleanText } from '../utils/antiAbuse.js';
 
 const router = express.Router();
 const STATUSES = ['pending', 'in_progress', 'resolved', 'closed'];
 
 router.post('/', auth, ah(async (req, res) => {
-  const subject = str(req.body.subject, { field: 'Subject', min: 3, max: 150, required: true });
-  const description = str(req.body.description, { field: 'Description', min: 10, max: 3000, required: true });
+  const subject = checkCleanText(str(req.body.subject, { field: 'Subject', min: 3, max: 150, required: true }), 'Subject');
+  const description = checkCleanText(str(req.body.description, { field: 'Description', min: 10, max: 3000, required: true }), 'Description');
   res.status(201).json(await db.get("INSERT INTO complaints (user_id, subject, description, status) VALUES (?, ?, ?, 'pending') RETURNING *", req.user.id, subject, description));
 }));
 

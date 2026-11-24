@@ -2,6 +2,7 @@ import express from 'express';
 import db, { audit } from '../db.js';
 import { requirePermission, rateLimit, ah } from '../middleware/rbac.js';
 import { str, phone, oneOf, intId } from '../utils/validate.js';
+import { checkPersonName, checkCleanText } from '../utils/antiAbuse.js';
 
 const router = express.Router();
 const STATUSES = ['new', 'shortlisted', 'interview', 'hired', 'rejected'];
@@ -11,11 +12,11 @@ router.post('/apply', rateLimit({ windowMs: 60 * 60 * 1000, max: 5 }), ah(async 
   if (b.company) return res.status(201).json({ message: 'Application received.' });
   await db.run('INSERT INTO job_applications (role, name, phone, experience, city, message) VALUES (?, ?, ?, ?, ?, ?)',
     str(b.role, { field: 'Role', max: 80, required: true }),
-    str(b.name, { field: 'Name', min: 2, max: 80, required: true }),
+    checkPersonName(b.name, 'Name'),
     phone(b.phone),
     str(b.experience, { field: 'Experience', max: 40 }),
     str(b.city, { field: 'City', max: 60 }),
-    str(b.message, { field: 'Message', max: 2000 }));
+    checkCleanText(str(b.message, { field: 'Message', max: 2000 }), 'Message'));
   res.status(201).json({ message: 'Application received.' });
 }));
 

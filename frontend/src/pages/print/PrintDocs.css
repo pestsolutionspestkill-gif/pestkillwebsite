@@ -83,3 +83,6 @@
   .cert-grid > div:nth-child(odd) { border-right: none; }
   .doc-table { font-size: 11px; }
 }
+.cert-qr { display: flex; align-items: center; gap: 10px; margin-right: auto; font-size: 10.5px; color: #6E6E73; line-height: 1.4; }
+.cert-qr img { width: 84px; height: 84px; border: 1px solid #E8E8ED; border-radius: 8px; }
+.cert-qr strong { color: #1D1D1F; font-weight: 600; word-break: break-all; }

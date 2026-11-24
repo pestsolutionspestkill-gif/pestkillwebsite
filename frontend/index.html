@@ -1,31 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-IN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- SEO Meta Tags -->
-    <meta name="title" content="Pest Kill Pest Solutions - Professional Pest Control Services in Rajasthan & India" />
-    <meta name="description" content="Best pest control company in Rajasthan. Professional termite treatment, cockroach control, bed bug removal, rodent control services in Jaipur, Jodhpur, Udaipur. 15+ years experience, certified experts, 100% satisfaction guarantee. Free inspection!" />
-    <meta name="keywords" content="pest control Jaipur, pest control near me, termite treatment Jaipur, cockroach control Jaipur, bed bug treatment Jaipur, rodent control Jaipur, mosquito control Jaipur, best pest control Jaipur, pest control services near me" />
-    <meta name="author" content="Pest Kill Pest Solutions" />
-    <meta name="robots" content="index, follow" />
-    <meta name="language" content="English" />
-    <meta name="revisit-after" content="7 days" />
-    
-    <!-- Open Graph -->
-    <meta property="og:title" content="Pest Kill Pest Solutions - Professional Pest Control in Rajasthan" />
-    <meta property="og:description" content="Government-certified pest control services. Termite treatment with 10-year warranty. Serving Jaipur, Jodhpur, Udaipur, Kota & all Rajasthan." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://pestkillsolutions.in" />
-    <meta property="og:image" content="https://pestkillsolutions.in/images/technician.jpg" />
-    <meta property="og:site_name" content="Pest Kill" />
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Pest Kill Pest Solutions" />
-    <meta name="twitter:description" content="Professional pest control services in Rajasthan" />
-    
+    <title>PestKill Pest Solutions | Pest Control in Jaipur & Rajasthan</title>
+    <!--pk-head-->
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
@@ -39,95 +20,142 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Playfair+Display:ital,wght@1,500;1,600&family=Noto+Sans+Devanagari:wght@500;600;700;800&display=swap" rel="stylesheet" />
     
-    <title>Pest Kill Pest Solutions | Professional Pest Control Services in Rajasthan</title>
-
-    <!-- LocalBusiness Schema Markup -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": "Pest Kill Solutions",
-      "alternateName": "Pest Kill Pest Solutions",
-      "description": "Professional pest control services in Rajasthan. Termite treatment, cockroach control, bed bug removal, rodent control services.",
-      "url": "https://pestkillsolutions.in",
-      "telephone": "+916375338302",
-      "email": "pestsolutionspestkill@gmail.com",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "F-52 Balaji Tower 1st, Vidhyadhar Nagar",
-        "addressLocality": "Jaipur",
-        "addressRegion": "Rajasthan",
-        "addressCountry": "IN"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": "26.9124",
-        "longitude": "75.7873"
-      },
-      "openingHours": "Mo-Sa 09:00-19:00",
-      "priceRange": "₹₹",
-      "areaServed": {
-        "@type": "State",
-        "name": "Rajasthan"
-      },
-      "serviceType": [
-        "Pest Control",
-        "Termite Control",
-        "Cockroach Control", 
-        "Bed Bug Treatment",
-        "Rodent Control",
-        "Mosquito Control"
-      ],
-      "sameAs": [
-        "https://www.facebook.com/pestkillsolutions",
-        "https://www.instagram.com/pestkillsolutions"
-      ]
-    }
+    <!-- Intro: a cockroach walks in, the PestKill mark drops on it. Shown once per browser session on
+         public pages, skipped for reduced-motion users. Plain HTML/CSS so it appears before the app loads. -->
+    <script>
+      (function () {
+        try {
+          var p = location.pathname;
+          var skip = /^\/(admin|print|dashboard|cart)/.test(p) || sessionStorage.getItem('pk_intro') === '1'
+            || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+            || /bot|crawler|spider|lighthouse/i.test(navigator.userAgent);
+          if (!skip) { document.documentElement.classList.add('pk-intro-on'); sessionStorage.setItem('pk_intro', '1'); }
+        } catch (e) { /* storage blocked: no intro */ }
+      })();
     </script>
+    <style>
+      .pk-intro { display: none; }
+      html.pk-intro-on { overflow: hidden; }
+      html.pk-intro-on .pk-intro {
+        --u: clamp(76px, 19vmin, 124px);
+        position: fixed; inset: 0; z-index: 2147483000; display: block; overflow: hidden;
+        background: radial-gradient(120% 90% at 50% 40%, #ffffff 0%, #f5f5f7 70%, #ececf0 100%);
+        animation: pkOut .5s cubic-bezier(.7,0,.3,1) 2.5s forwards;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
+      }
+      .pk-stage { position: absolute; left: 50%; top: 46%; width: 0; height: 0; animation: pkShake .32s linear 1.35s; }
+      .pk-bug { position: absolute; left: 0; top: 0; width: calc(var(--u) * .78); margin: calc(var(--u) * -.52) 0 0 calc(var(--u) * -.39);
+        animation: pkWalk 1.2s cubic-bezier(.3,.1,.35,1) both; }
+      .pk-bug svg { display: block; width: 100%; overflow: visible; filter: drop-shadow(0 6px 6px rgba(0,0,0,.18)); }
+      .pk-legs-a, .pk-legs-b { transform-box: view-box; transform-origin: 0 0; }
+      .pk-legs-a { animation: pkGaitA .15s linear 8 alternate, pkTwitchA .14s linear 1.42s 5 alternate forwards; }
+      .pk-legs-b { animation: pkGaitB .15s linear 8 alternate, pkTwitchB .14s linear 1.42s 5 alternate forwards; }
+      .pk-body { transform-box: view-box; transform-origin: 0 0; animation: pkSquash .3s cubic-bezier(.2,.8,.2,1) 1.35s forwards; }
+      .pk-antenna { animation: pkAnt .3s ease-in-out 4 alternate; transform-box: view-box; transform-origin: 0 -40px; }
+      .pk-splat { position: absolute; left: calc(var(--u) * -.4); top: 0; width: calc(var(--u) * 1.5); height: calc(var(--u) * 1.5); margin: calc(var(--u) * -.75) 0 0 calc(var(--u) * -.75);
+        transform: scale(0); animation: pkSplat .35s cubic-bezier(.2,1.4,.4,1) 1.37s forwards; }
+      .pk-shadow { position: absolute; left: 0; top: 0; width: calc(var(--u) * 1.15); height: calc(var(--u) * .28); margin: calc(var(--u) * .48) 0 0 calc(var(--u) * -.575);
+        border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.32), rgba(0,0,0,0)); opacity: 0; transform: scale(.2);
+        animation: pkShadow .42s cubic-bezier(.55,0,1,.45) .93s forwards; }
+      .pk-logo { position: absolute; left: 0; top: 0; width: var(--u); height: var(--u); margin: calc(var(--u) * -.5) 0 0 calc(var(--u) * -.5);
+        display: flex; align-items: center; justify-content: center; border-radius: 28%; background: linear-gradient(160deg, #2c2c2e, #000 70%);
+        box-shadow: 0 22px 40px -16px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.12);
+        opacity: 0; transform: translateY(-80vh) scale(1.5) rotate(-14deg);
+        animation: pkDrop .42s cubic-bezier(.55,0,1,.45) .93s forwards, pkSettle .45s ease-out 1.35s; }
+      .pk-logo svg { width: 56%; height: 56%; }
+      .pk-ring { position: absolute; left: 0; top: 0; width: calc(var(--u) * 1.3); height: calc(var(--u) * 1.3); margin: calc(var(--u) * -.65) 0 0 calc(var(--u) * -.65);
+        border-radius: 50%; border: 3px solid rgba(14,159,110,.55); opacity: 0; transform: scale(.4); animation: pkRing .65s ease-out 1.35s; }
+      .pk-dust { position: absolute; left: 0; top: 0; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #b9a58f; opacity: 0;
+        animation: pkDust .55s cubic-bezier(.1,.7,.3,1) 1.36s; }
+      .pk-word { position: absolute; left: 50%; top: calc(46% + var(--u) * .72); transform: translate(-50%, 10px); text-align: center; opacity: 0;
+        animation: pkWord .5s cubic-bezier(.2,.8,.2,1) 1.7s forwards; white-space: nowrap; }
+      .pk-word b { display: block; font-size: calc(var(--u) * .36); font-weight: 700; letter-spacing: -.04em; color: #1d1d1f; line-height: 1.05; }
+      .pk-word span { display: block; margin-top: 6px; font-size: calc(var(--u) * .12); font-weight: 600; letter-spacing: .32em; text-transform: uppercase; color: #6e6e73; }
+      .pk-word i { display: block; margin-top: 14px; font-style: normal; font-size: calc(var(--u) * .15); font-weight: 600;
+        background: linear-gradient(90deg, #0E9F6E, #12B5A5 55%, #2F8FD8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+      .pk-skip { position: absolute; right: 18px; top: 16px; padding: 8px 16px; font: 600 13px/1 inherit; color: #6e6e73; background: rgba(255,255,255,.7);
+        border: 1px solid #d2d2d7; border-radius: 999px; cursor: pointer; backdrop-filter: blur(8px); }
+      .pk-skip:hover { color: #1d1d1f; }
 
-    <!-- FAQ Schema -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "How much does pest control cost in Jaipur?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Pest control for cockroaches, bed bugs, rodents and other pests costs ₹1,200 for a 1BHK and ₹1,500 for a 2BHK or 3BHK home. Anti-termite treatment costs ₹6–9 per sq ft for existing buildings, ₹12–15 per sq ft before construction, and ₹22–25 per sq ft for the porous pipe system."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How long does termite treatment last?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Our termite treatment comes with 5 years warranty for post-construction and 10 years for pre-construction treatment. We use trusted products like ENVU Agenda and Heranba Heranil Plus."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Do you provide free inspection in Rajasthan?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes, we offer free on-site inspection in all major cities of Rajasthan including Jaipur, Jodhpur, Udaipur, Kota, Ajmer, Bikaner, and Alwar."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What pest control services do you offer in Rajasthan?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "We offer complete pest control services including termite treatment, cockroach control, bed bug treatment, rodent control, mosquito control, and general pest control for homes and businesses across Rajasthan."
-          }
-        }
-      ]
-    }
-    </script>
+      @keyframes pkWalk {
+        0% { transform: translate(-64vw, 24vh) rotate(60deg); }
+        35% { transform: translate(-38vw, 7vh) rotate(76deg); }
+        68% { transform: translate(-15vw, -3vh) rotate(98deg); }
+        100% { transform: translate(calc(var(--u) * -.46), 4px) rotate(86deg); }
+      }
+      @keyframes pkGaitA { from { transform: rotate(-11deg); } to { transform: rotate(11deg); } }
+      @keyframes pkGaitB { from { transform: rotate(11deg); } to { transform: rotate(-11deg); } }
+      @keyframes pkTwitchA { from { transform: scale(1.3) rotate(-9deg); } to { transform: scale(1.38) rotate(6deg); } }
+      @keyframes pkTwitchB { from { transform: scale(1.38) rotate(7deg); } to { transform: scale(1.3) rotate(-7deg); } }
+      @keyframes pkAnt { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+      @keyframes pkSquash { to { transform: scale(1.22, .62); filter: grayscale(.55) brightness(.75); } }
+      @keyframes pkSplat { to { transform: scale(1) rotate(-8deg); } }
+      @keyframes pkShadow { to { opacity: 1; transform: scale(1); } }
+      @keyframes pkDrop { 0% { opacity: 1; } 100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); } }
+      @keyframes pkSettle { 0% { transform: scale(1.12, .86); } 45% { transform: scale(.96, 1.05); } 100% { transform: scale(1); } }
+      @keyframes pkShake {
+        0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-7px, 5px); } 40% { transform: translate(6px, -4px); }
+        60% { transform: translate(-4px, 3px); } 80% { transform: translate(3px, -1px); }
+      }
+      @keyframes pkRing { 0% { opacity: .9; transform: scale(.4); } 100% { opacity: 0; transform: scale(2.6); } }
+      @keyframes pkDust { 0% { opacity: .9; transform: rotate(var(--a)) translateX(calc(var(--u) * .45)) scale(1); }
+        100% { opacity: 0; transform: rotate(var(--a)) translateX(calc(var(--u) * var(--d))) scale(.4); } }
+      @keyframes pkWord { to { opacity: 1; transform: translate(-50%, 0); } }
+      @keyframes pkOut { to { opacity: 0; transform: scale(1.04); visibility: hidden; } }
+    </style>
   </head>
   <body>
+    <div class="pk-intro" id="pk-intro" aria-hidden="true">
+      <div class="pk-stage">
+        <svg class="pk-splat" viewBox="-50 -50 100 100" aria-hidden="true">
+          <path d="M-30-6c-6-14 6-26 18-22 6-12 24-10 26 2 14-2 22 12 14 22 10 8 4 24-10 22-2 12-20 16-26 6-12 8-28-2-22-14-12-2-12-14 0-16z" fill="#6b4a2f" opacity=".22"/>
+        </svg>
+        <div class="pk-bug">
+          <svg viewBox="-60 -95 120 175" aria-hidden="true">
+            <g fill="none" stroke="#3b2416" stroke-linecap="round" stroke-linejoin="round">
+              <g class="pk-antenna" stroke-width="2.2"><path d="M-6 -46C-14 -66 -24 -76 -36 -94"/><path d="M6 -46C14 -66 24 -76 36 -94"/></g>
+              <g class="pk-legs-a" stroke-width="4"><path d="M-14 -22L-31 -31L-42 -50"/><path d="M16 2L37 0L52 -7"/><path d="M-14 22L-33 37L-43 58"/></g>
+              <g class="pk-legs-b" stroke-width="4"><path d="M14 -22L31 -31L42 -50"/><path d="M-16 2L-37 0L-52 -7"/><path d="M14 22L33 37L43 58"/></g>
+            </g>
+            <g class="pk-body">
+              <ellipse cx="0" cy="12" rx="21" ry="37" fill="#7a4626"/>
+              <path d="M0 -12V48" stroke="#4a2c1a" stroke-width="1.6"/>
+              <ellipse cx="-8" cy="6" rx="6" ry="22" fill="#fff" opacity=".12"/>
+              <ellipse cx="0" cy="-26" rx="18" ry="12" fill="#6b3e22"/>
+              <ellipse cx="-5" cy="-29" rx="7" ry="4" fill="#fff" opacity=".14"/>
+              <ellipse cx="0" cy="-41" rx="10" ry="8" fill="#4a2c1a"/>
+            </g>
+          </svg>
+        </div>
+        <div class="pk-shadow"></div>
+        <div class="pk-ring"></div>
+        <span class="pk-dust" style="--a:0deg;--d:1.15"></span><span class="pk-dust" style="--a:45deg;--d:1"></span>
+        <span class="pk-dust" style="--a:90deg;--d:1.2"></span><span class="pk-dust" style="--a:135deg;--d:.95"></span>
+        <span class="pk-dust" style="--a:180deg;--d:1.15"></span><span class="pk-dust" style="--a:225deg;--d:1"></span>
+        <span class="pk-dust" style="--a:270deg;--d:1.1"></span><span class="pk-dust" style="--a:315deg;--d:.95"></span>
+        <div class="pk-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2FD08F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+      </div>
+      <div class="pk-word"><b>PestKill</b><span>Pest Solutions</span><i>Pest-free. Guaranteed.</i></div>
+      <button type="button" class="pk-skip" id="pk-skip">Skip</button>
+    </div>
+    <script>
+      (function () {
+        var el = document.getElementById('pk-intro');
+        var root = document.documentElement;
+        if (!el) return;
+        if (!root.classList.contains('pk-intro-on')) { el.remove(); return; }
+        var done = function () { root.classList.remove('pk-intro-on'); if (el.parentNode) el.remove(); };
+        el.addEventListener('animationend', function (e) { if (e.animationName === 'pkOut') done(); });
+        document.getElementById('pk-skip').addEventListener('click', done);
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') done(); }, { once: true });
+        setTimeout(done, 4500); // safety net
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

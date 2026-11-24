@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Clock, Mail, ArrowUpRight, Search, Navigation } from 'lucide-react';
 import businessConfig from '../data/businessConfig';
+import { CITIES, cityPath } from '../data/rajasthan';
 import './Hub.css';
 
-const cityPages = { Jaipur: '/jaipur', Jodhpur: '/jodhpur', Udaipur: '/udaipur', Kota: '/kota', Ajmer: '/ajmer', Bikaner: '/bikaner', Alwar: '/alwar', Bharatpur: '/bharatpur' };
+const cityPages = Object.fromEntries(CITIES.map((c) => [c.name, cityPath(c.slug)]));
 
 // serviceCoverage is ordered Rajasthan → Delhi NCR → Uttar Pradesh
 const REGION_BOUNDS = [
@@ -20,6 +21,8 @@ const Locations = () => {
   const regions = REGION_BOUNDS.map((r, i) => {
     const start = serviceCoverage.indexOf(r.from);
     const end = REGION_BOUNDS[i + 1] ? serviceCoverage.indexOf(REGION_BOUNDS[i + 1].from) : serviceCoverage.length;
+    // Rajasthan lists every city that has its own page.
+    if (r.name === 'Rajasthan') return { name: r.name, cities: CITIES.map((c) => c.name) };
     return { name: r.name, cities: serviceCoverage.slice(start, end) };
   });
 
@@ -30,8 +33,8 @@ const Locations = () => {
       <section className="page-hero">
         <div className="container">
           <span className="eyebrow light">Locations</span>
-          <h1>Serving {serviceCoverage.length}+ cities <span className="text-gradient">across North India</span></h1>
-          <p>Head office in Jaipur with service teams covering Rajasthan, Delhi NCR and Uttar Pradesh.</p>
+          <h1>Pest control in <span className="text-gradient">every city of Rajasthan</span></h1>
+          <p>Head office in Jaipur. {CITIES.length} Rajasthan cities have their own page with local pests, prices and areas, and we also serve Delhi NCR and Uttar Pradesh.</p>
           <label className="hub-search">
             <Search size={18} />
             <input type="search" placeholder="Check your city" value={query} onChange={(e) => setQuery(e.target.value)} />

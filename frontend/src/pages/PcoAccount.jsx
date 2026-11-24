@@ -4,6 +4,7 @@ import { BadgeCheck, Clock, XCircle, ShieldCheck, ArrowRight, Store } from 'luci
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useBuyer } from '../hooks/useBuyer';
+import { useSignupOtp, OtpStep, precheckSignup } from '../components/SignupOtp';
 import './Shop.css';
 
 const STATES = ['Rajasthan', 'Delhi', 'Haryana', 'Uttar Pradesh', 'Madhya Pradesh', 'Gujarat', 'Punjab', 'Maharashtra', 'Other'];
@@ -30,7 +31,7 @@ const StatusCard = ({ buyer }) => {
 };
 
 const PcoAccount = () => {
-  const { user, register, loading } = useAuth();
+  const { user, loading } = useAuth();
   const { buyer: loaded } = useBuyer();
   // Keep the application just submitted, even if an earlier status request answers later.
   const [submitted, setSubmitted] = useState(null);
@@ -45,15 +46,40 @@ const PcoAccount = () => {
     if (buyer) setFirm({ firmName: buyer.firm_name || '', licenceNo: buyer.licence_no || '', licenceValidTill: buyer.licence_valid_till || '', gstin: buyer.gstin || '', address: buyer.address || '', city: buyer.city || '', state: buyer.state || 'Rajasthan', pincode: buyer.pincode || '' });
   }, [buyer]);
 
+  const otp = useSignupOtp();
+  const acctDetails = () => ({ ...acct, name: acct.name.trim(), email: acct.email.trim() });
+
+  const apply = async () => {
+    const b = await api('/buyers/apply', { method: 'POST', body: firm });
+    setSubmitted(b);
+    setEditing(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // New visitors: first verify the email with a code, then the account is created and the application sent.
   const submit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
+    setError('');
+    if (!user) {
+      const problem = precheckSignup(acct);
+      if (problem) { setError(problem); return; }
+    }
+    setBusy(true);
+    try {
+      if (!user) {
+        const created = await otp.start(acctDetails());
+        if (!created) { setBusy(false); return; } // waiting for the email code
+      }
+      await apply();
+    } catch (err) { setError(err.message); }
+    setBusy(false);
+  };
+
+  const verify = async (code) => {
     setBusy(true); setError('');
     try {
-      if (!user) await register({ ...acct, name: acct.name.trim(), email: acct.email.trim() });
-      const b = await api('/buyers/apply', { method: 'POST', body: firm });
-      setSubmitted(b);
-      setEditing(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      await otp.finish(acctDetails(), code);
+      await apply();
     } catch (err) { setError(err.message); }
     setBusy(false);
   };
@@ -84,7 +110,10 @@ const PcoAccount = () => {
           {buyer && <StatusCard buyer={buyer} />}
           {buyer?.status === 'pending' && !editing && <button type="button" className="text-link" onClick={() => setEditing(true)}>Edit application</button>}
 
-          {showForm && (
+          {showForm && !user && otp.stage === 'otp' && (
+            <OtpStep sent={otp.sent} cooldown={otp.cooldown} busy={busy} error={error} onVerify={verify} onResend={submit} onBack={() => { setError(''); otp.back(); }} />
+          )}
+          {showForm && !(!user && otp.stage === 'otp') && (
             <form className="pco-form" onSubmit={submit}>
               {!user && (
                 <>
@@ -115,7 +144,7 @@ const PcoAccount = () => {
                 <label>PIN code<input {...f('pincode')} inputMode="numeric" maxLength={6} /></label>
               </div>
               {error && <p className="form-error">{error}</p>}
-              <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy ? 'Submitting…' : buyer ? 'Submit again for review' : 'Create PCO account'}</button>
+              <button type="submit" className="btn btn-primary btn-block" disabled={busy}>{busy ? (user ? 'Submitting…' : 'Sending code…') : buyer ? 'Submit again for review' : user ? 'Submit application' : 'Continue — verify email'}</button>
             </form>
           )}
         </div>

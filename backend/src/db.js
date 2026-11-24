@@ -276,6 +276,51 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_invoices_lead ON invoices(lead_id);
   CREATE INDEX IF NOT EXISTS idx_invoices_user ON invoices(user_id);
 
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_verified INTEGER NOT NULL DEFAULT 0;
+  CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+
+  CREATE TABLE IF NOT EXISTS email_otps (
+    email TEXT NOT NULL,
+    purpose TEXT NOT NULL,
+    salt TEXT NOT NULL,
+    code_hash TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    sends INTEGER NOT NULL DEFAULT 0,
+    window_start TIMESTAMP,
+    last_sent TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (email, purpose)
+  );
+
+  ALTER TABLE leads ADD COLUMN IF NOT EXISTS household TEXT;
+
+  CREATE TABLE IF NOT EXISTS warranty_claims (
+    id SERIAL PRIMARY KEY,
+    lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    issue TEXT NOT NULL,
+    preferred_date TEXT,
+    status TEXT NOT NULL DEFAULT 'open',
+    scheduled_at TEXT,
+    admin_note TEXT,
+    created_at TIMESTAMP DEFAULT ${NOW},
+    updated_at TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS idx_claims_lead ON warranty_claims(lead_id);
+  CREATE INDEX IF NOT EXISTS idx_claims_status ON warranty_claims(status);
+
+  CREATE TABLE IF NOT EXISTS job_photos (
+    id SERIAL PRIMARY KEY,
+    lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    mime TEXT NOT NULL,
+    data BYTEA NOT NULL,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT ${NOW}
+  );
+  CREATE INDEX IF NOT EXISTS idx_job_photos_lead ON job_photos(lead_id);
+
   CREATE TABLE IF NOT EXISTS app_settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL

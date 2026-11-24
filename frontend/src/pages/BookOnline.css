@@ -155,3 +155,10 @@
 .book-hero .eyebrow.light { color: var(--emerald-600); }
 .book-progress li.current .dot { background: var(--ink); border-color: var(--ink); }
 .book-estimate { background: #000; }
+/* Safe Home plan chips */
+.household-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.household-chips button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.88rem; font-weight: 500; color: var(--ink-soft); background: #fff; border: 1px solid var(--line); border-radius: 999px; transition: all 0.2s ease; }
+.household-chips button svg { color: var(--muted); }
+.household-chips button.on { color: #0A7A55; background: #EEF9F4; border-color: #0E9F6E; }
+.household-chips button.on svg { color: #0E9F6E; }
+.household-note { margin-top: 8px; font-size: 0.8rem; color: var(--muted); }

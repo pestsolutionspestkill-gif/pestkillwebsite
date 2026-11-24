@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Phone, MapPin, AlertCircle, Droplets, BedDouble, Search, Trash2, Luggage, Bug } from 'lucide-react';
 import RateCards from '../components/RateCards';
 import './ServiceDetail.css';
+import CityLinks from '../components/CityLinks';
 
 const BedBugTreatment = () => {
   return (
@@ -179,14 +180,7 @@ const BedBugTreatment = () => {
             </div>
 
             <h3>Cities We Serve</h3>
-            <div className="cities-grid">
-              <Link to="/jaipur" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Jaipur</Link>
-              <Link to="/jodhpur" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Jodhpur</Link>
-              <Link to="/udaipur" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Udaipur</Link>
-              <Link to="/contact" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Kota</Link>
-              <Link to="/contact" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Ajmer</Link>
-              <Link to="/contact" className="city-link"><MapPin size={14} style={{marginRight:'4px',verticalAlign:'middle'}} />Bikaner</Link>
-            </div>
+            <CityLinks />
           </div>
         </div>
       </section>

@@ -4,6 +4,7 @@ import { Phone, MessageCircle, Mail, MapPin, Clock, ArrowRight, ShieldCheck, Awa
 import { Logo } from './Navbar';
 import { services as catalogServices } from '../data/catalog';
 import './Footer.css';
+import { CITIES, cityPath } from '../data/rajasthan';
 
 const quickLinks = [
   { label: 'Book Online', path: '/book' },
@@ -17,14 +18,7 @@ const quickLinks = [
   { label: 'Contact', path: '/contact' },
 ];
 
-const cities = [
-  { label: 'Jaipur', path: '/jaipur' },
-  { label: 'Jodhpur', path: '/jodhpur' },
-  { label: 'Udaipur', path: '/udaipur' },
-  { label: 'Kota', path: '/kota' },
-  { label: 'Ajmer', path: '/ajmer' },
-  { label: 'Bikaner', path: '/bikaner' },
-];
+const cities = CITIES.slice(0, 8).map((c) => ({ label: c.name, path: cityPath(c.slug) })).concat({ label: 'All Rajasthan cities', path: '/locations' });
 
 const Footer = () => {
   const { businessName, tagline, phoneNumber, whatsappNumber, email, officeAddress, workingHours, googleMapLink, brands, licenceNumber } = businessConfig;
