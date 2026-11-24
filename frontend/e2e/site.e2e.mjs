@@ -219,3 +219,27 @@ test('mobile: the menu opens and links work', async () => {
   assert.deepEqual(await page.problems(), []);
   await page.context().close();
 });
+
+test('mobile shop: no sideways scrolling, two-column grid, buy bar always visible', async () => {
+  const page = await openPage({ mobile: true });
+  for (const p of ['/shop', '/shop/pest/termite', '/shop/envu-premise-sc-1-l']) {
+    await page.goto(BASE + p);
+    await page.waitForSelector('h1');
+    await page.waitForTimeout(800);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    assert.equal(overflow, 0, `${p} has no horizontal overflow`);
+  }
+  await page.goto(`${BASE}/shop`);
+  await page.waitForSelector('.pgrid .pcard:not(.skeleton)');
+  const cols = await page.evaluate(() => getComputedStyle(document.querySelector('.pgrid')).gridTemplateColumns.split(' ').length);
+  assert.equal(cols, 2, 'two products per row on phones');
+  await page.goto(`${BASE}/shop/envu-premise-sc-1-l`);
+  await page.waitForSelector('.pd-buy');
+  const bar = await page.evaluate(() => { const r = document.querySelector('.pd-buy').getBoundingClientRect(); return { bottom: Math.round(r.bottom), vh: innerHeight, pos: getComputedStyle(document.querySelector('.pd-buy')).position }; });
+  assert.equal(bar.pos, 'fixed');
+  assert.ok(Math.abs(bar.bottom - bar.vh) <= 2, `buy bar sits at the bottom of the screen: ${JSON.stringify(bar)}`);
+  await page.click('.pd-buy button:has-text("Add to cart")');
+  await page.waitForSelector('.nav-cart-badge');
+  assert.deepEqual(await page.problems(), []);
+  await page.context().close();
+});

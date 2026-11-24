@@ -291,3 +291,90 @@
 .shop-pricelists span { color: var(--muted); }
 .shop-pricelists a { font-weight: 600; color: var(--emerald-700); }
 .shop-pricelists a:hover { text-decoration: underline; }
+
+/* ==========================================================================
+   Product cards: equal heights everywhere (fixed square image, clamped text)
+   ========================================================================== */
+.pcard-media { overflow: hidden; }
+.pcard-media > img, .pcard-media > svg { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
+.pcard-name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pcard-tech { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ==========================================================================
+   Mobile shop: app-style layout
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* Compact header so products appear sooner */
+  .shop-hero { padding: 20px 0 10px; text-align: left; }
+  .shop-hero .eyebrow { margin-bottom: 6px; font-size: 0.82rem; }
+  .shop-hero h1 { margin: 0 0 8px; font-size: 1.75rem; line-height: 1.1; }
+  .shop-hero h1 br { display: none; }
+  .shop-hero h1 .text-gradient { display: block; }
+  .shop-hero p { margin: 0; font-size: 0.92rem; line-height: 1.45; }
+  .shop-trust { flex-wrap: nowrap; justify-content: flex-start; gap: 8px; margin: 14px -20px 0; padding: 0 20px 2px; overflow-x: auto; scrollbar-width: none; font-size: 0.78rem; }
+  .shop-trust::-webkit-scrollbar { display: none; }
+  .shop-trust span { flex-shrink: 0; padding: 6px 10px; background: #fff; border: 1px solid var(--line-soft); border-radius: 999px; }
+
+  /* Buyer notice: one slim row */
+  .buyer-banner { gap: 10px; padding: 10px 12px; font-size: 0.8rem; line-height: 1.4; border-radius: 14px; }
+  .buyer-banner > span { min-width: 0; flex: 1 1 60%; }
+  .buyer-banner .btn { padding: 8px 12px; font-size: 0.78rem; }
+
+  /* Pest chips and tools scroll sideways instead of stacking */
+  .shop-pests { margin: 4px -20px 10px; padding: 0 20px 2px; gap: 8px; }
+  .shop-pests button { padding: 8px 12px; border-radius: 12px; }
+  .shop-pests button strong { font-size: 0.85rem; }
+  .shop-pests button span { font-size: 0.72rem; }
+  .shop-tools { display: flex; gap: 8px; margin: 0 -20px 12px; padding: 0 20px 2px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .shop-tools::-webkit-scrollbar { display: none; }
+  .shop-tools a { flex: 0 0 auto; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; scroll-snap-align: start; }
+  .shop-tools span { font-size: 0; gap: 0; }
+  .shop-tools strong { font-size: 0.84rem; white-space: nowrap; }
+  .shop-pricelists { flex-wrap: nowrap; margin: 0 -20px 12px; padding: 0 20px 2px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; font-size: 0.82rem; }
+  .shop-pricelists::-webkit-scrollbar { display: none; }
+
+  /* Search and filters stay at hand while scrolling the grid */
+  .shop-toolbar { position: sticky; top: var(--nav-h); z-index: 30; margin: 0 -20px 6px; padding: 10px 20px; background: rgba(245, 245, 247, 0.94); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); }
+  .shop-toolbar .shop-search { flex: 1 1 100%; }
+  .shop-toolbar .shop-search input { height: 44px; font-size: 0.9rem; }
+  .shop-toolbar select, .shop-toolbar .filter-toggle { height: 40px; }
+  .shop-meta { font-size: 0.82rem; }
+
+  /* Two-column cards */
+  .pgrid, .sl-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pcard { border-radius: 16px; }
+  .pcard:hover { transform: none; }
+  .pcard-media { padding: 8px; }
+  .pcard-chip, .pcard-deal { top: 8px; padding: 2px 7px; font-size: 0.66rem; }
+  .pcard-chip { left: 8px; }
+  .pcard-deal { right: 8px; }
+  .pcard-body { gap: 2px; padding: 10px 10px 12px; }
+  .pcard-brand { font-size: 0.64rem; }
+  .pcard-name { font-size: 0.9rem; line-height: 1.25; }
+  .pcard-tech { font-size: 0.72rem; }
+  .pcard-pack { margin-bottom: 6px; font-size: 0.76rem; }
+  .pcard-body .price-pay { font-size: 1.05rem; }
+  .pcard-body .price-mrp, .pcard-body .price-note { font-size: 0.68rem; }
+  .pcard-body .btn { min-height: 36px; padding: 8px; font-size: 0.8rem; border-radius: 10px; }
+
+  /* Product page */
+  .pd-page .crumbs { font-size: 0.8rem; }
+  .pd-media { padding: 14px; border-radius: 18px; }
+  .pd-media .packshot, .pd-media img.packshot { max-height: 280px; }
+  .pd-info h1 { font-size: 1.6rem; }
+  .pd-specs > div { grid-template-columns: 120px 1fr; gap: 10px; padding: 10px 14px; font-size: 0.86rem; }
+  .pd-assure { gap: 6px; padding: 12px 14px; font-size: 0.82rem; }
+  .pd-variants > div { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .pd-variants a { flex: 0 0 auto; }
+
+  /* Buy bar fixed at the bottom of the screen, like shopping apps */
+  .pd-page { padding-bottom: 96px; }
+  .pd-page .pd-buy { position: fixed; left: 0; right: 0; bottom: 0; z-index: 980; flex-wrap: nowrap; gap: 8px; margin: 0;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: rgba(255, 255, 255, 0.97);
+    border-top: 1px solid var(--line-soft); box-shadow: 0 -10px 30px -18px rgba(0, 0, 0, 0.35); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .pd-page .pd-buy .qty { flex-shrink: 0; }
+  .pd-page .pd-buy .btn { flex: 1; height: 44px; padding: 0 10px; font-size: 0.86rem; }
+  /* The buy bar and the WhatsApp bulk link replace the floating buttons here. */
+  body:has(.pd-page .pd-buy) .floating-actions { display: none; }
+  .pd-equiv > div { grid-template-columns: 1fr 1fr; }
+}

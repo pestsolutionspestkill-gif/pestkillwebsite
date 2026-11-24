@@ -33,3 +33,17 @@
 .sl-links a:hover { color: var(--emerald-600); border-color: var(--emerald-500); }
 .sl-links a.all { display: inline-flex; align-items: center; gap: 4px; color: #fff; background: var(--ink); border-color: var(--ink); }
 @media (max-width: 900px) { .sl-links { grid-template-columns: 1fr; } }
+
+@media (max-width: 640px) {
+  .sl-hero { padding: 20px 0 22px; }
+  .sl-hero h1 { font-size: 1.75rem; }
+  .sl-lead { margin-top: 8px; font-size: 0.92rem; }
+  .sl-facts { flex-wrap: nowrap; gap: 6px; margin: 14px -20px 0; padding: 0 20px 2px; overflow-x: auto; scrollbar-width: none; }
+  .sl-facts span { flex-shrink: 0; padding: 6px 10px; font-size: 0.78rem; }
+  .sl-actions { flex-wrap: nowrap; gap: 8px; margin: 14px -20px 0; padding: 0 20px 2px; overflow-x: auto; scrollbar-width: none; }
+  .sl-actions .btn { flex-shrink: 0; height: 40px; padding: 0 14px; font-size: 0.84rem; }
+  .sl-ingredients { flex-wrap: nowrap; margin: 4px -20px 14px; padding: 0 20px 2px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; font-size: 0.8rem; }
+  .sl-ingredients a { flex-shrink: 0; padding: 6px 10px; }
+  .sl-section { margin-top: 36px; }
+  .sl-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+}
