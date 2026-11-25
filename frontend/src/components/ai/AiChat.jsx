@@ -24,16 +24,18 @@ export const SUGGESTIONS = {
 /** Renders the assistant's plain-text answer: paragraphs, bullets, **bold**, links and [S1] source refs. */
 const Inline = ({ text, sources }) => {
   const parts = [];
-  const re = /(\*\*[^*]+\*\*|\[S\d+\]|\[[^\]]+\]\((?:\/[^)\s]*|https:\/\/[^)\s]+)\)|(?:^|\s)\/(?:[a-z0-9-]+\/?)+[a-z0-9-]*)/g;
+  const re = /(\*\*[^*]+\*\*|\[S\d+(?:\s*,\s*S\d+)*\]|\[[^\]]+\]\((?:\/[^)\s]*|https:\/\/[^)\s]+)\)|(?:^|\s)\/(?:[a-z0-9-]+\/?)+[a-z0-9-]*)/g;
   let last = 0;
   let m;
   while ((m = re.exec(text))) {
     if (m.index > last) parts.push(text.slice(last, m.index));
     const t = m[0];
     if (t.startsWith('**')) parts.push(<strong key={m.index}>{t.slice(2, -2)}</strong>);
-    else if (/^\[S\d+\]$/.test(t)) {
-      const s = sources?.find((x) => `[${x.ref}]` === t);
-      parts.push(s ? <a key={m.index} className="ai-ref" href={s.url} title={s.title} target={s.url.startsWith('/api/') ? '_blank' : undefined} rel="noopener noreferrer">{t.slice(1, -1)}</a> : <sup key={m.index}>{t.slice(1, -1)}</sup>);
+    else if (/^\[S\d+(?:\s*,\s*S\d+)*\]$/.test(t)) {
+      t.slice(1, -1).split(/\s*,\s*/).forEach((ref) => {
+        const s = sources?.find((x) => x.ref === ref);
+        parts.push(s ? <a key={`${m.index}-${ref}`} className="ai-ref" href={s.url} title={s.title} target={s.url.startsWith('/api/') ? '_blank' : undefined} rel="noopener noreferrer">{ref}</a> : <sup key={`${m.index}-${ref}`}>{ref}</sup>);
+      });
     } else if (t.startsWith('[')) {
       const [, label, href] = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(t);
       parts.push(href.startsWith('/') ? <Link key={m.index} to={href}>{label}</Link> : <a key={m.index} href={href} target="_blank" rel="noopener noreferrer nofollow">{label}</a>);
@@ -99,6 +101,7 @@ const AiChat = ({ mode = 'assistant', lang = 'en', page, productSlug, status, pr
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
+  const [lastAsk, setLastAsk] = useState(null);
   const threadRef = useRef(null);
   const offline = status && !status.configured;
 
@@ -115,14 +118,16 @@ const AiChat = ({ mode = 'assistant', lang = 'en', page, productSlug, status, pr
     } catch (e) { setError(e.message); }
   };
 
-  const ask = async (text, extra = {}) => {
+  const ask = async (text, extra = {}, retryPhoto) => {
+    const ph = retryPhoto !== undefined ? retryPhoto : photo;
     if (busy) return;
     const q = (text ?? input).trim();
-    if (!q && !photo) return;
+    if (!q && !ph) return;
     setError(null);
-    setMessages((m) => [...m, { role: 'user', content: q || '(photo for identification)', photo: photo?.preview }]);
+    setLastAsk({ text: q, extra, photo: ph });
+    setMessages((m) => [...m, { role: 'user', content: q || '(photo for identification)', photo: ph?.preview }]);
     setInput('');
-    const image = photo?.dataUrl;
+    const image = ph?.dataUrl;
     setPhoto(null);
     if (offline) {
       // No AI provider: show matching verified knowledge instead of an invented answer.
@@ -211,6 +216,9 @@ const AiChat = ({ mode = 'assistant', lang = 'en', page, productSlug, status, pr
           <div className="ai-error" role="alert">
             <AlertTriangle size={16} /> <span>{typeof error === 'string' ? error : error.message}</span>
             {error.status === 401 && <Link to="/login">Sign in</Link>}
+            {['AI_BUSY', 'AI_RATE_LIMIT', 'AI_CONNECTION', 'AI_UPSTREAM'].includes(error.code) && lastAsk && (
+              <button type="button" className="ai-retry" disabled={busy} onClick={() => { setMessages((m) => m.slice(0, -1)); ask(lastAsk.text, lastAsk.extra, lastAsk.photo || null); }}>Try again</button>
+            )}
           </div>
         )}
 

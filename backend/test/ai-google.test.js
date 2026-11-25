@@ -23,6 +23,7 @@ const fake = http.createServer((req, res) => {
     seen.push({ path: req.url, headers: req.headers, body: b });
     const send = (status, json) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(json)); };
     if (scenario === 'nosystem' && b.systemInstruction) return send(400, { error: { code: 400, message: 'Developer instruction is not enabled for models/gemma-4-31b-it', status: 'INVALID_ARGUMENT' } });
+    if (scenario === 'busy-all' || (scenario === 'busy-main' && req.url.includes('26b'))) return send(503, { error: { code: 503, message: 'This model is currently experiencing high demand.', status: 'UNAVAILABLE' } });
     if (scenario === 'rate') return send(429, { error: { code: 429, message: 'Resource has been exhausted (e.g. check quota).', status: 'RESOURCE_EXHAUSTED' } });
     if (scenario === 'badkey') return send(400, { error: { code: 400, message: 'API key not valid. Please pass a valid API key.', status: 'INVALID_ARGUMENT' } });
     if (scenario === 'safety') return send(200, { candidates: [{ finishReason: 'SAFETY', content: { parts: [] } }] });
@@ -64,14 +65,15 @@ after(() => { server?.kill(); fake.close(); });
 
 test('Gemma: chosen automatically with GEMINI_API_KEY; request format; thoughts hidden', async () => {
   const st = (await call('GET', '/ai/status')).j;
-  assert.deepEqual([st.configured, st.provider, st.model, st.sharesWithProvider], [true, 'google', 'gemma-4-31b-it', true]);
+  assert.deepEqual([st.configured, st.provider, st.model, st.sharesWithProvider], [true, 'google', 'gemma-4-26b-a4b-it', true]);
   scenario = 'ok';
   const r = await call('POST', '/ai/chat', { message: '2BHK price?' });
   assert.equal(r.s, 200, JSON.stringify(r.j));
   assert.equal(r.j.message.content, 'A 2BHK costs ₹1,500 plus GST [S2].', 'thought parts are not shown');
   const req = last();
-  assert.equal(req.path, '/v1beta/models/gemma-4-31b-it:generateContent');
+  assert.equal(req.path, '/v1beta/models/gemma-4-26b-a4b-it:generateContent');
   assert.equal(req.headers['x-goog-api-key'], 'test-google-key');
+  assert.deepEqual(req.body.generationConfig.thinkingConfig, { thinkingLevel: 'minimal' });
   assert.match(req.body.systemInstruction.parts[0].text, /never state a pesticide dose/i);
   assert.equal(req.body.contents.at(-1).role, 'user');
   assert.match(req.body.contents.at(-1).parts[0].text, /2BHK ₹1,500/);
@@ -112,5 +114,48 @@ test('Gemma: falls back when system instructions are refused; errors and safety 
   scenario = 'safety';
   r = await call('POST', '/ai/chat', { message: 'hello' });
   assert.equal(r.j.message.refused, true);
+  scenario = 'ok';
+});
+
+test('Gemma: owner connection test shows the provider error without the key; key paste mistakes are cleaned', async () => {
+  const O = (await call('POST', '/users/login', { email: 'owner@g.test', password: 'OwnerPass123' })).j.token;
+  scenario = 'ok';
+  let r = await call('POST', '/ai/admin/test', null, O);
+  assert.equal(r.j.ok, true);
+  scenario = 'badkey';
+  r = await call('POST', '/ai/admin/test', null, O);
+  assert.deepEqual([r.j.ok, r.j.code], [false, 'AI_AUTH']);
+  assert.match(r.j.detail, /HTTP 400: API key not valid/);
+  assert.doesNotMatch(JSON.stringify(r.j), /test-google-key/);
+  const ov = (await call('GET', '/ai/admin/overview', null, O)).j;
+  assert.ok(ov.errors.some((e) => /AI_AUTH HTTP 400/.test(e.error)), 'the reason is kept for the owner');
+  scenario = 'ok';
+  const ph = '9829077' + String(Math.floor(Math.random() * 900) + 100);
+  const T = (await call('POST', '/users/register/start', { name: 'Kavya Rathore', email: 'kavya.g@example.com', phone: ph, password: 'Passw0rd!x' })).j;
+  const C = (await call('POST', '/users/register', { name: 'Kavya Rathore', email: 'kavya.g@example.com', phone: ph, password: 'Passw0rd!x', otp: T.devCode })).j.token;
+  assert.ok(C, 'customer signed up');
+  assert.equal((await call('POST', '/ai/admin/test', null, C)).s, 403, 'owner only');
+  assert.equal((await call('POST', '/ai/admin/test')).s, 401);
+
+  const { geminiKey } = await import('../src/ai/provider.js');
+  const saved = process.env.GEMINI_API_KEY;
+  const k = `AIza${'Q'.repeat(35)}`;
+  for (const v of [k, ` ${k} `, `"${k}"`, `process.env.GEMINI_API_KEY = "${k}";`, `GEMINI_API_KEY=${k}`]) {
+    process.env.GEMINI_API_KEY = v;
+    assert.equal(geminiKey(), k, `cleaned: ${v.slice(0, 20)}`);
+  }
+  process.env.GEMINI_API_KEY = saved;
+});
+
+test('Gemma: when the main model is overloaded it retries, then answers from the fallback model', async () => {
+  scenario = 'busy-main';
+  const before = seen.length;
+  const r = await call('POST', '/ai/chat', { message: 'hello' });
+  assert.equal(r.s, 200, JSON.stringify(r.j));
+  const paths = seen.slice(before).map((x) => x.path);
+  assert.deepEqual(paths, ['/v1beta/models/gemma-4-26b-a4b-it:generateContent', '/v1beta/models/gemma-4-26b-a4b-it:generateContent', '/v1beta/models/gemma-4-31b-it:generateContent']);
+  scenario = 'busy-all';
+  const busy = await call('POST', '/ai/chat', { message: 'hello again' });
+  assert.deepEqual([busy.s, busy.j.code], [503, 'AI_BUSY']);
   scenario = 'ok';
 });

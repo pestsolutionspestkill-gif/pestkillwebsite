@@ -24,6 +24,8 @@ for (const c of cases) {
   for (const p of c.mustMatch || []) if (!new RegExp(p, 'i').test(text)) problems.push(`missing /${p}/`);
   for (const p of c.mustNotMatch || []) if (new RegExp(p, 'i').test(text)) problems.push(`contains /${p}/`);
   if (problems.length) failed += 1;
+  // Free-tier quotas are per minute: pace the cases.
+  await new Promise((r) => setTimeout(r, Number(process.env.EVAL_PAUSE_MS || 6000)));
   console.log(`${problems.length ? 'FAIL' : 'pass'}  ${c.id}${problems.length ? `  ${problems.join('; ')}` : ''}`);
   if (problems.length) console.log(`      answer: ${text.slice(0, 300).replace(/\s+/g, ' ')}`);
 }

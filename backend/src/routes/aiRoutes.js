@@ -25,6 +25,11 @@ const chatLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 20 });
 const searchLimiter = rateLimit({ windowMs: 60 * 1000, max: 60 });
 const DAILY_LIMIT = { visitor: Number(process.env.AI_DAILY_LIMIT_VISITOR) || 25, user: Number(process.env.AI_DAILY_LIMIT_USER) || 80, staff: Number(process.env.AI_DAILY_LIMIT_STAFF) || 300 };
 
+// Sources the answer actually cites, in [S1] or grouped [S1, S3] form.
+const citedIn = (text, cited) => {
+  const refs = new Set([...String(text).matchAll(/\[(S\d+(?:\s*,\s*S\d+)*)\]/g)].flatMap((m) => m[1].split(/\s*,\s*/)));
+  return cited.filter((c) => refs.has(c.ref));
+};
 const hash = (s) => crypto.createHash('sha256').update(String(s)).digest('hex').slice(0, 32);
 const clientKey = (req) => (req.user ? `u:${req.user.id}` : `ip:${hash(req.ip)}`);
 
@@ -116,7 +121,7 @@ router.post('/chat', chatLimiter, optionalAuth, ah(async (req, res) => {
   try {
     out = await complete({ system: SYSTEM_PROMPT, messages, maxTokens: 16000 });
   } catch (e) {
-    await db.run('INSERT INTO ai_usage (user_id, client_key, mode, ok, error, latency_ms) VALUES (?, ?, ?, 0, ?, ?)', req.user?.id ?? null, key, mode, e.code || e.message?.slice(0, 120), Date.now() - started);
+    await db.run('INSERT INTO ai_usage (user_id, client_key, mode, ok, error, latency_ms) VALUES (?, ?, ?, 0, ?, ?)', req.user?.id ?? null, key, mode, [e.code, e.detail].filter(Boolean).join(' ').slice(0, 300) || e.message?.slice(0, 120), Date.now() - started);
     if (e instanceof AiUnavailableError) {
       return res.status(e.status).json({ error: e.message, code: e.code, sources: sources.slice(2).map(({ text: t, ...s }) => ({ ...s, snippet: t.slice(0, 200) })) });
     }
@@ -140,7 +145,7 @@ router.post('/chat', chatLimiter, optionalAuth, ah(async (req, res) => {
 
   res.json({
     conversationId: convo.id, ...(anonKey ? { conversationKey: anonKey } : {}),
-    message: { id: reply.id, role: 'assistant', content: out.text, sources: cited.filter((c) => out.text.includes(`[${c.ref}]`)), refused: out.refused, truncated: out.truncated },
+    message: { id: reply.id, role: 'assistant', content: out.text, sources: citedIn(out.text, cited), refused: out.refused, truncated: out.truncated },
   });
 }));
 
@@ -176,6 +181,20 @@ router.get('/admin/overview', ownerOnly, ah(async (_req, res) => {
       (SELECT content FROM ai_messages q WHERE q.conversation_id = a.conversation_id AND q.id < a.id AND q.role = 'user' ORDER BY q.id DESC LIMIT 1) AS question
     FROM ai_feedback f JOIN ai_messages a ON a.id = f.message_id ORDER BY f.created_at DESC LIMIT 30`);
   res.json({ config: { ...aiConfig(), apiKey: undefined }, totals: { ...totals, input_tokens: Number(totals.input_tokens), output_tokens: Number(totals.output_tokens), cache_read_tokens: Number(totals.cache_read_tokens) }, byMode, errors, feedback });
+}));
+
+// Owner: one tiny request to check the key and model, showing the provider's own error if any.
+router.post('/admin/test', ownerOnly, ah(async (req, res) => {
+  const cfg = aiConfig();
+  if (!cfg.configured) return res.json({ ok: false, provider: cfg.provider, code: 'AI_NOT_CONFIGURED', detail: 'No API key is set on the server.' });
+  try {
+    const out = await complete({ system: 'Reply with the single word OK.', messages: [{ role: 'user', content: 'Connection test' }], maxTokens: 1024 });
+    audit(req, 'ai.test', 'ai', null, { ok: true });
+    res.json({ ok: true, provider: cfg.provider, model: out.model, reply: out.text.slice(0, 80) });
+  } catch (e) {
+    if (!(e instanceof AiUnavailableError)) throw e;
+    res.json({ ok: false, provider: cfg.provider, model: cfg.model, code: e.code, message: e.message, detail: e.detail || null });
+  }
 }));
 
 router.get('/services', (_req, res) => res.json(Object.entries(QUOTE_SERVICES).map(([key, s]) => ({ key, label: s.label, unit: s.unit, rate: s.rate || null }))));

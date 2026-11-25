@@ -15,12 +15,23 @@ const MODES = [
 
 const Overview = () => {
   const { data, error, loading } = useLoad('/ai/admin/overview');
+  const [test, setTest] = useState(null);
+  const runTest = async () => {
+    setTest({ busy: true });
+    try { setTest(await api('/ai/admin/test', { method: 'POST' })); } catch (e) { setTest({ ok: false, message: e.message }); }
+  };
   return (
     <State loading={loading && !data} error={error}>
       {data && (
         <section className="panel ai-overview">
           <h3>PestKill AI: last 30 days</h3>
           <p className="adm-muted">Provider: {data.config.provider} · Model: {data.config.model} · {data.config.configured ? 'API key set on the server' : 'Not configured: add GEMINI_API_KEY (Google Gemma, free) on the server to switch AI answers on'}</p>
+          <div className="ai-test">
+            <button type="button" className="btn btn-outline btn-sm" onClick={runTest} disabled={test?.busy}>{test?.busy ? 'Testing…' : 'Test connection'}</button>
+            {test && !test.busy && (test.ok
+              ? <span className="ok">Working: {test.model} replied “{test.reply}”.</span>
+              : <span className="bad">{test.message || 'Not working.'}{test.detail ? <> Google says: <code>{test.detail}</code></> : ''}{test.code === 'AI_AUTH' ? ' Check that the Render value is only the key itself (it starts with AQ. or AIza), with no quotes or GEMINI_API_KEY= in front, created at aistudio.google.com/apikey.' : ''}</span>)}
+          </div>
           <div className="ai-kpis">
             <div><strong>{data.totals.calls}</strong><span>Requests</span></div>
             <div><strong>{data.totals.errors}</strong><span>Failed</span></div>

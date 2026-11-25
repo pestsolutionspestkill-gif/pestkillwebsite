@@ -68,3 +68,5 @@
   .ai-thread { padding: 14px; max-height: none; min-height: 300px; }
   .ai-msg { max-width: 96%; }
 }
+.ai-retry { margin-left: auto; padding: 6px 12px; border: 1px solid var(--gold-500); border-radius: 999px; background: #fff; color: var(--gold-700); font: inherit; font-weight: 600; font-size: .82rem; cursor: pointer; }
+.ai-retry + a { margin-left: 8px; }
