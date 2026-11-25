@@ -10,7 +10,7 @@ const pillars = [
   { icon: FileText, title: 'Audit-ready records', text: 'Service reports, chemical details and pest sighting logs kept ready for audits and inspections.' },
   { icon: UserCheck, title: 'Single point of contact', text: 'One supervisor responsible for your account, quality checks and escalations.' },
   { icon: LineChart, title: 'Trend reporting', text: 'Monitoring results reviewed over time so recurring problems are fixed at the source.' },
-  { icon: Building, title: 'Multi-site coverage', text: 'One agreement and consistent standards across all your locations in Rajasthan, Delhi NCR and UP.' },
+  { icon: Building, title: 'Multi-site coverage', text: 'One agreement and consistent standards across your locations, with teams dispatched from Jaipur.' },
 ];
 
 const Business = () => {

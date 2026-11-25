@@ -162,3 +162,9 @@
 .household-chips button.on { color: #0A7A55; background: #EEF9F4; border-color: #0E9F6E; }
 .household-chips button.on svg { color: #0E9F6E; }
 .household-note { margin-top: 8px; font-size: 0.8rem; color: var(--muted); }
+
+/* Service-area check (teams travel from Jaipur; nothing is booked until we call) */
+.book-area { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; font-size: .88rem; background: var(--emerald-50); border: 1px solid var(--emerald-100); color: var(--ink-soft); }
+.book-area strong { display: inline-flex; align-items: center; gap: 6px; color: var(--emerald-700); }
+.book-area.is-outstation { background: #FFF8E6; border-color: #F1DFA8; }
+.book-area.is-outstation strong { color: var(--gold-700); }

@@ -6,7 +6,7 @@ import {
   Wrench, FileCheck2, BookOpen,
 } from 'lucide-react';
 import PipeDiagram from '../components/PipeDiagram';
-import { RATES } from '../data/catalog';
+import { RATES, GST_NOTE } from '../data/catalog';
 
 const pipe = RATES.porousPipe;
 const pre = RATES.termitePre;
@@ -29,7 +29,7 @@ const steps = [
   { icon: Wrench, title: 'Porous pipe installation', text: 'Porous pipes are laid at a depth of about 6–8 inches and joined into a continuous, leak-tested network.' },
   { icon: RefreshCw, title: 'External refill points', text: 'Access points are brought outside the building, so the system can be recharged later without breaking the floor.' },
   { icon: FlaskConical, title: 'Termiticide charging', text: 'A professional Fipronil- or Imidacloprid-based termiticide is pumped through the network, forming a uniform chemical barrier in the soil.' },
-  { icon: FileCheck2, title: 'Certificate & handover', text: 'You receive a layout record, a treatment report and a written warranty certificate for your property file.' },
+  { icon: FileCheck2, title: 'Certificate & handover', text: 'You receive a layout record and a treatment report for your property file; any warranty is written on your quotation.' },
 ];
 
 const advantages = [
@@ -212,18 +212,19 @@ const AntiTermitePiping = () => {
           <div className="atp-pricing">
             <div className="atp-price-card">
               <span className="eyebrow light">Pricing</span>
-              <div className="atp-price">₹{pipe.min}–{pipe.max} <small>/ sq.ft.</small></div>
+              <div className="atp-price">₹{pipe.min}–{pipe.max} <small>/ sq.ft. + GST</small></div>
+              <p className="gst-note on-dark">{GST_NOTE} Final price is confirmed after the drawings or site are checked.</p>
               <ul>
                 <li><CheckCircle size={16} /> Pipe layout design from drawings</li>
                 <li><CheckCircle size={16} /> Porous pipes, joints & refill points</li>
                 <li><CheckCircle size={16} /> Professional termiticide charging</li>
-                <li><CheckCircle size={16} /> Layout record & warranty certificate</li>
+                <li><CheckCircle size={16} /> Layout record & treatment report</li>
               </ul>
               <Link to="/contact" className="btn btn-primary btn-block btn-lg">Request exact quote <ArrowRight size={18} /></Link>
             </div>
             <div className="atp-safety">
               <h3>Safety & chemicals</h3>
-              <p>All work is carried out by trained, certified technicians wearing protective equipment. We use professional-grade termiticides from reputed manufacturers such as ENVU and Heranba, applied at label-recommended doses.</p>
+              <p>All work is carried out by trained technicians wearing protective equipment. We use professional-grade termiticides from reputed manufacturers such as ENVU and Heranba, applied at label-recommended doses.</p>
               <ul>
                 <li><ShieldCheck size={18} /> Professional handling only, never DIY</li>
                 <li><ShieldCheck size={18} /> Chemical confined to the soil below the slab</li>

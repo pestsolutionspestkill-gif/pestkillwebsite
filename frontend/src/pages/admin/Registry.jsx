@@ -23,6 +23,14 @@ const LicenceCard = ({ l, notify, reload }) => {
     await api(`/licences/${l.id}/document`, { method: 'PUT', body: { dataUrl: await fileToDataUrl(file) } });
   }, 'Licence copy uploaded. Check it and mark the licence verified.');
   const verified = l.status === 'verified';
+  // Open the tab first (on the click) so the browser does not block it, then load the short-lived link.
+  const viewCopy = async () => {
+    const tab = window.open('', '_blank');
+    try {
+      const { url } = await api(`/licences/${l.id}/document-link`, { method: 'POST' });
+      if (tab) { tab.opener = null; tab.location.href = url; } else window.location.href = url;
+    } catch (err) { tab?.close(); notify(err.message, 'error'); }
+  };
   return (
     <section className="panel lic-admin" data-licence={l.key}>
       <header>
@@ -54,7 +62,8 @@ const LicenceCard = ({ l, notify, reload }) => {
             <div><dt>Covers</dt><dd>{l.activity}</dd></div>
             <div><dt>Issuing authority</dt><dd>{l.issuing_authority || <em>Not entered</em>}</dd></div>
             <div><dt>Validity</dt><dd>{l.valid_from || l.valid_until ? `${fmtDay(l.valid_from)} – ${fmtDay(l.valid_until)}` : <em>Not entered</em>}</dd></div>
-            <div><dt>Licence copy</dt><dd>{l.doc_size ? <a href={`/api/licences/${l.id}/document`} target="_blank" rel="noopener noreferrer"><Eye size={14} /> View ({Math.max(1, Math.round(l.doc_size / 1024))} KB)</a> : <em>Not uploaded</em>}</dd></div>
+            <div><dt>Licence copy</dt><dd>{l.doc_size ? <button type="button" className="text-btn" onClick={viewCopy}><Eye size={14} /> View ({Math.max(1, Math.round(l.doc_size / 1024))} KB)</button> : <em>Not uploaded</em>}</dd></div>
+            <div><dt>Access</dt><dd>Private. Opens with a 5-minute link for your account; every view is logged.</dd></div>
             <div><dt>On website</dt><dd>{l.display ? 'Shown' : 'Hidden'}</dd></div>
           </dl>
           <div className="lic-admin-actions">

@@ -12,18 +12,21 @@ const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
 
 const BASE_SQL = `SELECT p.id, p.slug, p.name, p.brand, p.technical, p.formulation, p.category, p.pack_size, p.pack_style,
-  p.mrp, p.pco_price, p.offer_price, p.offer_label, p.offer_ends, p.mrp_note, p.mrp_verified, p.usage_info, p.description, p.stock, p.is_active, p.sort, p.updated_at,
+  p.mrp, p.pco_price, p.offer_price, p.offer_label, p.offer_ends, p.mrp_note, p.mrp_verified, p.mrp_verified_at, p.usage_info, p.description, p.stock, p.is_active, p.sort, p.updated_at,
   p.how_to_use, p.storage_info, p.faqs, p.target_pests, p.dose_per_litre, p.solution_per_sqm, p.dose_note,
   pi.updated_at AS image_updated, pi.source_url AS image_source, pi.credit AS image_credit, pi.licence_note AS image_licence
   FROM products p LEFT JOIN product_images pi ON pi.product_id = p.id`;
 
 // Indian calendar date (YYYY-MM-DD); offers run until the end of their last day in IST.
 const istToday = () => new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
-export const activeOffer = (p) => (p.offer_price != null && p.mrp != null && p.offer_price < p.mrp && (!p.offer_ends || p.offer_ends >= istToday())
+// An MRP is shown and sold at only after staff have checked it against the printed pack. Until then
+// the product is "price on request" for customers (staff still see the stored figure and its source).
+export const verifiedMrp = (p) => (p.mrp != null && Number(p.mrp_verified) === 1 ? p.mrp : null);
+export const activeOffer = (p) => (p.offer_price != null && verifiedMrp(p) != null && p.offer_price < p.mrp && (!p.offer_ends || p.offer_ends >= istToday())
   ? { price: p.offer_price, label: p.offer_label || null, ends: p.offer_ends || null } : null);
-// Lowest applicable price: MRP, a running public offer, or the PCO price (approved buyers only).
+// Lowest applicable price: verified MRP, a running public offer, or the PCO price (approved buyers only).
 export const bestPrice = (p, { pco }) => {
-  const prices = [p.mrp, activeOffer(p)?.price, pco ? p.pco_price : null].filter((v) => v != null);
+  const prices = [verifiedMrp(p), activeOffer(p)?.price, pco ? p.pco_price : null].filter((v) => v != null);
   return prices.length ? Math.min(...prices) : null;
 };
 
@@ -47,8 +50,10 @@ export const pestsFor = (p) => {
 const parseFaqs = (v) => { try { const a = JSON.parse(v || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } };
 
 // Approved and the licence has not expired (an expired licence must be renewed and re-checked).
+// An approved buyer must also hold a licence with a recorded, unexpired validity date.
+// Legacy records with no validity date do NOT qualify; the buyer has to re-submit.
 export const isApprovedBuyer = async (userId) => Boolean(userId
-  && await db.get("SELECT 1 FROM buyer_profiles WHERE user_id = ? AND status = 'approved' AND (licence_valid_till IS NULL OR licence_valid_till >= ?)", userId, istToday()));
+  && await db.get("SELECT 1 FROM buyer_profiles WHERE user_id = ? AND status = 'approved' AND licence_valid_till IS NOT NULL AND licence_valid_till <> '' AND licence_valid_till >= ?", userId, istToday()));
 
 // Public shape. PCO price only for approved buyers and staff; MRP notes only for staff.
 const shape = (p, { pco, staff }) => ({
@@ -61,7 +66,7 @@ const shape = (p, { pco, staff }) => ({
   category: p.category,
   pack_size: p.pack_size,
   pack_style: p.pack_style,
-  mrp: p.mrp,
+  mrp: staff ? p.mrp : verifiedMrp(p),
   pco_price: pco || staff ? p.pco_price : null,
   offer: activeOffer(p),
   in_stock: p.stock == null || p.stock > 0,
@@ -77,7 +82,7 @@ const shape = (p, { pco, staff }) => ({
   image_url: p.image_updated ? `/api/products/${p.id}/image?v=${encodeURIComponent(p.image_updated)}` : null,
   // Where the photo came from (shown as a credit; empty until staff record it).
   image_meta: p.image_updated ? { source_url: p.image_source || null, credit: p.image_credit || null, licence: p.image_licence || null } : null,
-  ...(staff ? { offer_price: p.offer_price, offer_label: p.offer_label, offer_ends: p.offer_ends, is_active: p.is_active, mrp_note: p.mrp_note, mrp_verified: p.mrp_verified, sort: p.sort, target_pests: p.target_pests } : {}),
+  ...(staff ? { offer_price: p.offer_price, offer_label: p.offer_label, offer_ends: p.offer_ends, is_active: p.is_active, mrp_note: p.mrp_note, mrp_verified: p.mrp_verified, mrp_verified_at: p.mrp_verified_at, sort: p.sort, target_pests: p.target_pests } : {}),
 });
 
 const viewer = async (req) => {
@@ -105,7 +110,7 @@ export const listProducts = async (query, v = { staff: false, pco: false }) => {
     where.push('(p.name ILIKE ? OR p.brand ILIKE ? OR p.technical ILIKE ? OR p.category ILIKE ? OR p.usage_info ILIKE ?)');
     params.push(q, q, q, q, q);
   }
-  const order = { 'price-asc': 'p.mrp ASC NULLS LAST', 'price-desc': 'p.mrp DESC NULLS LAST', name: 'p.name ASC, p.mrp ASC' }[req.query.sort] || 'p.sort ASC, p.id ASC';
+  const order = { 'price-asc': 'CASE WHEN p.mrp_verified = 1 THEN p.mrp END ASC NULLS LAST', 'price-desc': 'CASE WHEN p.mrp_verified = 1 THEN p.mrp END DESC NULLS LAST', name: 'p.name ASC, p.mrp ASC' }[req.query.sort] || 'p.sort ASC, p.id ASC';
   let rows = await db.all(`${BASE_SQL} ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY ${order} LIMIT 500`, ...params);
   const pest = PESTS[req.query.pest] ? req.query.pest : null;
   if (pest) rows = rows.filter((p) => pestsFor(p).includes(pest));
@@ -157,11 +162,12 @@ export const productDetail = async (key, v = { staff: false, pco: false }) => {
   const variants = await db.all(`${BASE_SQL} WHERE p.brand = ? AND p.name = ? AND p.is_active = 1 ORDER BY p.mrp ASC NULLS LAST, p.id`, p.brand, p.name);
   // Alternatives with the same active ingredient from other products (one pack per product).
   const equivalents = p.technical
-    ? await db.all(`SELECT DISTINCT ON (p.brand, p.name) p.id, p.slug, p.name, p.brand, p.pack_size, p.mrp, p.technical
+    ? await db.all(`SELECT DISTINCT ON (p.brand, p.name) p.id, p.slug, p.name, p.brand, p.pack_size, p.mrp, p.mrp_verified, p.technical
         FROM products p WHERE p.is_active = 1 AND lower(p.technical) = lower(?) AND NOT (p.brand = ? AND p.name = ?)
         ORDER BY p.brand, p.name, p.mrp ASC NULLS LAST LIMIT 4`, p.technical, p.brand, p.name)
     : [];
-  return { ...shape(p, v), variants: variants.map((x) => ({ id: x.id, slug: x.slug, pack_size: x.pack_size, mrp: x.mrp })), equivalents,
+  return { ...shape(p, v), variants: variants.map((x) => ({ id: x.id, slug: x.slug, pack_size: x.pack_size, mrp: v.staff ? x.mrp : verifiedMrp(x) })),
+    equivalents: equivalents.map(({ mrp_verified: _, ...e }) => ({ ...e, mrp: v.staff ? e.mrp : verifiedMrp({ ...e, mrp_verified: _ }) })),
     documents: await documentsFor(p.id, levelsFor(v)),
     // Verified label dosage records (used by the dosage calculator).
     doses: await verifiedDosesFor(p.id) };
@@ -210,6 +216,10 @@ const applyChanges = async (t, req, id, body) => {
   const stock = stockValue(body?.stock);
   if (stock !== undefined) changes.stock = stock;
   if ('mrp' in changes) changes.price = changes.mrp;
+  // A changed MRP needs to be checked against the pack again (unless it is confirmed in the same save).
+  if ('mrp' in changes && Number(changes.mrp) !== Number(before.mrp) && changes.mrp_verified !== 1) changes.mrp_verified = 0;
+  if (changes.mrp_verified === 1 && (Number(before.mrp_verified) !== 1 || 'mrp' in changes)) { changes.mrp_verified_at = new Date().toISOString(); changes.mrp_verified_by = req.user.id; }
+  if (changes.mrp_verified === 0) { changes.mrp_verified_at = null; changes.mrp_verified_by = null; }
   checkPrices({ ...before, ...changes });
   const keys = Object.keys(changes);
   if (keys.length) await t.run(`UPDATE products SET ${keys.map((k) => `${k} = ?`).join(', ')}, updated_at = ${NOW} WHERE id = ?`, ...keys.map((k) => changes[k]), id);

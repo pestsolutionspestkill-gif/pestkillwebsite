@@ -487,3 +487,6 @@ fieldset.plain { display: contents; border: none; padding: 0; margin: 0; }
 .photo-source input { padding: 8px 10px; border: 1px solid #D2D2D7; border-radius: 10px; font: inherit; }
 .photo-source em { color: #B42318; font-style: normal; }
 .photo-source a { color: #075A3E; }
+.pay-form h4 { margin: 0; font-size: .95rem; }
+.rep-admin { margin-top: 22px; padding: 18px; }
+.rep-admin h3 { margin: 0 0 4px; }

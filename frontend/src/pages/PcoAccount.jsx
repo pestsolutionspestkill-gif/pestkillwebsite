@@ -17,6 +17,7 @@ const StatusCard = ({ buyer }) => {
     rejected: [XCircle, 'no', 'Needs changes', buyer.admin_note || 'Please correct your details and submit again.'],
   };
   if (buyer.licence_expired) map.approved = map.pending = [AlertTriangle, 'no', 'Licence expired', 'Ordering is paused. Upload your renewed licence and its new validity date below.'];
+  else if (buyer.licence_validity_missing) map.approved = map.pending = [AlertTriangle, 'no', 'Licence validity date needed', 'Ordering is paused because your application has no licence validity date. Submit the form below again with the date your licence is valid till.'];
   const [Icon, tone, title, text] = map[buyer.status];
   return (
     <div className={`pco-status ${tone}`}>
@@ -25,11 +26,11 @@ const StatusCard = ({ buyer }) => {
         <h3>{title}</h3>
         <p>{text}</p>
         <small>{buyer.firm_name} · Licence {buyer.licence_no}{buyer.licence_valid_till ? ` · valid till ${new Date(`${buyer.licence_valid_till}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}</small>
-        {buyer.status === 'approved' && !buyer.licence_expired && buyer.licence_days_left != null && buyer.licence_days_left <= 30 && (
+        {buyer.status === 'approved' && !buyer.licence_expired && !buyer.licence_validity_missing && buyer.licence_days_left != null && buyer.licence_days_left <= 30 && (
           <p className="pco-renew"><AlertTriangle size={14} /> Your licence expires in {buyer.licence_days_left} day{buyer.licence_days_left === 1 ? '' : 's'}. Renew it to keep ordering.</p>
         )}
       </div>
-      {buyer.status === 'approved' && !buyer.licence_expired && <Link to="/shop" className="btn btn-primary btn-sm">Go to shop <ArrowRight size={15} /></Link>}
+      {buyer.status === 'approved' && !buyer.licence_expired && !buyer.licence_validity_missing && <Link to="/shop" className="btn btn-primary btn-sm">Go to shop <ArrowRight size={15} /></Link>}
     </div>
   );
 };
@@ -110,7 +111,7 @@ const PcoAccount = () => {
 
   if (loading) return <div className="container pd-state"><span className="spinner" /></div>;
   const isStaff = user && user.role !== 'client';
-  const showForm = !isStaff && (!buyer || buyer.status === 'rejected' || buyer.licence_expired || (buyer.status === 'pending' && editing));
+  const showForm = !isStaff && (!buyer || buyer.status === 'rejected' || buyer.licence_expired || buyer.licence_validity_missing || (buyer.status === 'pending' && editing));
   const f = (k) => ({ value: firm[k], onChange: (e) => setFirm({ ...firm, [k]: e.target.value }) });
   const a = (k) => ({ value: acct[k], onChange: (e) => setAcct({ ...acct, [k]: e.target.value }) });
 

@@ -13,6 +13,7 @@
 
   /* Keep page content, the WhatsApp button and the product buy bar clear of the bar */
   .app main { padding-bottom: var(--bottom-nav-h); }
+  .footer .footer-bottom { padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 24px); }
   .floating-actions { bottom: calc(var(--bottom-nav-h) + 14px) !important; }
   .floating-actions .float-call { display: none; }
   .pd-page .pd-buy { bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom)) !important; padding-bottom: 10px !important; }

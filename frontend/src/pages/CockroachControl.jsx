@@ -131,29 +131,29 @@ const CockroachControl = () => {
               <div className="benefit-item">
                 <span className="benefit-icon"><Check size={18} /></span>
                 <div>
-                  <h4>100% Satisfaction</h4>
-                  <p>Free re-treatment if cockroaches return within warranty period</p>
+                  <h4>Follow-up included</h4>
+                  <p>A follow-up visit is part of the treatment; any re-treatment terms are written on your quotation</p>
                 </div>
               </div>
               <div className="benefit-item">
                 <span className="benefit-icon"><Check size={18} /></span>
                 <div>
-                  <h4>Certified Experts</h4>
-                  <p>Trained technicians with 15+ years experience</p>
+                  <h4>Trained Technicians</h4>
+                  <p>Gel and spray applied by trained staff</p>
                 </div>
               </div>
               <div className="benefit-item">
                 <span className="benefit-icon"><Check size={18} /></span>
                 <div>
-                  <h4>Safe Products</h4>
-                  <p>Low-toxicity, pet & child-friendly solutions</p>
+                  <h4>Label-Directed Use</h4>
+                  <p>Registered products used as the label directs, with household safety advice</p>
                 </div>
               </div>
               <div className="benefit-item">
                 <span className="benefit-icon"><Check size={18} /></span>
                 <div>
-                  <h4>Same-Day Service</h4>
-                  <p>Quick response across Rajasthan</p>
+                  <h4>Service Across India</h4>
+                  <p>Teams dispatched from Jaipur; visits scheduled by location</p>
                 </div>
               </div>
             </div>
@@ -166,7 +166,7 @@ const CockroachControl = () => {
               </div>
               <div className="faq-item">
                 <h4>Is cockroach treatment safe for pets?</h4>
-                <p>Yes, our gel treatments are completely safe for pets once dry. We use low-toxicity products that are pet-friendly.</p>
+                <p>Gel is placed in cracks and hinges where pets and children cannot reach it, as the product label directs. Tell us about pets when you book and we will explain any precautions for the products used.</p>
               </div>
               <div className="faq-item">
                 <h4>How do cockroaches enter my home?</h4>
@@ -189,7 +189,7 @@ const CockroachControl = () => {
       <section className="cta-section">
         <div className="container">
           <h2>Get Rid of Cockroaches Forever</h2>
-          <p>Professional cockroach control with guaranteed results. Book today!</p>
+          <p>Professional cockroach control with a follow-up visit. Book today!</p>
           <div className="cta-buttons">
             <Link to="/contact" className="btn btn-primary">Get Free Quote</Link>
             <a href="tel:+916375338302" className="btn btn-outline"><Phone size={16} style={{marginRight:'6px',verticalAlign:'middle'}} />Call: +91-63753-38302</a>

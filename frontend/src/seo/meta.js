@@ -38,7 +38,7 @@ const business = () => ({
   '@id': BUSINESS_ID,
   name: businessConfig.businessName,
   alternateName: ['PestKill', 'Pest Kill Solutions'],
-  description: 'Licensed pest control company in Jaipur serving all of Rajasthan: termite treatment, cockroach, bed bug, rodent and mosquito control for homes and businesses.',
+  description: 'Licensed pest control company based in Jaipur. Pest control services across India, with teams dispatched from Jaipur, and professional pesticide supply with delivery across India.',
   url: abs('/'),
   logo: abs('/images/brand/pestkill-emblem.png'),
   image: abs(DEFAULT_IMAGE),
@@ -47,7 +47,7 @@ const business = () => ({
   priceRange: `${homeFrom}+`,
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'F-52 Balaji Tower 1st, Vidhyadhar Nagar',
+    streetAddress: 'F-52, Balaji Tower 1st, Vidhyadhar Nagar',
     addressLocality: 'Jaipur',
     addressRegion: 'Rajasthan',
     addressCountry: 'IN',
@@ -57,8 +57,10 @@ const business = () => ({
     dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
     opens: '09:00', closes: '19:00',
   }],
-  areaServed: [{ '@type': 'State', name: 'Rajasthan' }, ...CITIES.map((c) => ({ '@type': 'City', name: c.name }))],
-  founder: { '@type': 'Person', name: 'Prerit Mudgal' },
+  areaServed: [{ '@type': 'Country', name: 'India' }, { '@type': 'State', name: 'Rajasthan' }, ...CITIES.map((c) => ({ '@type': 'City', name: c.name }))],
+  taxID: businessConfig.gstin || undefined,
+  identifier: [{ '@type': 'PropertyValue', propertyID: 'GSTIN', value: businessConfig.gstin }, { '@type': 'PropertyValue', propertyID: 'Udyam', value: businessConfig.udyam }],
+  founder: { '@type': 'Person', name: businessConfig.founder, jobTitle: businessConfig.founderTitle },
   knowsAbout: ['Termite control', 'Anti-termite treatment', 'Cockroach control', 'Bed bug treatment', 'Rodent control', 'Mosquito control', 'Fumigation', 'Integrated pest management'],
   ...(businessConfig.socialProfiles?.length ? { sameAs: businessConfig.socialProfiles } : {}),
 });
@@ -92,11 +94,13 @@ const offerFor = (svc) => {
   if (!p) return undefined;
   if (p.unit === 'bhk') {
     const v = Object.values(p.tiers);
-    return { '@type': 'AggregateOffer', priceCurrency: 'INR', lowPrice: Math.min(...v), highPrice: Math.max(...v) };
+    // Published prices exclude GST.
+    return { '@type': 'AggregateOffer', priceCurrency: 'INR', lowPrice: Math.min(...v), highPrice: Math.max(...v),
+      priceSpecification: { '@type': 'PriceSpecification', priceCurrency: 'INR', valueAddedTaxIncluded: false } };
   }
   return {
     '@type': 'Offer', priceCurrency: 'INR',
-    priceSpecification: { '@type': 'UnitPriceSpecification', priceCurrency: 'INR', minPrice: p.min, maxPrice: p.max, unitText: 'per sq.ft.' },
+    priceSpecification: { '@type': 'UnitPriceSpecification', priceCurrency: 'INR', minPrice: p.min, maxPrice: p.max, unitText: 'per sq.ft.', valueAddedTaxIncluded: false },
   };
 };
 
@@ -124,7 +128,7 @@ const svcPage = (slug, path, title, description) => {
 const STATIC = {
   '/': {
     title: 'Pest Control in Jaipur & All Rajasthan | PestKill Pest Solutions',
-    description: `Licensed pest control in Jaipur and all Rajasthan. Homes from ${homeFrom}, termite treatment from ${termiteFrom}. Free inspection, written warranty, photo proof.`,
+    description: `Licensed pest control across India from Jaipur. Homes from ${homeFrom} + GST, termite treatment from ${termiteFrom}. Inspection, written report, photo proof.`,
     schema: [business(), website(), faqPage(HOME_FAQS)],
   },
   '/services': {
@@ -137,19 +141,19 @@ const STATIC = {
     `Pre-construction porous pipe anti-termite system at ₹${RATES.porousPipe.min}–${RATES.porousPipe.max}/sq.ft. Pipes laid under the floor and refilled from outside, without drilling. Jaipur and all Rajasthan.`),
   '/termite-control': svcPage('termite-control', '/termite-control',
     'Termite Control & Deemak Treatment in Jaipur, Rajasthan | PestKill',
-    `Anti-termite treatment for existing homes from ₹${RATES.termitePost.min}–${RATES.termitePost.max}/sq.ft. and pre-construction from ₹${RATES.termitePre.min}/sq.ft., with a written warranty. Free inspection across Rajasthan.`),
+    `Anti-termite treatment for existing homes from ₹${RATES.termitePost.min}–${RATES.termitePost.max}/sq.ft. and pre-construction from ₹${RATES.termitePre.min}/sq.ft. (+ GST), with a written repoanty. Free inspection across Rajasthan.`),
   '/cockroach-control': svcPage('cockroach-control', '/cockroach-control',
     'Cockroach Control in Jaipur & Rajasthan from ₹1,200 | PestKill',
-    `Odourless gel and spray cockroach treatment for kitchens, homes, hotels and restaurants. 1BHK ${homeFrom}, 2BHK/3BHK ${inr(RATES.home['2BHK'])}, with warranty and photo proof.`),
+    `Odourless gel and spray cockroach treatment for kitchens, homes, hotels and restaurants. 1BHK ${homeFrom}, 2BHK ${inr(RATES.home['2BHK'])}, 3BHK ${inr(RATES.home['3BHK'])} (+ GST), with photo proof.`),
   '/bed-bug-treatment': svcPage('bed-bugs', '/bed-bug-treatment',
     'Bed Bug Treatment in Jaipur & Rajasthan | Khatmal Control | PestKill',
-    `Bed bug (khatmal) treatment for homes, hostels, PGs and hotels with a follow-up visit. Homes from ${homeFrom}. Free inspection, written warranty, Safe Home plan.`),
+    `Bed bug (khatmal) treatment for homes, hostels, PGs and hotels with a follow-up visit. Homes from ${homeFrom}. Inspection, written report, Safe Home plan.`),
   '/rodent-control': svcPage('rodent-control', '/rodent-control',
     'Rodent & Rat Control in Jaipur & Rajasthan | PestKill',
     'Rat and mouse control with bait stations, trapping and proofing for homes, shops, godowns and factories. Audit-ready reports for food and pharma units.'),
   '/book': {
     title: 'Book Pest Control Online in Rajasthan | Instant Price | PestKill',
-    description: `Book pest control in 60 seconds. Choose a service, see the starting price, pick a date and time slot. Homes from ${homeFrom}. Free inspection and written warranty.`,
+    description: `Book pest control in 60 seconds. Choose a service, see the starting price, pick a date and time slot. Homes from ${homeFrom} + GST. We confirm availability for your location by phone.`,
     crumbs: [{ name: 'Book online', path: '/book' }],
   },
   '/pests': {
@@ -162,6 +166,11 @@ const STATIC = {
     description: 'Species guides for German and American cockroaches, termites, Aedes, Culex and Anopheles mosquitoes, rodents, bed bugs and more: signs, life cycle, risks and treatment.',
     crumbs: [{ name: 'Knowledge Centre', path: '/knowledge' }],
   },
+  '/privacy-policy': { title: 'Privacy Policy | PestKill Pest Solutions', description: 'What information PestKill Pest Solutions collects through this website, how it is used, who can see it and your choices.', crumbs: [{ name: 'Privacy policy', path: '/privacy-policy' }] },
+  '/terms': { title: 'Terms & Conditions | PestKill Pest Solutions', description: 'Terms for pest control services and professional product orders: service area, appointments, prices exclusive of GST, warranty, cancellation and payment.', crumbs: [{ name: 'Terms & conditions', path: '/terms' }] },
+  '/shipping-delivery': { title: 'Shipping & Delivery Policy | PestKill Pest Solutions', description: 'Professional pest control products delivered across India from Jaipur. Delivery timeline and any charges are confirmed before dispatch.', crumbs: [{ name: 'Shipping & delivery', path: '/shipping-delivery' }] },
+  '/replacement-policy': { title: 'Product Replacement Policy | PestKill Pest Solutions', description: 'Products that were already expired when supplied are replaced with a fresh lot. How to report one with batch number, expiry date and photos.', crumbs: [{ name: 'Product replacement', path: '/replacement-policy' }] },
+  '/disclaimer': { title: 'Disclaimer | PestKill Pest Solutions', description: 'Product information, dose calculator, technical references, guides and prices: what this website information can and cannot be relied on for.', crumbs: [{ name: 'Disclaimer', path: '/disclaimer' }] },
   '/technical-standards': {
     title: 'Anti-Termite Standards (IS 6313) Reference | PestKill',
     description: 'Indian Standards for anti-termite measures in buildings (IS 6313 Parts 1 to 3): scope, edition and how each detail was checked. Plus our pest control and pesticide sale licences.',
@@ -199,7 +208,7 @@ const STATIC = {
   },
   '/about': {
     title: 'About PestKill Pest Solutions, Jaipur | Founder Prerit Mudgal',
-    description: 'PestKill Pest Solutions is a licensed pest control company in Jaipur, founded by Prerit Mudgal, serving homes, businesses and government projects across Rajasthan.',
+    description: 'PestKill Pest Solutions is a licensed pest control company in Jaipur, founded by Prerit Mudgal, serving homes and businesses across India from Jaipur, and supplying professional products across India.',
     crumbs: [{ name: 'About', path: '/about' }],
   },
   '/contact': {
@@ -254,7 +263,7 @@ const dynamicPage = (path) => {
     if (!city) return null;
     const region = REGIONS[city.region];
     const top = region.pests.slice(0, 3).map((p) => getPest(p.slug)?.name.toLowerCase()).filter(Boolean);
-    const description = `Pest control in ${city.name} for ${top.slice(0, 2).join(' and ')}. Homes from ${homeFrom}, termites from ${termiteFrom}. Free inspection and warranty. Call ${businessConfig.phoneNumber.replace('+91-', '')}.`;
+    const description = `Pest control in ${city.name} for ${top.slice(0, 2).join(' and ')}. Homes from ${homeFrom}, termites from ${termiteFrom}. Teams dispatched from Jaipur. Call ${businessConfig.phoneNumber.replace('+91-', '')}.`;
     return {
       title: `Pest Control in ${city.name} | Termite & Cockroach | PestKill`,
       description,
@@ -271,7 +280,7 @@ const dynamicPage = (path) => {
     const svc = getService(slug);
     if (!svc || svc.path !== path) return null;
     const extra = extraServices[slug];
-    return svcPage(slug, path, `${extra?.name || svc.name} in Jaipur & Rajasthan | PestKill`, clip(`${extra?.desc || svc.summary} Free inspection and written service report across Rajasthan.`));
+    return svcPage(slug, path, `${extra?.name || svc.name} in Jaipur & Rajasthan | PestKill`, clip(`${extra?.desc || svc.summary} Written service report; teams dispatched from Jaipur.`));
   }
   if ((m = /^\/pests\/([a-z-]+)$/.exec(path))) {
     const pest = getPest(m[1]);

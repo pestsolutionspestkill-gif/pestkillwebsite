@@ -37,6 +37,13 @@ before(async () => {
     if (!up) await new Promise((r) => setTimeout(r, 500));
   }
   if (!up) throw new Error(`API server did not start:\n${log}`);
+  // Fixture: the owner has checked the Premise SC packs against the printed MRP (unchecked MRPs are
+  // "price on request" for customers). Used by the shop, cart and calculator journeys.
+  const owner = (await (await fetch(`${BASE}/api/users/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(OWNER) })).json()).token;
+  const all = (await (await fetch(`${BASE}/api/products?q=Premise`, { headers: { Authorization: `Bearer ${owner}` } })).json()).products;
+  const ids = all.filter((p) => p.brand === 'Envu' && p.name === 'Premise SC').map((p) => ({ id: p.id, mrpVerified: true }));
+  const set = await fetch(`${BASE}/api/products/bulk`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${owner}` }, body: JSON.stringify({ updates: ids }) });
+  if (!set.ok) throw new Error(`Could not prepare fixtures: ${await set.text()}`);
   browser = await chromium.launch(process.env.E2E_BROWSER_PATH ? { executablePath: process.env.E2E_BROWSER_PATH } : { channel: 'msedge' });
 });
 after(async () => { await browser?.close(); server?.kill(); });
@@ -62,7 +69,8 @@ const api = async (method, p, body, token) => {
 };
 
 const PUBLIC_PAGES = ['/', '/pest-control/jaipur', '/termite-control', '/services', '/book', '/shop', '/shop/pest/termite',
-  '/shop/envu-premise-sc-1-l', '/pest-identifier', '/contact', '/about', '/blog', '/locations', '/login', '/register', '/pco-account', '/technical-standards'];
+  '/shop/envu-premise-sc-1-l', '/pest-identifier', '/contact', '/about', '/blog', '/locations', '/login', '/register', '/pco-account', '/technical-standards',
+  '/privacy-policy', '/terms', '/shipping-delivery', '/replacement-policy', '/disclaimer'];
 
 test('public pages load with content, no console errors and no CSP violations', async () => {
   const page = await openPage();
@@ -109,13 +117,28 @@ test('booking: a visitor books a service and the booking is saved', async () => 
   await page.fill('#b-name', 'Rohit Sharma');
   await page.fill('#b-phone', '9829061547');
   await page.fill('#b-address', '12 Vaishali Nagar, Jaipur');
+  // PIN code is required; the service-area note never promises a date.
   await page.click('button:has-text("Continue")');
-  await page.click('button:has-text("Confirm booking")');
-  await page.waitForSelector('text=Your booking reference is');
-  const ref = (await page.textContent('strong:near(:text("booking reference"))')).trim();
+  assert.match(await page.textContent('#b-pin ~ .field-error'), /PIN code/);
+  await page.fill('#b-pin', '302021');
+  assert.match(await page.textContent('.book-area'), /Jaipur: served directly from our office/);
+  await page.selectOption('#b-state', 'Maharashtra');
+  await page.fill('#b-city', 'Pune');
+  await page.fill('#b-pin', '411001');
+  assert.match(await page.textContent('.book-area'), /outstation visit, subject to confirmation[\s\S]*Nothing is booked until we confirm/);
+  await page.selectOption('#b-state', 'Rajasthan');
+  await page.fill('#b-city', 'Jaipur');
+  await page.fill('#b-pin', '302021');
+  await page.click('button:has-text("Continue")');
+  assert.match(await page.textContent('.book-hint'), /confirmed only on that call/);
+  await page.click('button:has-text("Send booking request")');
+  await page.waitForSelector('text=Your request reference is');
+  assert.match(await page.textContent('.book-done'), /not confirmed until that call/);
+  const ref = (await page.textContent('strong:near(:text("request reference"))')).trim();
   const owner = (await api('POST', '/users/login', OWNER)).j.token;
   const leads = (await api('GET', `/leads?q=${encodeURIComponent(ref)}`, null, owner)).j;
   assert.equal(leads[0]?.name, 'Rohit Sharma', 'booking reached the database');
+  assert.match(leads[0]?.address || '', /PIN 302021/);
   assert.deepEqual(await page.problems(), []);
   await page.context().close();
 });
@@ -146,6 +169,7 @@ test('accounts: sign up with email code, sign out, wrong password, sign in, rese
   await page.goto(`${BASE}/forgot-password`);
   await page.fill('#fp-email', 'anjali.e2e@gmail.com');
   await page.click('button:has-text("Send code")');
+  await page.waitForFunction(() => /Development code: \d{6}/.test(document.querySelector('.auth-header p')?.textContent || ''));
   const note = await page.textContent('.auth-header p');
   const resetCode = /Development code: (\d{6})/.exec(note)?.[1];
   assert.ok(resetCode, 'reset code shown in test mode');
@@ -467,7 +491,7 @@ test('journey 6: licence numbers appear exactly where required, also without Jav
     await page.goto(`${BASE}/about`);
     await page.waitForSelector('#credentials .cred-card');
     assert.doesNotMatch(await page.textContent('#credentials'), /Issued by|Valid/);
-    assert.equal(await page.$('#credentials .cred-view'), null, 'no "View licence" without a copy');
+    assert.equal(await page.$('#credentials a[href*="/licences/"]'), null, 'licence copies are never linked publicly');
     assert.deepEqual(await page.problems(), []);
     await page.context().close();
   }
@@ -568,12 +592,14 @@ test('journey 8: owner manages products, photos, licences, standards and referen
   await page.fill(`${drawer} .photo-source label:has-text("Credit") input`, 'Own photo, PestKill store');
   await page.click(`${drawer} .photo-source button:has-text("Save source")`);
   await page.waitForSelector(`${drawer} .photo-source:has-text("Own photo, PestKill store")`);
-  await page.fill(`${drawer} label:has-text("MRP") input`, '480');
+  assert.equal((await api('GET', `/products?q=${encodeURIComponent('E2E Test Gel')}`)).j.products[0].mrp, null, 'unchecked MRP is price on request');
+  await page.fill(`${drawer} label:has-text("MRP (₹") input`, '480');
+  await page.check(`${drawer} label:has-text("I have checked this MRP") input`);
   await page.click(`${drawer} button[type="submit"]:has-text("Save changes")`);
   await page.waitForSelector('.toast:has-text("Product saved")');
   const pub = (await api('GET', `/products?q=${encodeURIComponent('E2E Test Gel')}`)).j.products;
   assert.equal(pub.length, 1);
-  assert.equal(pub[0].mrp, 480);
+  assert.equal(pub[0].mrp, 480, 'checked MRP is public');
   assert.equal(pub[0].image_meta.credit, 'Own photo, PestKill store');
   await page.uncheck(`${drawer} label:has-text("Show in shop") input`);
   await page.click(`${drawer} button[type="submit"]:has-text("Save changes")`);
@@ -592,13 +618,18 @@ test('journey 8: owner manages products, photos, licences, standards and referen
   assert.equal(await page.textContent(`${sale} .lic-admin-no`), SALE_LIC);
   assert.ok(await page.isDisabled(`${sale} button:has-text("Mark verified")`), 'cannot verify without a copy');
   await page.setInputFiles(`${sale} input[type="file"]`, { name: 'sale-licence.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n% sale licence\n') });
-  await page.waitForSelector(`${sale} .lic-admin-dl a:has-text("View")`);
+  await page.waitForSelector(`${sale} .lic-admin-dl button:has-text("View")`);
+  // The owner opens the copy through a short-lived link in a new tab.
+  const [tab] = await Promise.all([page.context().waitForEvent('page'), page.click(`${sale} .lic-admin-dl button:has-text("View")`)]);
+  await tab.waitForURL(/\/api\/licences\/\d+\/document\?t=/);
+  await tab.close();
   await page.click(`${sale} button:has-text("Mark verified")`);
   await page.waitForSelector(`${sale} .badge:has-text("Verified")`);
   const customer = await openPage();
   await customer.goto(`${BASE}/shop`);
-  await customer.waitForSelector('.cred-section .cred-view');
+  await customer.waitForSelector('.cred-section .cred-status.is-ok');
   assert.match(await customer.textContent('.cred-section'), /checked against the licence copy/);
+  assert.equal(await customer.$('a[href*="/licences/"]'), null, 'no public link to the licence copy');
   await page.click(`${sale} button:has-text("Hide from website")`);
   await page.waitForSelector(`${sale} button:has-text("Show on website")`);
   const shown = (await api('GET', '/licences')).j.map((l) => l.key);
@@ -690,5 +721,94 @@ test('dose calculator: any product, IS 6313 starting figures, label entry for ot
   // 40 m × 2.25 + 101 holes × 1 L = 191 L.
   assert.match(await page.textContent('.dc-result .dc-totals'), /191 L/);
   assert.deepEqual(await page.problems(), []);
+  await page.context().close();
+});
+
+/* ---------- Production-readiness release ---------- */
+test('footer: copyright with current year, developer credit opens WhatsApp, no social links anywhere', async () => {
+  for (const mobile of [false, true]) {
+    const page = await openPage({ mobile });
+    for (const p of ['/', '/shop', '/contact', '/about', '/terms']) {
+      await page.goto(BASE + p);
+      await page.waitForSelector('footer .footer-credit');
+      const copy = await page.textContent('footer .footer-copy');
+      assert.ok(copy.includes(`© ${new Date().getFullYear()} PestKill Pest Solutions. All Rights Reserved.`), `${p} copyright`);
+      assert.match(copy, /Designed & Created By\s*Prerit Mudgal/);
+      const link = page.locator('footer .footer-credit a');
+      assert.equal(await link.count(), 1, 'only the name is a link');
+      assert.equal((await link.textContent()).trim(), 'Prerit Mudgal');
+      assert.equal(await link.getAttribute('href'), 'https://wa.me/916375338302');
+      assert.equal(await link.getAttribute('target'), '_blank');
+      assert.match(await link.getAttribute('rel'), /noopener/);
+      assert.match(await link.getAttribute('aria-label'), /WhatsApp/);
+      assert.equal(await page.$('footer .footer-copy > p:first-child a'), null, 'the copyright text is not a link');
+      const social = await page.$$eval('a[href]', (as) => as.map((a) => a.href).filter((h) => /instagram|facebook\.com|twitter\.com|x\.com\/|linkedin|youtube/i.test(h)));
+      assert.deepEqual(social, [], `${p} has no social links`);
+      // The credit is visible and not covered by the phone bottom bar.
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForTimeout(150);
+      const hit = await page.evaluate(() => {
+        const a = document.querySelector('footer .footer-credit a');
+        const r = a.getBoundingClientRect();
+        return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === a;
+      });
+      assert.ok(hit, `${mobile ? 'mobile' : 'desktop'} ${p}: credit can be tapped`);
+    }
+    // Keyboard reachable.
+    await page.focus('footer .footer-credit a');
+    assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'Prerit Mudgal');
+    await page.context().close();
+  }
+});
+
+test('lead forms: when the server is down, a tap-to-send WhatsApp button appears (no blocked pop-up)', async () => {
+  const page = await openPage({ mobile: true });
+  await page.route('**/api/leads', (r) => r.abort());
+  await page.goto(`${BASE}/contact`);
+  await page.fill('#c-name', 'Anil Verma');
+  await page.fill('#c-phone', '9829077123');
+  await page.fill('#c-subject', 'Termite inspection');
+  await page.fill('#c-message', 'Termites in the door frame');
+  const popups = [];
+  page.context().on('page', (p) => popups.push(p));
+  await page.click('.contact-form button[type="submit"]');
+  const btn = page.locator('.contact-form .wa-fallback');
+  await btn.waitFor();
+  assert.equal(popups.length, 0, 'nothing opened automatically');
+  const href = await btn.getAttribute('href');
+  assert.match(href, /^https:\/\/wa\.me\/916375338302\?text=/);
+  assert.match(decodeURIComponent(href), /Anil Verma[\s\S]*9829077123[\s\S]*Termite inspection/);
+  assert.match(await page.textContent('.contact-form .form-error'), /was not saved/);
+  assert.equal(await page.$('text=Thank You!'), null, 'no false success message');
+  await page.context().close();
+});
+
+test('prices and claims: official rates with GST note; unverified claims are gone', async () => {
+  const page = await openPage();
+  await page.goto(`${BASE}/termite-control`);
+  await page.waitForSelector('.pricing-grid');
+  const t = await page.textContent('main');
+  assert.match(t, /₹7–9/);
+  assert.match(t, /₹12–15/);
+  assert.match(t, /₹22–27/);
+  assert.match(t, /exclusive of GST/);
+  await page.goto(`${BASE}/cockroach-control`);
+  await page.waitForSelector('.pricing-grid');
+  const c = await page.textContent('.pricing-grid');
+  assert.match(c, /₹1,200[\s\S]*₹1,500[\s\S]*₹1,800/);
+  for (const p of ['/', '/services', '/termite-control', '/cockroach-control', '/rodent-control', '/about', '/pest-control/jaipur']) {
+    await page.goto(BASE + p);
+    await page.waitForSelector('h1');
+    const text = await page.evaluate(() => document.body.innerText);
+    for (const bad of [/4\.9\s*\/\s*5/, /100% satisfaction/i, /10[- ]year warranty/i, /same[- ]day/i, /local teams/i, /government projects/i, /completely safe/i, /₹6[–-]9/, /₹22[–-]25\b/]) {
+      assert.doesNotMatch(text, bad, `${p} still says ${bad}`);
+    }
+  }
+  await page.goto(`${BASE}/`);
+  assert.match(await page.textContent('main'), /dispatched from Jaipur/);
+  // An MRP not yet checked against the pack is never shown to customers.
+  await page.goto(`${BASE}/shop/envu-agenda-25-ec-100-ml`);
+  await page.waitForSelector('.pd-info');
+  assert.match(await page.textContent('.pd-info'), /Price on request/);
   await page.context().close();
 });

@@ -2,7 +2,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { Phone, MapPin, ArrowRight, CalendarCheck, MessageCircle, ShieldCheck, Camera, QrCode, HeartHandshake, CloudSun, ChevronDown, Store } from 'lucide-react';
 import { PEST_LANDING } from '../data/shopLanding';
 import { CITIES, REGIONS, getCity, cityPath, cityFaqs } from '../data/rajasthan';
-import { RATES, getPest, getService, sqftLabel } from '../data/catalog';
+import { RATES, getPest, getService, sqftLabel, GST_NOTE } from '../data/catalog';
 import { pestMedia } from '../data/media';
 import businessConfig from '../data/businessConfig';
 import './CityPage.css';
@@ -25,7 +25,8 @@ const CityPage = () => {
 
   const prices = [
     { label: 'Home pest control · 1BHK', value: inr(RATES.home['1BHK']) },
-    { label: 'Home pest control · 2BHK / 3BHK', value: inr(RATES.home['2BHK']) },
+    { label: 'Home pest control · 2BHK', value: inr(RATES.home['2BHK']) },
+    { label: 'Home pest control · 3BHK', value: inr(RATES.home['3BHK']) },
     { label: 'Anti-termite · existing building', value: sqftLabel(RATES.termitePost) },
     { label: 'Anti-termite · pre-construction', value: sqftLabel(RATES.termitePre) },
     { label: 'Porous pipe anti-termite system', value: sqftLabel(RATES.porousPipe) },
@@ -47,7 +48,7 @@ const CityPage = () => {
             <a href={`tel:${phoneNumber}`} className="btn btn-white"><Phone size={18} /> {phoneNumber}</a>
             <a href={wa} target="_blank" rel="noopener noreferrer" className="btn btn-ghost"><MessageCircle size={18} /> WhatsApp</a>
           </div>
-          <p className="city-note">Free inspection · Written warranty · Licensed pest control operator</p>
+          <p className="city-note">Teams dispatched from Jaipur · Written treatment report · Licensed pest control operator</p>
         </div>
       </section>
 
@@ -88,7 +89,7 @@ const CityPage = () => {
           <div>
             <span className="eyebrow">Prices in {city.name}</span>
             <h2>Clear starting prices</h2>
-            <p className="city-muted">The same published rates apply across Rajasthan. The final price is confirmed after a free inspection, before any work starts.</p>
+            <p className="city-muted">The same published rates apply everywhere we work. {GST_NOTE} The final price is confirmed after inspection, before any work starts.</p>
             <table className="city-prices">
               <tbody>
                 {prices.map((p) => <tr key={p.label}><th scope="row">{p.label}</th><td>{p.value}</td></tr>)}

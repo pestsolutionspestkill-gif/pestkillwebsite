@@ -120,7 +120,7 @@ const BedBugTreatment = () => {
                 <div className="step-number">4</div>
                 <div className="step-content">
                   <h4>Follow-up</h4>
-                  <p>Free re-treatment if needed within warranty period</p>
+                  <p>Follow-up visit included; re-treatment terms are written on your quotation</p>
                 </div>
               </div>
             </div>
@@ -176,7 +176,7 @@ const BedBugTreatment = () => {
               </div>
               <div className="faq-item">
                 <h4>Can I treat bed bugs myself?</h4>
-                <p>DIY methods often fail. Professional treatment ensures complete eradication and warranty.</p>
+                <p>DIY methods often fail. Professional treatment reaches hiding places and every life stage, with a follow-up visit.</p>
               </div>
             </div>
 

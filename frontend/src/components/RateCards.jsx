@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { RATES } from '../data/catalog';
+import { RATES, GST_NOTE } from '../data/catalog';
 
 const inr = (n) => `₹${n.toLocaleString('en-IN')}`;
 
@@ -41,7 +41,7 @@ const RateCards = ({ includes = ['Inspection', 'Complete treatment', 'Follow-up 
     </div>
     <p className="rate-note">
       {withTermite ? `3 BHK homes are also ${inr(RATES.home['3BHK'])}. ` : ''}
-      Larger homes, villas and commercial sites are quoted after a free inspection.
+      Larger homes, villas and commercial sites are quoted after inspection. {GST_NOTE}
     </p>
   </>
 );

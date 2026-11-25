@@ -14,8 +14,11 @@ import Credentials, { LicenceLine } from '../components/Credentials';
 
 export const BuyerBanner = () => {
   const { user } = useAuth();
-  const { buyer } = useBuyer();
-  if (buyer?.status === 'approved') {
+  const { buyer, approved } = useBuyer();
+  if (buyer?.status === 'approved' && !approved) {
+    return <div className="buyer-banner wait"><Clock size={18} /> <span>{buyer.licence_expired ? 'Your licence validity has passed.' : 'Your account has no licence validity date on record.'} Ordering is paused until you update it.</span><Link to="/pco-account" className="btn btn-primary btn-sm">Update licence</Link></div>;
+  }
+  if (approved) {
     return <div className="buyer-banner ok"><BadgeCheck size={18} /> <span><strong>{buyer.firm_name}</strong> — verified PCO buyer. You can order online.</span></div>;
   }
   if (buyer?.status === 'pending') {
@@ -24,7 +27,7 @@ export const BuyerBanner = () => {
   return (
     <div className="buyer-banner">
       <ShieldCheck size={18} />
-      <span>Professional products are sold only to <strong>licensed pest control operators</strong>. {buyer?.status === 'rejected' ? 'Your application needs changes.' : 'Create a free PCO buyer account to order.'}</span>
+      <span>{buyer?.status === 'rejected' ? <>Your PCO application needs changes.</> : <><strong>Licensed Pest Control Operator?</strong> Apply for PCO verification to unlock exclusive discounted pricing. PCO prices are shared after verification and can be discussed directly with our team.</>}</span>
       <Link to="/pco-account" className="btn btn-primary btn-sm">{user ? (buyer?.status === 'rejected' ? 'Update application' : 'Apply as PCO buyer') : 'Create PCO account'}</Link>
     </div>
   );

@@ -44,12 +44,12 @@ const Letterhead = ({ title, number, date }) => {
   return (
     <header className="doc-head">
       <div className="doc-brand">
-        <img className="doc-mark" src="/images/brand/pestkill-emblem-192.png" alt="Pest Kill logo" />
+        <img className="doc-mark" src="/images/brand/pestkill-emblem-192.png" alt="PestKill logo" />
         <div>
           <strong>{businessName}</strong>
           <span>{officeAddress}</span>
           <span>{phoneNumber} · {email}</span>
-          {gstin && <span>GSTIN: {gstin}</span>}
+          {gstin && <span>GSTIN: {gstin}{businessConfig.udyam ? ` · Udyam: ${businessConfig.udyam}` : ''}</span>}
           {licenceNumber && <span>Pest Control Licence: {licenceNumber}</span>}
           {saleLicenceNumber && <span>Pesticide Sale Licence: {saleLicenceNumber}</span>}
         </div>

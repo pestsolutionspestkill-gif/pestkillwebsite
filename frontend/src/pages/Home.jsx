@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import businessConfig from '../data/businessConfig';
 import {
-  Phone, MapPin, ArrowRight, ArrowUpRight, Star, CheckCircle,
+  Phone, MapPin, ArrowRight, ArrowUpRight, CheckCircle,
   Bug, BedDouble, ShieldCheck, Zap, Shield, Users, Wrench, Leaf, Tag,
   ClipboardList, Search, BadgeCheck, Award, Building2, Layers, Plus, Minus,
   Home as HomeIcon, Hotel, Hospital, Warehouse, UtensilsCrossed, HardHat,
@@ -17,36 +17,31 @@ import { media, pestMedia, sectorMedia } from '../data/media';
 import './Home.css';
 import { HOME_FAQS as faqs } from '../data/homeFaqs';
 import { CITIES, cityPath } from '../data/rajasthan';
+import FormError from '../components/FormError';
 
 const services = [
-  { name: 'Anti-Termite Piping System', slug: 'anti-termite-piping', icon: Layers, desc: 'For new construction: a porous pipe network laid under your foundation. It can be refilled from outside for 10–15 years, with no drilling and no broken floors.', tag: 'New · Pre-construction' },
-  { name: 'Termite Treatment', slug: 'termite-control', icon: Bug, desc: 'Pre & post-construction anti-termite treatment with soil barrier and wood protection.', tag: 'Up to 10-year warranty' },
-  { name: 'Cockroach Control', slug: 'cockroach-control', icon: Zap, desc: 'Odourless gel baiting and residual spray for kitchens, homes and restaurants.', tag: '90-day guarantee' },
-  { name: 'Rodent Control', slug: 'rodent-control', icon: Shield, desc: 'Proofing, tamper-proof bait stations and monitoring for homes and godowns.', tag: '1-year warranty' },
+  { name: 'Anti-Termite Piping System', slug: 'anti-termite-piping', icon: Layers, desc: 'For new construction: a porous pipe network laid under your foundation. It can be recharged from outside later, with no drilling and no broken floors.', tag: 'New · Pre-construction' },
+  { name: 'Termite Treatment', slug: 'termite-control', icon: Bug, desc: 'Pre & post-construction anti-termite treatment with soil barrier and wood protection.', tag: 'Pre & post-construction' },
+  { name: 'Cockroach Control', slug: 'cockroach-control', icon: Zap, desc: 'Odourless gel baiting and residual spray for kitchens, homes and restaurants.', tag: 'Gel + spray' },
+  { name: 'Rodent Control', slug: 'rodent-control', icon: Shield, desc: 'Proofing, tamper-proof bait stations and monitoring for homes and godowns.', tag: 'Proofing + bait stations' },
   { name: 'Bed Bug Treatment', slug: 'bed-bugs', icon: BedDouble, desc: 'Combined heat, steam and chemical treatment that reaches every life stage.', tag: 'Two-visit protocol' },
   { name: 'General Pest Control', slug: 'general-pest-control', icon: ShieldCheck, desc: 'Annual maintenance contracts covering ants, spiders, flies and crawling insects.', tag: 'Annual contract' },
 ];
 
 const whyChooseUs = [
-  { title: 'Certified Technicians', text: 'Trained, background-verified staff in uniform on every visit.', icon: Users },
+  { title: 'Trained Technicians', text: 'Trained staff carry out every treatment and explain what was done.', icon: Users },
   { title: 'Professional Equipment', text: 'Industrial sprayers, drilling rigs and ULV foggers.', icon: Wrench },
-  { title: 'Family-Safe Methods', text: 'Low-toxicity, government-approved formulations.', icon: Leaf },
-  { title: 'Same-Day Response', text: 'Inspection slots available across Jaipur within hours.', icon: Zap },
-  { title: 'Written Warranty', text: 'Every job documented with a warranty certificate.', icon: BadgeCheck },
+  { title: 'Label-Directed Use', text: 'Registered products used as the label directs, with safety advice for your household.', icon: Leaf },
+  { title: 'Service Across India', text: 'Teams dispatched from Jaipur; visits scheduled by location and availability.', icon: Zap },
+  { title: 'Licensed & Documented', text: 'Licensed operator; every job gets a written treatment report.', icon: BadgeCheck },
   { title: 'Transparent Pricing', text: 'Fixed written quote after inspection. No surprises.', icon: Tag },
 ];
 
 const process = [
-  { icon: ClipboardList, title: 'Book', text: 'Call, WhatsApp or fill the form. We confirm a slot the same day.' },
+  { icon: ClipboardList, title: 'Book', text: 'Call, WhatsApp or fill the form. We call back to confirm availability and a slot.' },
   { icon: Search, title: 'Inspect', text: 'An expert surveys the site and identifies pest type and severity.' },
   { icon: Tag, title: 'Quote', text: 'You receive a fixed, itemised written quotation. No hidden costs.' },
-  { icon: CheckCircle, title: 'Treat & Protect', text: 'Professional treatment, follow-up visits and warranty certificate.' },
-];
-
-const testimonials = [
-  { name: 'Ramesh Jangid', location: 'Vidhyadhar Nagar, Jaipur', text: 'Had a termite problem in my kitchen cabinets. They came the same day, showed me the affected areas and gave a fair quote. Treatment was done properly.' },
-  { name: 'Sunita Sharma', location: 'Sanganer, Jaipur', text: 'Cockroaches were a nightmare. Their gel treatment worked within a week and there have been no issues for three months. Price was reasonable.' },
-  { name: 'Vijay Singh', location: 'Ajmer Road, Jaipur', text: 'Needed rodent control for our godown. The team was professional, set up bait stations and advised us on preventing future infestation.' },
+  { icon: CheckCircle, title: 'Treat & Protect', text: 'Professional treatment, follow-up advice and a written treatment report.' },
 ];
 
 const industries = [
@@ -57,24 +52,25 @@ const industries = [
   { icon: Hospital, title: 'Hospitals & Clinics' },
   { icon: Building2, title: 'Offices & IT Parks' },
   { icon: Warehouse, title: 'Warehouses & Godowns' },
-  { icon: Award, title: 'Government Institutions' },
+  { icon: Award, title: 'Institutions & Campuses' },
 ];
 
 
 const cityLinks = Object.fromEntries(CITIES.map((c) => [c.name, cityPath(c.slug)]));
 
 const Home = () => {
-  const { phoneNumber, whatsappNumber, serviceCoverage, experience, brands } = businessConfig;
+  const { phoneNumber, whatsappNumber, serviceCoverage, brands } = businessConfig;
   const [formData, setFormData] = useState({ name: '', phone: '', service: '' });
   const [submitted, setSubmitted] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
   const pricesFrom = homeFrom;
 
   const stats = [
-    { value: '8+', label: 'Years of service' },
-    { value: `${experience.governmentProjects}+`, label: 'Government projects' },
-    { value: `${serviceCoverage.length}+`, label: 'Cities covered' },
-    { value: '100%', label: 'Satisfaction guarantee' },
+    // Only facts that can be checked: licences, registrations and what we sell.
+    { value: 'Licensed', label: 'Pest control & pesticide sale' },
+    { value: 'Pan-India', label: 'Service, dispatched from Jaipur' },
+    { value: `${brands.length}`, label: 'Authorised product brands' },
+    { value: 'GST', label: 'Invoice with every job and order' },
   ];
 
   const [sending, setSending] = useState(false);
@@ -91,7 +87,7 @@ const Home = () => {
       );
       setSubmitted(true);
     } catch (err) {
-      setFormError(err.message);
+      setFormError(err);
     } finally {
       setSending(false);
     }
@@ -102,32 +98,31 @@ const Home = () => {
       {/* HERO */}
       <section className="hero">
         <div className="container hero-center">
-          <h1 className="hero-kicker fade-up">PestKill · Pest control in Jaipur &amp; all Rajasthan</h1>
+          <h1 className="hero-kicker fade-up">PestKill · Pest control across India, from Jaipur</h1>
           <p className="hero-title fade-up d1">
-            Pest-free.<br /><span className="text-gradient">Guaranteed.</span>
+            Pest-free.<br /><span className="text-gradient">Done properly.</span>
           </p>
           <p className="hero-subtitle fade-up d2">
-            Termite, cockroach, rodent and bed bug control for homes and businesses — by trained specialists, with a written warranty.
+            Termite, cockroach, rodent and bed bug control for homes and businesses by trained specialists, with a written treatment report.
           </p>
           <div className="hero-actions fade-up d3">
             <Link to="/book" className="btn btn-primary btn-lg">Book Online</Link>
             <a href="#inspect" className="link-more">Get a free inspection <ArrowRight size={17} /></a>
           </div>
           <div className="hero-proof fade-up d4">
-            <span className="hero-stars">{[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}</span>
-            <span><strong>4.9/5</strong> from homeowners & businesses across Jaipur</span>
+            <span><strong>Licensed</strong> · Pest Control Licence {businessConfig.licenceNumber}</span>
           </div>
         </div>
         <div className="container fade-up d4">
           <figure className="hero-media photo-frame">
             <img src={media.technician.src} alt={media.technician.alt} />
             <figcaption className="hero-media-caption">
-              <strong>From {pricesFrom}</strong>
-              <span>Inspection · Treatment · Written warranty</span>
+              <strong>From {pricesFrom} + GST</strong>
+              <span>Inspection · Treatment · Written report · + GST</span>
             </figcaption>
             <Link to="/about" className="hero-founder">
               <img src={founder.portrait} alt={founder.name} width="64" height="64" />
-              <span><em>“{founder.promise}”</em><strong>{founder.name}</strong><small>{founder.title}, Pest Kill Pest Solutions</small></span>
+              <span><em>“{founder.promise}”</em><strong>{founder.name}</strong><small>{founder.title}, PestKill Pest Solutions</small></span>
             </Link>
           </figure>
         </div>
@@ -157,8 +152,8 @@ const Home = () => {
           <div className="inspect-tile">
             <div className="inspect-copy">
               <span className="eyebrow light">Free inspection</span>
-              <h2>A specialist at your door. <span className="text-gradient">Within hours.</span></h2>
-              <p>Tell us what you're seeing. We'll call you back within 30 minutes to schedule a free, no-obligation inspection.</p>
+              <h2>A specialist at your door. <span className="text-gradient">Scheduled for you.</span></h2>
+              <p>Tell us what you're seeing. We'll call you back to check availability for your location and schedule an inspection.</p>
               <a href={`tel:${phoneNumber}`} className="link-more light"><Phone size={16} /> Or call {phoneNumber}</a>
             </div>
           <div className="hero-card">
@@ -166,7 +161,7 @@ const Home = () => {
               <span className="icon-tile"><ShieldCheck size={22} /></span>
               <div>
                 <h3>Book a free inspection</h3>
-                <p>We call you back within 30 minutes.</p>
+                <p>We call you back during working hours.</p>
               </div>
             </div>
             {submitted ? (
@@ -183,7 +178,7 @@ const Home = () => {
                   <option value="">Select a service</option>
                   {services.map(s => <option key={s.slug} value={s.name}>{s.name}</option>)}
                 </select>
-                {formError && <p className="form-error" role="alert">{formError}</p>}
+                <FormError error={formError} />
                 <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={sending}>{sending ? 'Sending…' : <>Request Inspection <ArrowRight size={18} /></>}</button>
                 <p className="hero-form-note"><BadgeCheck size={14} /> No obligation. Free across Jaipur.</p>
               </form>
@@ -201,7 +196,7 @@ const Home = () => {
             <div>
               <span className="audience-kicker">For your home</span>
               <h3>Residential pest control</h3>
-              <p>Odourless, family-safe treatments with fixed starting prices and online booking.</p>
+              <p>Gel and spray treatments with published starting prices and online booking.</p>
             </div>
             <span className="audience-cta">Explore home services <ArrowRight size={16} /></span>
           </Link>
@@ -255,8 +250,8 @@ const Home = () => {
             <div className="why-badge">
               <Award size={28} />
               <div>
-                <strong>{experience.governmentProjects}+ Govt. projects</strong>
-                <span>and multinational clients</span>
+                <strong>Homes to large sites</strong>
+                <span>Residential, commercial and institutional work</span>
               </div>
             </div>
           </div>
@@ -313,7 +308,7 @@ const Home = () => {
             </div>
             <ul className="piping-band-points">
               <li><strong>10–15 yrs</strong><span>Protection with refills</span></li>
-              <li><strong>₹{RATES.porousPipe.min}–{RATES.porousPipe.max}</strong><span>Per sq.ft.</span></li>
+              <li><strong>₹{RATES.porousPipe.min}–{RATES.porousPipe.max}</strong><span>Per sq.ft. + GST</span></li>
               <li><strong>0</strong><span>Floor drilling ever</span></li>
             </ul>
           </Link>
@@ -325,7 +320,7 @@ const Home = () => {
         <div className="container">
           <div className="section-head">
             <span className="eyebrow">Industries We Serve</span>
-            <h2 className="section-title">From family homes to <span className="text-gradient">government campuses</span></h2>
+            <h2 className="section-title">From family homes to <span className="text-gradient">large campuses</span></h2>
             <p className="section-subtitle">Each property gets a treatment plan built around its layout, occupancy and hygiene standards.</p>
           </div>
           <div className="industries-grid">
@@ -361,31 +356,6 @@ const Home = () => {
       </section>
 
       <FounderSection />
-
-      {/* TESTIMONIALS */}
-      <section className="section testimonials-section">
-        <div className="container">
-          <div className="section-head">
-            <span className="eyebrow light">Client Stories</span>
-            <h2 className="section-title">Trusted by families <span className="text-gradient">and businesses</span></h2>
-          </div>
-          <div className="testimonials-grid">
-            {testimonials.map((t) => (
-              <figure key={t.name} className="testimonial-card">
-                <div className="testimonial-stars">{[...Array(5)].map((_, i) => <Star key={i} size={15} fill="currentColor" />)}</div>
-                <blockquote>"{t.text}"</blockquote>
-                <figcaption>
-                  <span className="avatar">{t.name.split(' ').map(n => n[0]).join('')}</span>
-                  <span>
-                    <strong>{t.name}</strong>
-                    <small>{t.location}</small>
-                  </span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <Credentials />
 
@@ -427,8 +397,8 @@ const Home = () => {
         <div className="container coverage-layout">
           <div className="section-head left">
             <span className="eyebrow">Service Coverage</span>
-            <h2 className="section-title">Across Rajasthan, <span className="text-gradient">Delhi NCR & UP</span></h2>
-            <p className="section-subtitle">Local teams in major cities with rapid response and on-site inspection.</p>
+            <h2 className="section-title">Across India, <span className="text-gradient">from Jaipur</span></h2>
+            <p className="section-subtitle">{businessConfig.dispatchNote}</p>
             <Link to="/contact" className="btn btn-navy">Check your area <ArrowRight size={16} /></Link>
           </div>
           <div className="coverage-grid">
@@ -439,7 +409,7 @@ const Home = () => {
                 ? <Link key={city} to={path} className="coverage-item linked">{inner}<ArrowUpRight size={14} className="cov-arrow" /></Link>
                 : <div key={city} className="coverage-item">{inner}</div>;
             })}
-            <div className="coverage-item more"><Building2 size={15} /> +{serviceCoverage.length - 12} more cities</div>
+            <Link to="/book" className="coverage-item more"><Building2 size={15} /> Anywhere else in India: check availability</Link>
           </div>
         </div>
       </section>

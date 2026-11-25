@@ -291,3 +291,9 @@ textarea.form-input { resize: vertical; min-height: 120px; }
 
 /* Visually hidden, still read by screen readers. */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* GST statement shown next to every published price. */
+.gst-note { margin: 12px 0 18px; font-size: .85rem; color: var(--ink-soft); }
+.gst-note.on-dark { color: rgba(255, 255, 255, .8); margin: 8px 0 14px; }
+.form-error p, .book-error p { margin: 0; }
+.wa-fallback { margin-top: 10px; background: #1F9D55; }

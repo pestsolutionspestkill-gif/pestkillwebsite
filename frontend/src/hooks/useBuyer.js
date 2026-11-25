@@ -12,5 +12,7 @@ export const useBuyer = () => {
     api('/buyers/me').then((b) => live && setBuyer(b)).catch(() => live && setBuyer(null));
     return () => { live = false; };
   }, [user]);
-  return { buyer, setBuyer, approved: buyer?.status === 'approved' };
+  // Mirrors the server rule: approved AND a recorded licence validity date that has not passed.
+  const approved = buyer?.status === 'approved' && !buyer.licence_expired && !buyer.licence_validity_missing;
+  return { buyer, setBuyer, approved };
 };

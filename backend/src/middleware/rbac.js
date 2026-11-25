@@ -13,6 +13,17 @@ export const setJwtSecret = (secret) => {
 // `tv` (token version) ties the token to the current password; changing the password signs out old tokens.
 export const signToken = (user) => jwt.sign({ sub: user.id, tv: user.token_version || 0 }, JWT_SECRET, { expiresIn: TOKEN_TTL, algorithm: 'HS256' });
 
+// Short-lived links for private files (e.g. business licence copies). Bound to one file and one
+// user, valid for a few minutes, so a copied URL stops working almost immediately.
+const FILE_AUDIENCE = 'pk-private-file';
+export const signFileToken = (file, userId, seconds = 300) => jwt.sign({ f: file, sub: userId }, JWT_SECRET, { expiresIn: seconds, audience: FILE_AUDIENCE, algorithm: 'HS256' });
+export const verifyFileToken = (token, file) => {
+  try {
+    const p = jwt.verify(String(token || ''), JWT_SECRET, { audience: FILE_AUDIENCE, algorithms: ['HS256'] });
+    return p.f === file ? p : null;
+  } catch { return null; }
+};
+
 // The user is reloaded from the database on every request, so suspensions, role changes
 // and permission changes take effect immediately.
 const loadUser = async (req) => {

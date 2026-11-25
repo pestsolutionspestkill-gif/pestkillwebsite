@@ -16,6 +16,7 @@ import serviceRoutes from './routes/serviceRoutes.js';
 import complaintRoutes from './routes/complaintRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import replacementRoutes from './routes/replacementRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
 import buyerRoutes from './routes/buyerRoutes.js';
@@ -86,7 +87,7 @@ const imageJson = express.json({ limit: '2.5mb' });
 // PDF datasheets and licence copies: up to 5 MB files, about 6.7 MB as base64.
 const documentJson = express.json({ limit: '7mb' });
 app.use((req, res, next) => {
-  if (/^\/api\/(products\/\d+\/documents\/[a-z]+|buyers\/documents\/[a-z]+|documents|documents\/\d+|licences\/\d+\/document)$/.test(req.path)) return documentJson(req, res, next);
+  if (/^\/api\/(products\/\d+\/documents\/[a-z]+|buyers\/documents\/[a-z]+|documents|documents\/\d+|licences\/\d+\/document|replacements)$/.test(req.path)) return documentJson(req, res, next);
   return (/^\/api\/(products\/\d+\/image|jobs\/\d+\/photos)$/.test(req.path) ? imageJson : smallJson)(req, res, next);
 });
 
@@ -98,6 +99,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/replacements', replacementRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/buyers', buyerRoutes);

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone, Layers, TreeDeciduous, Bug, AlertTriangle } from 'lucide-react';
-import { RATES } from '../data/catalog';
+import { RATES, GST_NOTE } from '../data/catalog';
 import './ServiceDetail.css';
 import CityLinks from '../components/CityLinks';
 import Credentials from '../components/Credentials';
@@ -12,7 +12,7 @@ const TermiteControl = () => {
         <div className="container">
           <span className="service-badge">Professional Service</span>
           <h1>Professional <span className="text-gradient">Termite Control</span> Treatment in Rajasthan</h1>
-          <p className="hero-desc">Protect your home from silent destroyers. Get professional termite treatment with 5-10 years warranty.</p>
+          <p className="hero-desc">Protect your home from silent destroyers. Get professional termite treatment with a written treatment report. Warranty terms are written on your quotation.</p>
           <div className="hero-buttons">
             <Link to="/contact" className="btn btn-primary">Get Free Quote</Link>
             <a href="tel:+916375338302" className="btn btn-outline"><Phone size={16} style={{marginRight:'6px',verticalAlign:'middle'}} />Call Now</a>
@@ -24,7 +24,7 @@ const TermiteControl = () => {
         <div className="container">
           <div className="service-content">
             <h2>Best Termite Control Treatment in Rajasthan</h2>
-            <p>Termites are silent destroyers that can cause crores worth of damage to your property. At Pest Kill Solutions, we provide <strong>professional termite control treatment across Rajasthan</strong> with guaranteed results.</p>
+            <p>Termites are silent destroyers that can cause crores worth of damage to your property. At PestKill Pest Solutions, we provide <strong>professional termite control treatment across India</strong>, with teams dispatched from Jaipur and a written report for every job.</p>
             
             <h3>Signs of Termite Infestation</h3>
             <div className="symptoms-grid">
@@ -132,7 +132,7 @@ const TermiteControl = () => {
                 <ul>
                   <li>Drilling & injection</li>
                   <li>Wood treatment</li>
-                  <li>5 years warranty</li>
+                  <li>Warranty as per quotation</li>
                 </ul>
               </div>
               <div className="pricing-card">
@@ -141,7 +141,7 @@ const TermiteControl = () => {
                 <ul>
                   <li>Foundation treatment</li>
                   <li>Soil drenching</li>
-                  <li>10 years warranty</li>
+                  <li>Warranty as per quotation</li>
                 </ul>
               </div>
               <div className="pricing-card">
@@ -154,6 +154,7 @@ const TermiteControl = () => {
                 </ul>
               </div>
             </div>
+            <p className="gst-note">{GST_NOTE} The final price is confirmed after inspection.</p>
 
             <h3>Frequently Asked Questions</h3>
             <div className="faq-section">
@@ -163,11 +164,11 @@ const TermiteControl = () => {
               </div>
               <div className="faq-item">
                 <h4>Is termite treatment safe for children?</h4>
-                <p>Yes, after 24-48 hours of drying, it's completely safe. We use low-toxicity chemicals like Fipronil.</p>
+                <p>The waiting time before treated areas can be used depends on the product and method, and follows the product label. We tell you exactly which areas to avoid and for how long, and what to do for children and pets.</p>
               </div>
               <div className="faq-item">
                 <h4>How long does the treatment last?</h4>
-                <p>Our warranty is 5 years for post-construction and 10 years for pre-construction treatment.</p>
+                <p>How long protection lasts depends on the product, soil, construction and later disturbance of the treated soil. Any warranty we give is written on your quotation, with its period and conditions.</p>
               </div>
               <div className="faq-item">
                 <h4>Do you provide free inspection?</h4>
@@ -190,7 +191,7 @@ const TermiteControl = () => {
       <section className="cta-section">
         <div className="container">
           <h2>Protect Your Home from Termites</h2>
-          <p>Get professional termite treatment with guaranteed results. Free inspection!</p>
+          <p>Professional termite treatment by trained technicians, with a written report.</p>
           <div className="cta-buttons">
             <Link to="/contact" className="btn btn-primary">Get Free Quote</Link>
             <a href="tel:+916375338302" className="btn btn-outline"><Phone size={16} style={{marginRight:'6px',verticalAlign:'middle'}} />Call: +91-63753-38302</a>

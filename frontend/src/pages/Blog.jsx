@@ -98,7 +98,7 @@ Comparison: Porous Pipe vs Traditional Treatment
 
 | Feature | Porous Pipe System | Traditional Drilling |
 |---------|------------------|-------------------|
-| Cost | ₹22-25/sq.ft. (ek baar) | ₹6-9/sq.ft. (har treatment) |
+| Cost | ₹22-27/sq.ft. (ek baar) | ₹7-9/sq.ft. (har treatment) |
 | Longevity | 10-15 years | 5-7 years |
 | Re-treatment | Easy | Difficult |
 
@@ -114,13 +114,13 @@ Q1: Is porous pipe treatment necessary for every new home?
 Ans: Ji haan, highly recommended hai.
 
 Q2: How much does it cost in Rajasthan?
-Ans: Porous pipe system ₹22-25 per sq.ft. hota hai. Normal pre-construction soil treatment ₹12-15 per sq.ft. hai.
+Ans: Porous pipe system ₹22-27 per sq.ft. hota hai. Normal pre-construction soil treatment ₹12-15 per sq.ft. hai.
 
 Q3: Can we install after construction?
 Ans: Possible hai but costly aur difficult hai.
 
 Q4: How long does the treatment last?
-Ans: 10-15 saal tak valid hai warranty ke saath.
+Ans: Ye product, mitti aur construction par depend karta hai. Warranty ki shartein aapke quotation par likhi hoti hain.
 
 Get Professional Pre-Construction Termite Treatment
 
@@ -129,7 +129,7 @@ Naya ghar bana rahe hain? Abhi hi free consultation book karein!`,
     category: 'Termite Control', 
     date: '2026-04-20', 
     readTime: '8 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '1', 
@@ -161,7 +161,7 @@ Naya ghar bana rahe hain? Abhi hi free consultation book karein!`,
     category: 'Termite Control', 
     date: '2026-01-15', 
     readTime: '5 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '2', 
@@ -196,7 +196,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
     category: 'Cockroach Control', 
     date: '2026-01-12', 
     readTime: '4 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '3', 
@@ -235,7 +235,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
     category: 'Rodent Control', 
     date: '2026-01-10', 
     readTime: '6 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '4', 
@@ -279,7 +279,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
     category: 'Bed Bugs', 
     date: '2026-01-08', 
     readTime: '4 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '5', 
@@ -329,7 +329,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
     category: 'Seasonal', 
     date: '2026-01-05', 
     readTime: '5 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '6', 
@@ -386,7 +386,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
     category: 'Prevention', 
     date: '2026-01-03', 
     readTime: '4 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '7', 
@@ -443,7 +443,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
     category: 'Commercial', 
     date: '2025-12-28', 
     readTime: '5 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '8', 
@@ -507,7 +507,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
     category: 'Commercial', 
     date: '2025-12-25', 
     readTime: '6 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '9', 
@@ -561,7 +561,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
     category: 'Prevention', 
     date: '2025-12-22', 
     readTime: '4 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '10', 
@@ -634,7 +634,7 @@ Many professionals recommend using both:
     category: 'Prevention', 
     date: '2025-12-20', 
     readTime: '5 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '11', 
@@ -668,7 +668,7 @@ DIY works for minor cases; professionals recommended for major issues.
 Depends on property size and pest type; get a quote.
 
 **9. Do you guarantee your work?**
-Yes, we offer warranties on most treatments.
+Where a warranty applies, its period and terms are written on your quotation.
 
 **10. Are natural treatments effective?**
 Yes, for prevention and minor issues.
@@ -691,7 +691,7 @@ Call us or book online for inspection.`,
     category: 'FAQ', 
     date: '2025-12-18', 
     readTime: '7 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '12', 
@@ -757,7 +757,7 @@ Call us or book online for inspection.`,
     category: 'Commercial', 
     date: '2025-12-15', 
     readTime: '6 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '13', 
@@ -818,7 +818,7 @@ Call us or book online for inspection.`,
     category: 'Guide', 
     date: '2025-12-12', 
     readTime: '4 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '14', 
@@ -882,7 +882,7 @@ Call us or book online for inspection.`,
     category: 'Seasonal', 
     date: '2025-12-10', 
     readTime: '5 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   { 
     _id: '15', 
@@ -905,14 +905,16 @@ Call us or book online for inspection.`,
 
 - 1BHK: ₹1,200
 - 2BHK: ₹1,500
-- 3BHK: ₹1,500
+- 3BHK: ₹1,800
 - Bigger homes and villas: quote after inspection
 
 *Anti-Termite Treatment:*
 
-- Post-construction (existing buildings): ₹6-9/sq ft
+- Post-construction (existing buildings): ₹7-9/sq ft
 - Pre-construction (soil treatment): ₹12-15/sq ft
-- Porous pipe system: ₹22-25/sq ft
+- Porous pipe system: ₹22-27/sq ft
+
+*All prices are exclusive of GST. Applicable GST is charged separately.*
 
 *Commercial Sites:*
 
@@ -947,7 +949,7 @@ Call us or book online for inspection.`,
     category: 'Guide', 
     date: '2025-12-08', 
     readTime: '4 min read',
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
 ];
 

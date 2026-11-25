@@ -84,14 +84,15 @@ router.get('/calculator', ah(async (req, res) => {
   for (const r of rows) {
     const p = await db.get('SELECT id, slug, name, brand, technical, formulation FROM products WHERE id = ?', r.product_id);
     // Pack sizes of the same product, with prices where an MRP or running offer exists.
-    const packs = await db.all(`SELECT id, slug, pack_size, mrp, offer_price, offer_ends FROM products
+    const packs = await db.all(`SELECT id, slug, pack_size, mrp, mrp_verified, offer_price, offer_ends FROM products
       WHERE brand = ? AND name = ? AND is_active = 1 ORDER BY mrp ASC NULLS LAST, id`, p.brand, p.name);
     const today = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
     out.push({
       ...shape(r),
       product: p,
       packs: packs.map((x) => ({ id: x.id, slug: x.slug, pack_size: x.pack_size,
-        price: x.offer_price != null && x.mrp != null && x.offer_price < x.mrp && (!x.offer_ends || x.offer_ends >= today) ? x.offer_price : x.mrp })),
+        // Only pack-verified MRPs are shown to customers.
+        price: Number(x.mrp_verified) !== 1 || x.mrp == null ? null : x.offer_price != null && x.offer_price < x.mrp && (!x.offer_ends || x.offer_ends >= today) ? x.offer_price : x.mrp })),
     });
   }
   const pending = (await db.get("SELECT COUNT(*)::int n FROM dose_records WHERE activity = ? AND status <> 'verified'", activity)).n;

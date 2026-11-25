@@ -24,7 +24,18 @@ const quickLinks = [
 
 const cities = CITIES.slice(0, 8).map((c) => ({ label: c.name, path: cityPath(c.slug) })).concat({ label: 'All Rajasthan cities', path: '/locations' });
 
+// Developer credit: the name opens WhatsApp chat with the developer.
+const DEV_WA = 'https://wa.me/916375338302';
+export const LEGAL = [
+  { label: 'Privacy policy', path: '/privacy-policy' },
+  { label: 'Terms & conditions', path: '/terms' },
+  { label: 'Shipping & delivery', path: '/shipping-delivery' },
+  { label: 'Product replacement', path: '/replacement-policy' },
+  { label: 'Disclaimer', path: '/disclaimer' },
+];
+
 const Footer = () => {
+  const year = new Date().getFullYear();
   const { businessName, tagline, phoneNumber, whatsappNumber, email, officeAddress, workingHours, googleMapLink, brands } = businessConfig;
   const wa = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`;
 
@@ -35,7 +46,7 @@ const Footer = () => {
           <div>
             <span className="eyebrow light">Free Site Inspection</span>
             <h2>Protect what matters. <span className="text-gradient">Book today.</span></h2>
-            <p>Certified technicians, government-approved chemicals and written warranty on every treatment.</p>
+            <p>Trained technicians, registered products used as the label directs, and a written treatment report.</p>
           </div>
           <div className="footer-cta-actions">
             <Link to="/services" className="btn btn-primary btn-lg">Get Free Quote <ArrowRight size={18} /></Link>
@@ -46,13 +57,13 @@ const Footer = () => {
         <div className="footer-grid">
           <div className="footer-about">
             <Logo />
-            <p className="footer-tagline">{tagline}. Serving homes, hotels, hospitals and industries across Rajasthan, Delhi NCR and Uttar Pradesh.</p>
+            <p className="footer-tagline">{tagline}. Pest control services across India, with teams dispatched from our Jaipur office. Professional products delivered across India.</p>
             <ul className="footer-trust">
               <li><LicenceLine kind="pco" /></li>
               <li><LicenceLine kind="sale" /></li>
-              <li><ShieldCheck size={16} /> Govt. approved chemicals</li>
-              <li><Award size={16} /> Up to 10-year warranty</li>
-              <li><Leaf size={16} /> Family & pet safe methods</li>
+              <li><ShieldCheck size={16} /> GSTIN {businessConfig.gstin}</li>
+              <li><Award size={16} /> Udyam {businessConfig.udyam}</li>
+              {businessConfig.pmarMember && <li><Leaf size={16} /> Member, PMAR{businessConfig.pmarNumber ? ` (${businessConfig.pmarNumber})` : ''}</li>}
             </ul>
           </div>
 
@@ -95,8 +106,17 @@ const Footer = () => {
 
       <div className="footer-bottom">
         <div className="container">
-          <p>&copy; {new Date().getFullYear()} {businessName}. All rights reserved.</p>
-          <p><Link to="/login">Staff Login</Link></p>
+          <nav className="footer-legal" aria-label="Policies">
+            {LEGAL.map((l) => <Link key={l.path} to={l.path}>{l.label}</Link>)}
+            <Link to="/login">Staff login</Link>
+          </nav>
+          <div className="footer-copy">
+            <p>&copy; {year} {businessName}. All Rights Reserved.</p>
+            <p className="footer-credit">
+              Designed &amp; Created By{' '}
+              <a href={DEV_WA} target="_blank" rel="noopener noreferrer" aria-label="Prerit Mudgal, designer and developer: chat on WhatsApp (opens in a new tab)">Prerit Mudgal</a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>

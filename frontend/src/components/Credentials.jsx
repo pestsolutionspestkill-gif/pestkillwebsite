@@ -10,7 +10,7 @@ import businessConfig from '../data/businessConfig';
 import { api } from '../lib/api';
 import './Credentials.css';
 
-const FALLBACK = businessConfig.licences.map((l) => ({ ...l, status: 'unverified', has_document: false, document_url: null }));
+const FALLBACK = businessConfig.licences.map((l) => ({ ...l, status: 'unverified', has_document: false }));
 
 let cache = null;
 let pending = null;
@@ -51,11 +51,8 @@ const Card = ({ l }) => {
           )}
         </dl>
         <p className={`cred-status ${verified ? 'is-ok' : ''}`}>
-          {verified ? <><BadgeCheck size={14} /> Details checked against the licence copy</> : 'Licence copy available on request'}
+          {verified ? <><BadgeCheck size={14} /> Details checked against the licence copy</> : <><FileText size={14} /> Licence copy available on request</>}
         </p>
-        {l.has_document && l.document_url && (
-          <a className="cred-view" href={l.document_url} target="_blank" rel="noopener noreferrer"><FileText size={15} /> View licence</a>
-        )}
       </div>
     </article>
   );
@@ -90,7 +87,6 @@ export const LicenceLine = ({ kind, className = '' }) => {
     <p className={`lic-line ${className}`} data-licence={l.key}>
       <BadgeCheck size={15} aria-hidden="true" />
       <span>{l.title}: <strong translate="no">{l.number}</strong></span>
-      {l.has_document && l.document_url && <a href={l.document_url} target="_blank" rel="noopener noreferrer">View</a>}
     </p>
   );
 };

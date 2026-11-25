@@ -147,8 +147,17 @@ test('shop: catalogue, photos, PCO approval, offers, stock and orders', async ()
   let r = await call('GET', '/products');
   assert.ok(r.j.products.length >= 140);
   assert.ok(r.j.products.filter((p) => p.image_url).length >= 100);
-  const premise = r.j.products.find((p) => p.slug === 'envu-premise-sc-250-ml');
-  assert.equal(premise.mrp, 1245);
+  let premise = r.j.products.find((p) => p.slug === 'envu-premise-sc-250-ml');
+  // Unchecked MRPs (from retailer listings) are "price on request" for customers until staff check the pack.
+  assert.equal(premise.mrp, null, 'unverified MRP is not public');
+  assert.equal((await call('GET', `/products/${premise.slug}`, null, O)).j.mrp, 1245, 'staff see the stored figure');
+  const premiseIds = r.j.products.filter((p) => p.brand === 'Envu' && p.name === 'Premise SC').map((p) => p.id);
+  r = await call('PATCH', '/products/bulk', { updates: premiseIds.map((id) => ({ id, mrpVerified: true })) }, O);
+  assert.equal(r.s, 200, JSON.stringify(r.j));
+  premise = (await call('GET', `/products/${premise.slug}`)).j;
+  assert.equal(premise.mrp, 1245, 'verified MRP is public');
+  const staffView = (await call('GET', `/products/${premise.slug}`, null, O)).j;
+  assert.ok(staffView.mrp_verified_at, 'verification date recorded');
 
   const P = await register('Ravi Pest', 'pco@example.com');
   r = await call('POST', '/orders', { items: [{ productId: premise.id, quantity: 1 }], address: 'Shop 4, MI Road', city: 'Jaipur' }, P);
@@ -537,7 +546,22 @@ test('licences: exact numbers, validity hidden until verified, copy required to 
   assert.equal(r.j.status, 'verified');
   const pub = (await call('GET', '/licences')).j.find((l) => l.key === 'pco');
   assert.equal(pub.valid_until, '2026-03-31');
-  assert.equal((await fetch(`${SITE}${pub.document_url}`)).headers.get('content-type'), 'application/pdf');
+  // The licence copy is private: no public URL, a 5-minute owner-only link, every view logged.
+  assert.equal(pub.document_url, undefined);
+  assert.equal(pub.has_document, true);
+  assert.equal((await fetch(`${B}/licences/${pub.id}/document`)).status, 403, 'no link, no file');
+  assert.equal((await call('POST', `/licences/${pub.id}/document-link`, null, C)).s, 403, 'customers cannot get a link');
+  const link = (await call('POST', `/licences/${pub.id}/document-link`, null, O)).j;
+  assert.equal(link.expires_in, 300);
+  const file = await fetch(`${SITE}${link.url}`);
+  assert.equal(file.headers.get('content-type'), 'application/pdf');
+  assert.match(file.headers.get('cache-control'), /no-store/);
+  const other = (await call('GET', '/licences')).j.find((l) => l.key === 'sale');
+  assert.equal((await fetch(`${B}/licences/${other.id}/document?${link.url.split('?')[1]}`)).status, 403, 'a link opens only its own licence');
+  assert.equal((await fetch(`${B}/licences/${pub.id}/document?t=forged.token.value`)).status, 403);
+  await new Promise((r) => setTimeout(r, 200)); // audit rows are written in the background
+  const actions = (await call('GET', '/admin/audit', null, O)).j.map((l) => l.action);
+  assert.ok(actions.includes('licence.document_link') && actions.includes('licence.document_view'), 'links and views are audit-logged');
   r = await call('PATCH', `/licences/${byKey.pco.id}`, { validUntil: '2027-03-31' }, O);
   assert.equal(r.j.status, 'unverified', 'changing validity needs a new verification');
   await call('PATCH', `/licences/${byKey.pco.id}`, { issuingAuthority: null, validFrom: null, validUntil: null }, O);
@@ -571,4 +595,62 @@ test('shop: formulation filter and missing-photo list', async () => {
   assert.ok(sc.formulations.some((f) => f.name === 'SC'));
   const missing = (await call('GET', '/products?photo=missing')).j.products;
   assert.ok(missing.every((p) => p.image_url === null));
+});
+
+test('orders: manual payment needs a reference; expired-product replacement with photos', async () => {
+  const P = await register('Kiran Pest Care', 'kiran.pco@example.com');
+  const pdf = `data:application/pdf;base64,${Buffer.from('%PDF-1.4\n% licence\n').toString('base64')}`;
+  assert.equal((await call('POST', '/buyers/documents/licence', { dataUrl: pdf }, P)).s, 201);
+  const validTill = new Date(Date.now() + 200 * 86400e3).toISOString().slice(0, 10);
+  assert.equal((await call('POST', '/buyers/apply', { firmName: 'Kiran Pest Care', licenceNo: 'RJ/PCO/901', licenceValidTill: validTill, address: 'Shop 2, Tonk Road', city: 'Jaipur', state: 'Rajasthan' }, P)).s, 201);
+  const me = (await call('GET', '/admin/users?q=kiran.pco@example.com', null, O)).j[0];
+  assert.equal((await call('PATCH', `/buyers/${me.id}`, { status: 'approved' }, O)).j.status, 'approved');
+  const prod = (await call('GET', '/products?q=Premise')).j.products.find((p) => p.pack_size === '1 L');
+  const order = (await call('POST', '/orders', { items: [{ productId: prod.id, quantity: 2 }], address: 'Shop 2, Tonk Road', city: 'Jaipur', paymentMethod: 'upi' }, P)).j;
+  assert.equal(order.payment_status, 'unpaid', 'new orders are never paid');
+
+  // Payment: staff only, reference required.
+  assert.equal((await call('PATCH', `/orders/${order.id}/payment`, { status: 'paid', reference: 'UTR123456' }, P)).s, 403);
+  let r = await call('PATCH', `/orders/${order.id}/payment`, { status: 'paid' }, O);
+  assert.equal(r.s, 400);
+  assert.match(r.j.error, /UTR/);
+  r = await call('PATCH', `/orders/${order.id}/payment`, { status: 'paid', reference: 'UTR123456789' }, O);
+  assert.equal(r.j.payment_status, 'paid');
+  assert.equal(r.j.payment_ref, 'UTR123456789');
+  assert.ok(r.j.paid_at);
+
+  // Replacement: only after delivery, only an item of the order, only if the expiry date has passed, photos required.
+  const png = `data:image/png;base64,${Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64').toString('base64')}`;
+  const claim = { orderId: order.id, productId: prod.id, batchNo: 'PRM2301', expiryDate: '2025-01-31', quantity: 1, photos: [png] };
+  r = await call('POST', '/replacements', claim, P);
+  assert.equal(r.s, 400, 'not delivered yet');
+  await call('PATCH', `/orders/${order.id}`, { status: 'delivered' }, O);
+  const future = new Date(Date.now() + 90 * 86400e3).toISOString().slice(0, 10);
+  assert.match((await call('POST', '/replacements', { ...claim, expiryDate: future }, P)).j.error, /already expired when supplied/);
+  assert.match((await call('POST', '/replacements', { ...claim, photos: [] }, P)).j.error, /photos/);
+  const other = await register('Someone Else', 'someone.else@example.com');
+  assert.equal((await call('POST', '/replacements', claim, other)).s, 404, 'only the buyer who ordered');
+  r = await call('POST', '/replacements', claim, P);
+  assert.equal(r.s, 201, JSON.stringify(r.j));
+  assert.equal(r.j.status, 'pending');
+  assert.equal(r.j.photos.length, 1);
+  assert.equal((await call('POST', '/replacements', claim, P)).s, 400, 'one open request per product');
+  const photo = await fetch(`${SITE}${r.j.photos[0]}`, { headers: { Authorization: `Bearer ${P}` } });
+  assert.equal(photo.headers.get('content-type'), 'image/png');
+  assert.equal((await fetch(`${SITE}${r.j.photos[0]}`, { headers: { Authorization: `Bearer ${other}` } })).status, 404, 'photos are private');
+  assert.equal((await call('PATCH', `/replacements/${r.j.id}`, { status: 'rejected' }, O)).s, 400, 'a reason is required');
+  const done = await call('PATCH', `/replacements/${r.j.id}`, { status: 'approved' }, O);
+  assert.equal(done.j.status, 'approved');
+  assert.equal((await call('GET', '/replacements/mine', null, P)).j[0].status, 'approved');
+  assert.equal((await call('GET', '/replacements', null, P)).s, 403);
+});
+
+test('PCO eligibility needs an unexpired licence date, in approval as in ordering', async () => {
+  const P = await register('Late Renewal', 'late.renewal@example.com');
+  const pdf = `data:application/pdf;base64,${Buffer.from('%PDF-1.4\n% lic\n').toString('base64')}`;
+  await call('POST', '/buyers/documents/licence', { dataUrl: pdf }, P);
+  const r = await call('POST', '/buyers/apply', { firmName: 'Late Renewal Pest', licenceNo: 'RJ/PCO/55', licenceValidTill: '', address: 'Plot 4, Malviya Nagar', city: 'Jaipur', state: 'Rajasthan' }, P);
+  assert.equal(r.s, 400, 'a validity date is required');
+  const me = (await call('GET', '/buyers/me', null, P)).j;
+  assert.ok(!me || me.status !== 'approved');
 });

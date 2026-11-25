@@ -340,6 +340,8 @@ const SCHEMA = `
   ALTER TABLE products ADD COLUMN IF NOT EXISTS pco_price DOUBLE PRECISION;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_note TEXT;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_verified INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_verified_at TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_verified_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS usage_info TEXT;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS sort INTEGER NOT NULL DEFAULT 0;
@@ -516,6 +518,38 @@ const SCHEMA = `
   ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_note TEXT;
   ALTER TABLE orders ADD COLUMN IF NOT EXISTS item_count INTEGER;
   ALTER TABLE orders ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;
+  -- Manual payments (COD / UPI / bank transfer). An order is "paid" only when staff record the
+  -- payment with a reference. Nothing marks it paid automatically.
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'unpaid';
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_ref TEXT;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP;
+  ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_recorded_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+
+  -- Replacement of products that were expired when supplied (the only replacement we offer).
+  CREATE TABLE IF NOT EXISTS replacement_requests (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+    product_name TEXT NOT NULL,
+    batch_no TEXT NOT NULL,
+    expiry_date TEXT NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    details TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    admin_note TEXT,
+    reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT ${NOW},
+    updated_at TIMESTAMP DEFAULT ${NOW}
+  );
+  CREATE TABLE IF NOT EXISTS replacement_photos (
+    id SERIAL PRIMARY KEY,
+    request_id INTEGER NOT NULL REFERENCES replacement_requests(id) ON DELETE CASCADE,
+    mime TEXT NOT NULL,
+    data BYTEA NOT NULL,
+    size INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_replacements_order ON replacement_requests(order_id);
   ALTER TABLE order_items ADD COLUMN IF NOT EXISTS product_name TEXT;
   ALTER TABLE order_items ADD COLUMN IF NOT EXISTS brand TEXT;
   ALTER TABLE order_items ADD COLUMN IF NOT EXISTS pack_size TEXT;

@@ -54,9 +54,12 @@ export const submitLead = async (lead, { whatsappNumber, whatsappText }) => {
   try {
     return await api('/leads', { method: 'POST', body: lead });
   } catch (e) {
+    // Server unreachable: never open a window here (it would be blocked after the await). The form
+    // shows a "Send on WhatsApp" button instead, so the visitor's own tap opens WhatsApp.
     if (e.status === 0 || e.status >= 500) {
-      window.open(waLink(whatsappNumber, whatsappText), '_blank', 'noopener');
-      return { fallback: true };
+      const err = new ApiError('We could not reach our server, so your request was not saved. Tap the button to send the same details on WhatsApp.', e.status);
+      err.waUrl = waLink(whatsappNumber, whatsappText);
+      throw err;
     }
     throw e;
   }

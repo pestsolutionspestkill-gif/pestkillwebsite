@@ -34,7 +34,7 @@ const Locations = () => {
         <div className="container">
           <span className="eyebrow light">Locations</span>
           <h1>Pest control in <span className="text-gradient">every city of Rajasthan</span></h1>
-          <p>Head office in Jaipur. {CITIES.length} Rajasthan cities have their own page with local pests, prices and areas, and we also serve Delhi NCR and Uttar Pradesh.</p>
+          <p>Head office in Jaipur. {CITIES.length} Rajasthan cities have their own page with local pests, prices and areas, and we serve locations across India with teams dispatched from Jaipur.</p>
           <label className="hub-search">
             <Search size={18} />
             <input type="search" placeholder="Check your city" value={query} onChange={(e) => setQuery(e.target.value)} />

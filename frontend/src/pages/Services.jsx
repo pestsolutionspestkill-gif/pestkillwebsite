@@ -4,12 +4,12 @@ import businessConfig from '../data/businessConfig';
 import { Bug, Zap, Shield, BedDouble, ShieldCheck, Tag, Clock, CheckCircle, Layers, ArrowRight, Home as HomeIcon, Hotel, Hospital, Building2, Warehouse, GraduationCap, HardHat, UtensilsCrossed } from 'lucide-react';
 import { scrollToId } from '../components/SmoothScroll';
 import { submitLead } from '../lib/api';
-import { RATES, sqftLabel, homeFrom } from '../data/catalog';
+import { RATES, sqftLabel, homeFrom, GST_NOTE } from '../data/catalog';
 import './Services.css';
 import Credentials, { LicenceLine } from '../components/Credentials';
+import FormError from '../components/FormError';
 
 const Services = () => {
-  const { serviceCoverage } = businessConfig;
   const [searchParams] = useSearchParams();
   const preselectedService = searchParams.get('service');
 
@@ -28,8 +28,8 @@ const Services = () => {
     {
       slug: 'termite-control', name: 'Termite Treatment', icon: <Bug size={32} />,
       price: `Post ₹${RATES.termitePost.min}–${RATES.termitePost.max} · Pre ₹${RATES.termitePre.min}–${RATES.termitePre.max} / sq.ft.`, duration: '2-4 hours',
-      description: 'Complete termite treatment using advanced techniques. We offer both pre-construction and post-construction treatment with up to 10-year warranty.',
-      features: ['Pre-construction treatment', 'Post-construction treatment', 'Soil treatment', 'Wood treatment', '10-year warranty'],
+      description: 'Complete termite treatment using advanced techniques. We offer both pre-construction and post-construction treatment; warranty terms are written on your quotation.',
+      features: ['Pre-construction treatment', 'Post-construction treatment', 'Soil treatment', 'Wood treatment', 'Written treatment report'],
       signs: ['Mud tubes on walls', 'Hollow sound in wood', 'Discarded wings', 'Blisters on wood surface'],
       process: ['Inspection → Soil treatment → Wood treatment → Barrier creation → Final inspection']
     },
@@ -87,7 +87,7 @@ const Services = () => {
       );
       setSuccess(true);
     } catch (err) {
-      setFormError(err.message);
+      setFormError(err);
     } finally {
       setSending(false);
     }
@@ -107,6 +107,7 @@ const Services = () => {
       {/* Services Grid */}
       <section className="section">
         <div className="container">
+          <p className="gst-note">{GST_NOTE} Larger homes, commercial, industrial and complex sites are quoted after inspection.</p>
           <div className="services-grid">
             {services.map((service, index) => (
               <div key={index} id={service.slug} className="service-card">
@@ -148,7 +149,7 @@ const Services = () => {
               { icon: Hospital, title: 'Hospitals & Clinics', text: 'Strict-hygiene treatments planned around patient areas and operation theatres.' },
               { icon: Building2, title: 'Offices & IT Parks', text: 'After-hours treatment and quarterly AMCs with minimal disruption to work.' },
               { icon: Warehouse, title: 'Warehouses & Godowns', text: 'Rodent bait stations, stored-grain pest control and fumigation support.' },
-              { icon: GraduationCap, title: 'Schools & Institutions', text: 'Holiday-schedule treatments and government-approved chemistry only.' },
+              { icon: GraduationCap, title: 'Schools & Institutions', text: 'Holiday-schedule treatments using registered products as the label directs.' },
             ].map(({ icon: Icon, title, text }) => (
               <div key={title} className="industry-card">
                 <span className="icon-tile"><Icon size={22} /></span>
@@ -171,7 +172,7 @@ const Services = () => {
           <div className="amc-grid">
             {[
               { name: 'Home Care', visits: '3 visits / year', items: ['Cockroach & ant control', 'Spider & crawling insects', 'Free re-treatment', 'Phone support'] },
-              { name: 'Home Care Plus', visits: '4 visits / year', popular: true, items: ['Everything in Home Care', 'Rodent monitoring', 'Mosquito spray', 'Priority same-day visits'] },
+              { name: 'Home Care Plus', visits: '4 visits / year', popular: true, items: ['Everything in Home Care', 'Rodent monitoring', 'Mosquito spray', 'Priority scheduling'] },
               { name: 'Commercial', visits: 'Monthly / custom', items: ['Customised pest programme', 'Service logs & audit reports', 'Dedicated supervisor', 'Emergency response'] },
             ].map(plan => (
               <div key={plan.name} className={`amc-card ${plan.popular ? 'popular' : ''}`}>
@@ -193,7 +194,7 @@ const Services = () => {
         <div className="container">
           <div className="form-card" id="book">
             <h2>Book Free Inspection</h2>
-            <p>Fill the form and we'll call you within 30 minutes!</p>
+            <p>Fill the form and we'll call you back during working hours.</p>
             
             {success ? (
               <div className="success-message">
@@ -208,9 +209,9 @@ const Services = () => {
                   <input type="tel" name="phone" placeholder="Phone Number *" className="form-input" value={formData.phone} onChange={handleChange} required />
                 </div>
                 <textarea name="message" placeholder="Tell us about your pest problem..." className="form-input" rows="3" value={formData.message} onChange={handleChange} />
-                {formError && <p className="form-error" role="alert">{formError}</p>}
+                <FormError error={formError} />
                 <button type="submit" className="btn btn-primary" disabled={sending}>{sending ? 'Sending…' : 'Get Free Quote'}</button>
-                <p style={{fontSize: '0.85rem', color: '#666', marginTop: '12px', textAlign: 'center'}}>We respond within 15 minutes</p>
+                <p style={{fontSize: '0.85rem', color: '#666', marginTop: '12px', textAlign: 'center'}}>Mon–Sat, 9 AM – 7 PM</p>
                 <LicenceLine kind="pco" />
               </form>
             )}
@@ -228,7 +229,7 @@ const Services = () => {
           <div className="faq-grid">
             <div className="faq-item">
               <h3>Are the chemicals safe?</h3>
-              <p>Yes! We use government-approved, child and pet safe chemicals. All our technicians are certified.</p>
+              <p>We use registered products, applied by trained technicians exactly as the label directs. Safety depends on the product and treatment: we tell you which rooms to keep closed, for how long, and what to do for children, pets and anyone with asthma before the visit.</p>
             </div>
             <div className="faq-item">
               <h3>How long does treatment take?</h3>
@@ -236,11 +237,11 @@ const Services = () => {
             </div>
             <div className="faq-item">
               <h3>Do you provide warranty?</h3>
-              <p>Yes! We provide up to 10 years warranty on termite treatment and 1 year on general pest control.</p>
+              <p>Warranty terms depend on the treatment and site, and are written on your quotation and invoice for that job. We do not promise a warranty that is not in writing.</p>
             </div>
             <div className="faq-item">
               <h3>What areas do you serve?</h3>
-              <p>We serve {serviceCoverage.length}+ cities across Rajasthan, Delhi NCR, and UP.</p>
+              <p>We provide services across India. Our teams are dispatched from Jaipur, and appointments are scheduled according to location, distance and availability.</p>
             </div>
             <div className="faq-item">
               <h3>What is the porous pipe anti-termite system?</h3>
@@ -251,8 +252,8 @@ const Services = () => {
               <p>For gel treatments, no. For spray, termite drilling or bed bug treatment we usually advise keeping the treated rooms closed for 2–4 hours.</p>
             </div>
             <div className="faq-item">
-              <h3>Will I get a written warranty?</h3>
-              <p>Yes. Every job comes with a service report and a warranty card stating the treatment, chemicals used and warranty period.</p>
+              <h3>Will I get a written report?</h3>
+              <p>Yes. Every job comes with a service report stating the treatment and products used. Where a warranty applies, its period and terms are written on your quotation.</p>
             </div>
             <div className="faq-item">
               <h3>Do you offer GST invoices for businesses?</h3>

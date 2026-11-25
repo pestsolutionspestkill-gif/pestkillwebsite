@@ -236,13 +236,13 @@ const inr = (n) => `₹${n.toLocaleString('en-IN')}`;
 // Questions shown on each city page. The same list feeds the FAQ structured data, so the
 // markup always matches what visitors can read.
 export const cityFaqs = (city, RATES) => {
-  const home = `${inr(RATES.home['1BHK'])} for a 1BHK and ${inr(RATES.home['2BHK'])} for a 2BHK or 3BHK`;
+  const home = `${inr(RATES.home['1BHK'])} for a 1BHK, ${inr(RATES.home['2BHK'])} for a 2BHK and ${inr(RATES.home['3BHK'])} for a 3BHK`;
   const where = city.areas.length ? `${city.areas.slice(0, 6).join(', ')} and every other part of ${city.name}` : `all of ${city.name}`;
   return [
     { q: `How much does pest control cost in ${city.name}?`,
-      a: `Home pest control for cockroaches, bed bugs, ants, lizards and rodents starts at ${home}. Anti-termite treatment costs ₹${RATES.termitePost.min}–${RATES.termitePost.max} per sq.ft. for existing buildings and ₹${RATES.termitePre.min}–${RATES.termitePre.max} per sq.ft. before construction. The final price is confirmed after a free inspection.` },
+      a: `Home pest control for cockroaches, bed bugs, ants, lizards and rodents starts at ${home}. Anti-termite treatment costs ₹${RATES.termitePost.min}–${RATES.termitePost.max} per sq.ft. for existing buildings and ₹${RATES.termitePre.min}–${RATES.termitePre.max} per sq.ft. before construction. Prices are exclusive of GST, which is charged separately. The final price is confirmed after inspection.` },
     { q: `Do you provide termite (deemak) treatment in ${city.name}?`,
-      a: `Yes. We offer pre-construction soil treatment, the porous pipe system for new buildings (₹${RATES.porousPipe.min}–${RATES.porousPipe.max} per sq.ft.) and drill-and-fill treatment for existing homes and offices in ${city.name}, with a written warranty.` },
+      a: `Yes. We offer pre-construction soil treatment, the porous pipe system for new buildings (₹${RATES.porousPipe.min}–${RATES.porousPipe.max} per sq.ft.) and drill-and-fill treatment for existing homes and offices in ${city.name}. Teams travel from Jaipur, and any warranty is written on your quotation.` },
     { q: `Which areas of ${city.name} do you cover?`,
       a: `We cover ${where}${city.nearby.length ? ', plus nearby cities' : ''}.` },
     { q: `How soon can a technician visit in ${city.name}?`,

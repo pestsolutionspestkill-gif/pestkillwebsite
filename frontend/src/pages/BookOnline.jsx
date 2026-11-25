@@ -11,6 +11,8 @@ import { HOUSEHOLD_OPTIONS } from '../data/safeHome';
 import { services, serviceGroups, getService } from '../data/catalog';
 import './BookOnline.css';
 import { LicenceLine } from '../components/Credentials';
+import FormError from '../components/FormError';
+import { STATES, validPin, assessArea } from '../lib/serviceArea';
 
 const STEPS = ['Service', 'Property', 'Schedule', 'Your details', 'Review'];
 const SIZES = ['1BHK', '2BHK', '3BHK', '4BHK+ / Villa'];
@@ -19,7 +21,6 @@ const SLOTS = [
   { id: 'afternoon', label: 'Afternoon', time: '12:00 PM – 3:00 PM' },
   { id: 'evening', label: 'Evening', time: '3:00 PM – 7:00 PM' },
 ];
-const BOOKING_CITIES = ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota', 'Ajmer', 'Bikaner', 'Alwar', 'Bharatpur', 'Sikar', 'Other'];
 
 const inr = (n) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 
@@ -42,14 +43,14 @@ export const estimateFor = (service, property) => {
   if (p.unit === 'bhk') {
     const price = p.tiers[property.size];
     return price
-      ? { text: `From ${inr(price)}`, note: 'Starting price. Final price is confirmed after inspection.' }
+      ? { text: `From ${inr(price)} + GST`, note: 'Starting price, exclusive of GST. Final price is confirmed after inspection.' }
       : { text: 'Quote after inspection', note: 'Larger homes are priced after inspection.' };
   }
-  if (p.unit === 'flat') return { text: `From ${inr(p.from)}`, note: 'Starting price per visit. Final price is confirmed after inspection.' };
+  if (p.unit === 'flat') return { text: `From ${inr(p.from)} + GST`, note: 'Starting price per visit, exclusive of GST. Final price is confirmed after inspection.' };
   if (p.unit === 'sqft') {
     const area = Number(property.area);
     return area > 0
-      ? { text: `${inr(area * p.min)} – ${inr(area * p.max)}`, note: `Indicative, at ${p.label}. Final quote after site visit.` }
+      ? { text: `${inr(area * p.min)} – ${inr(area * p.max)}`, note: `Indicative, at ${p.label}, exclusive of GST. Final quote after site visit.` }
       : { text: p.label, note: 'Enter your built-up area for an estimate.' };
   }
   return null;
@@ -64,7 +65,7 @@ const BookOnline = () => {
   const [serviceSlug, setServiceSlug] = useState(preset?.slug || '');
   const [property, setProperty] = useState({ type: 'home', size: '2BHK', area: '' });
   const [schedule, setSchedule] = useState({ date: null, slot: '' });
-  const [details, setDetails] = useState({ name: '', phone: '', email: '', address: '', city: 'Jaipur', notes: '' });
+  const [details, setDetails] = useState({ name: '', phone: '', email: '', address: '', city: 'Jaipur', state: 'Rajasthan', pincode: '', notes: '' });
   const [household, setHousehold] = useState({});
   const [errors, setErrors] = useState({});
   const [bookingRef, setBookingRef] = useState('');
@@ -94,6 +95,8 @@ const BookOnline = () => {
     if (!/^[6-9]\d{9}$/.test(details.phone.replace(/\D/g, '').slice(-10))) e.phone = 'Enter a valid 10-digit mobile number';
     if (details.email && !/^\S+@\S+\.\S+$/.test(details.email)) e.email = 'Enter a valid email address';
     if (details.address.trim().length < 6) e.address = 'Please enter your full address';
+    if (details.city.trim().length < 2) e.city = 'Enter your city or town';
+    if (!validPin(details.pincode)) e.pincode = 'Enter a valid 6-digit PIN code';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -104,6 +107,7 @@ const BookOnline = () => {
   };
 
   const slotLabel = SLOTS.find((s) => s.id === schedule.slot);
+  const area = assessArea(details);
   const dateLabel = schedule.date?.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
   const propertyLabel = property.type === 'business'
     ? 'Business premises'
@@ -121,7 +125,8 @@ const BookOnline = () => {
       `Name: ${details.name}`,
       `Phone: ${details.phone}`,
       details.email && `Email: ${details.email}`,
-      `Address: ${details.address}, ${details.city}`,
+      `Address: ${details.address}, ${details.city}, ${details.state} ${details.pincode}`,
+      area && `Service area: ${area.title}`,
       details.notes && `Notes: ${details.notes}`,
     ].filter(Boolean).join('\n');
     try {
@@ -136,15 +141,15 @@ const BookOnline = () => {
         name: details.name,
         phone: details.phone,
         email: details.email,
-        address: details.address,
-        city: details.city,
+        address: `${details.address}, PIN ${details.pincode}`,
+        city: `${details.city.trim()}, ${details.state}`.slice(0, 60),
         message: details.notes,
         household,
         source: 'book-online',
       }, { whatsappNumber, whatsappText: msg });
-      setBookingRef(result.ref || 'whatsapp');
+      setBookingRef(result.ref);
     } catch (e) {
-      setSubmitError(e.message);
+      setSubmitError(e);
     } finally {
       setSubmitting(false);
     }
@@ -158,10 +163,7 @@ const BookOnline = () => {
           <span className="eyebrow">Request received</span>
           <h1>Thank you, {details.name.split(' ')[0]}.</h1>
           <p>
-            {bookingRef === 'whatsapp'
-              ? <>Your request was sent to us on WhatsApp. </>
-              : <>Your booking reference is <strong>{bookingRef}</strong>. </>}
-            Our team will call you on <strong>{details.phone}</strong> to confirm your {slotLabel.label.toLowerCase()} slot on {dateLabel}.
+            Your request reference is <strong>{bookingRef}</strong>. Our team will call you on <strong>{details.phone}</strong> to check availability for {details.city} and confirm the appointment. Your preferred slot ({slotLabel.label.toLowerCase()}, {dateLabel}) is not confirmed until that call.
           </p>
           <div className="book-done-card">
             <div><span>Service</span><strong>{service.name}</strong></div>
@@ -183,7 +185,7 @@ const BookOnline = () => {
         <div className="container">
           <span className="eyebrow light">Book Online</span>
           <h1>Book your pest control <span className="text-gradient">in two minutes</span></h1>
-          <p>Choose a service, pick a slot and we'll confirm by phone. No payment needed now.</p>
+          <p>Choose a service and a preferred slot. Our teams are dispatched from Jaipur; we call you to confirm availability for your location before anything is booked. No payment needed now.</p>
         </div>
       </section>
 
@@ -302,11 +304,27 @@ const BookOnline = () => {
                     {errors.email && <span className="field-error">{errors.email}</span>}
                   </div>
                   <div className="form-group">
-                    <label className="form-label" htmlFor="b-city">City</label>
-                    <select id="b-city" className="form-input" value={details.city} onChange={(e) => setDetails({ ...details, city: e.target.value })}>
-                      {BOOKING_CITIES.map((c) => <option key={c}>{c}</option>)}
+                    <label className="form-label" htmlFor="b-state">State</label>
+                    <select id="b-state" className="form-input" value={details.state} onChange={(e) => setDetails({ ...details, state: e.target.value })} autoComplete="address-level1">
+                      {STATES.map((s) => <option key={s}>{s}</option>)}
                     </select>
                   </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="b-city">City / town</label>
+                    <input id="b-city" className={`form-input ${errors.city ? 'invalid' : ''}`} value={details.city} onChange={(e) => setDetails({ ...details, city: e.target.value })} autoComplete="address-level2" />
+                    {errors.city && <span className="field-error">{errors.city}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="b-pin">PIN code</label>
+                    <input id="b-pin" inputMode="numeric" maxLength={6} className={`form-input ${errors.pincode ? 'invalid' : ''}`} value={details.pincode} onChange={(e) => setDetails({ ...details, pincode: e.target.value.replace(/\D/g, '') })} autoComplete="postal-code" />
+                    {errors.pincode && <span className="field-error">{errors.pincode}</span>}
+                  </div>
+                  {area && (
+                    <div className={`form-group span-2 book-area is-${area.tier}`} aria-live="polite">
+                      <strong><MapPin size={15} /> {area.title}</strong>
+                      <span>{area.note}</span>
+                    </div>
+                  )}
                   <div className="form-group span-2">
                     <label className="form-label" htmlFor="b-address">Address</label>
                     <input id="b-address" className={`form-input ${errors.address ? 'invalid' : ''}`} placeholder="House no., street, area / landmark" value={details.address} onChange={(e) => setDetails({ ...details, address: e.target.value })} autoComplete="street-address" />
@@ -339,12 +357,13 @@ const BookOnline = () => {
                   <div><dt>Property</dt><dd>{propertyLabel}</dd></div>
                   <div><dt>Preferred slot</dt><dd>{dateLabel} · {slotLabel.label} ({slotLabel.time})</dd></div>
                   <div><dt>Contact</dt><dd>{details.name} · {details.phone}{details.email && ` · ${details.email}`}</dd></div>
-                  <div><dt>Address</dt><dd>{details.address}, {details.city}</dd></div>
+                  <div><dt>Address</dt><dd>{details.address}, {details.city}, {details.state} {details.pincode}</dd></div>
+                  {area && <div><dt>Service area</dt><dd>{area.title}</dd></div>}
                   {details.notes && <div><dt>Notes</dt><dd>{details.notes}</dd></div>}
                   <div className="total"><dt>Estimate</dt><dd>{estimate.text}</dd></div>
                 </dl>
-                {submitError && <p className="book-error" role="alert">{submitError}</p>}
-                <p className="book-hint"><MessageCircle size={18} /> Our team calls you to confirm the slot. You will get a booking reference right away.</p>
+                <FormError error={submitError} className="book-error" />
+                <p className="book-hint"><MessageCircle size={18} /> This is a booking request. Our team calls you to check availability for your location and confirm the date and time; the appointment is confirmed only on that call. You get a reference number right away.</p>
               </>
             )}
           </div>
@@ -356,7 +375,7 @@ const BookOnline = () => {
             {step < STEPS.length - 1 ? (
               <button type="button" className="btn btn-primary" disabled={!canContinue} onClick={next}>Continue <ArrowRight size={16} /></button>
             ) : (
-              <button type="button" className="btn btn-primary" onClick={confirm} disabled={submitting}>{submitting ? 'Confirming…' : <>Confirm booking <Check size={16} /></>}</button>
+              <button type="button" className="btn btn-primary" onClick={confirm} disabled={submitting}>{submitting ? 'Sending…' : <>Send booking request <Check size={16} /></>}</button>
             )}
           </div>
           <LicenceLine kind="pco" />

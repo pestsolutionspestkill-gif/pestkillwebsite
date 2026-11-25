@@ -8,13 +8,13 @@ import Credentials from '../components/Credentials';
 
 const values = [
   { icon: ShieldCheck, title: 'Integrity', text: 'Honest inspections, written quotations and no unnecessary treatments.' },
-  { icon: Leaf, title: 'Safety first', text: 'Government-approved, low-toxicity products applied by trained hands.' },
+  { icon: Leaf, title: 'Safety first', text: 'Registered products applied by trained hands, exactly as the label directs.' },
   { icon: Award, title: 'Proven results', text: 'Documented warranties of up to 10 years on termite treatment.' },
   { icon: Users, title: 'Long relationships', text: 'Homes, hotels and institutions that have trusted us for years.' },
 ];
 
 const About = () => {
-  const { businessName, phoneNumber, email, officeAddress, experience, googleMapLink, brands, formulations } = businessConfig;
+  const { businessName, phoneNumber, email, officeAddress, googleMapLink, brands, formulations } = businessConfig;
 
   return (
     <div className="about-page">
@@ -39,10 +39,10 @@ const About = () => {
             <span className="eyebrow">Our Story</span>
             <h2>Welcome to {businessName}</h2>
             <p>We are a pest management company committed to safe, effective and environmentally responsible solutions. For residential, commercial and industrial clients, we understand that a pest-free environment is about health, hygiene and peace of mind.</p>
-            <p>Our certified professionals use proven techniques and genuine products to protect your family, pets and property — and we document every job with a clear warranty.</p>
+            <p>Our trained team uses proven techniques and genuine, registered products, and documents every job with a written treatment report. We provide pest control services across India, with teams dispatched from our Jaipur office, and deliver professional products across India.</p>
             <div className="about-stats">
-              <div className="stat-box"><span className="stat-number">{experience.governmentProjects}+</span><span className="stat-label">Government projects</span></div>
-              <div className="stat-box"><span className="stat-number">{experience.multinationalProjects}</span><span className="stat-label">Multinational clients</span></div>
+              <div className="stat-box"><span className="stat-number">2</span><span className="stat-label">Licences: pest control & pesticide sale</span></div>
+              <div className="stat-box"><span className="stat-number">Pan-India</span><span className="stat-label">Service from Jaipur, product delivery</span></div>
               <div className="stat-box"><span className="stat-number">{formulations.length}</span><span className="stat-label">Formulation types handled</span></div>
             </div>
           </div>

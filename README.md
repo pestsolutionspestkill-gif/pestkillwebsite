@@ -100,9 +100,21 @@ operators only**:
 2. The owner (or a manager with **PCO buyer accounts** permission) approves it in **Admin → PCO buyers**.
 3. Approved buyers check out from the cart; orders appear in **Admin → Shop orders**. Payment is
    cash on delivery, UPI or bank transfer, confirmed by phone. Cancelling an order returns stock.
+4. **Payment status** starts as *Unpaid*. Staff with order rights record a payment in the order drawer with a
+   reference (UPI/bank UTR, or cash receipt). Nothing marks an order paid automatically. There is no payment
+   gateway.
+5. **Expired product replacement**, the only replacement offered: on a shipped or delivered order, the buyer
+   reports the product, batch number, expiry date (must already have passed) and 1–3 label photos from
+   *My account → Shop orders*. Staff approve, reject (with a reason) or mark replaced under
+   **Admin → Shop orders → Expired-product replacement requests**. Photos are private.
 
-Prices: everyone sees the **MRP** (inclusive of taxes). An optional **PCO price** (≤ MRP) is shown only
-to approved buyers. Products without an MRP show "Price on request" with a WhatsApp quote button.
+Prices: customers see an **MRP only after staff tick "I have checked this MRP against the printed pack"**.
+Until then the product shows "Price on request" with a WhatsApp quote button and cannot be ordered online at
+that price. Changing an MRP clears the tick. The date and the staff member are recorded. An optional
+**PCO price** (≤ MRP) is shown only to approved buyers.
+
+**PCO eligibility** (server-side, for both approval and ordering): approved status **and** a recorded licence
+validity date that has not passed. Records without a validity date do not qualify. The buyer has to re-submit.
 
 **Managing prices, offers and photos (Admin → Products):**
 - Click a product to edit everything, set an **offer** (price below MRP, offer name, end date — shown to
@@ -212,7 +224,11 @@ products without an MRP show "Price on request". Stock left empty means "not tra
   - The numbers are also in `frontend/src/data/businessConfig.js`, so they are in the pre-rendered HTML.
   - Issuing authority and validity are **shown only after you upload the licence copy and mark it verified**.
     Changing the number, authority or dates, or replacing the copy, makes it unverified again.
-  - *View licence* appears only when a copy is uploaded. *Hide from website* removes a licence everywhere.
+  - **Licence copies are private.** The public site shows the numbers only, never a link to the copy. In
+    Admin → Licences, *View* opens the copy through a link that is valid for 5 minutes and bound to your
+    account. Every link and view is written to the audit log. Responses are `no-store` and `noindex`.
+    Watermarking is not applied. Screenshots cannot be prevented in a browser.
+  - *Hide from website* removes a licence everywhere.
 - **Technical standards** (Admin → *Technical standards*; public page `/technical-standards`):
   - IS 6313 Parts 1–3 are recorded from archived copies of the standards, with the source link.
   - The 2022 editions mentioned in the brief could not be confirmed. They are stored as *Not confirmed* and kept
@@ -255,6 +271,44 @@ products without an MRP show "Price on request". Stock left empty means "not tra
 
 Run `npm test` in `backend/` to run the API tests, which cover these features.
 
+## Business details, prices and content rules (release 2026-11)
+
+- **Identity** (`frontend/src/data/businessConfig.js`):
+  - PestKill Pest Solutions; founder & CEO Prerit Mudgal; https://pestkillsolutions.in;
+  - GSTIN 08GAEPM4144P1Z5; Udyam UDYAM-RJ-17-0584915; PMAR member (number shown only when entered in `pmarNumber`).
+  - With the GSTIN set, invoices are titled *Tax Invoice*.
+- **Service prices**, all exclusive of GST and set only in `RATES` in `frontend/src/data/catalog.js`:
+  - homes: 1BHK ₹1,200, 2BHK ₹1,500, 3BHK ₹1,800;
+  - anti-termite per sq.ft.: post-construction ₹7–9, pre-construction ₹12–15, porous pipe ₹22–27;
+  - larger and commercial sites are quoted after inspection.
+  - The GST note is shown next to prices and in structured data (`valueAddedTaxIncluded: false`).
+- **Pan-India service from Jaipur**: copy says teams are dispatched from Jaipur.
+  - Online booking collects state, city and PIN code and shows how the visit will be planned (`frontend/src/lib/serviceArea.js`).
+  - A booking is a *request* until the team confirms availability on a call.
+- **Claims**: unverified figures were removed:
+  - ratings, satisfaction guarantees, warranty periods, same-day promises, "local teams", government-project counts and absolute safety claims;
+  - the unverifiable testimonials were also removed from the home page.
+  - Warranty is "as written on your quotation". Re-add any claim only with evidence.
+- **Social media**: no social links or icons for this release. `socialProfiles` stays empty, so nothing is added to structured data.
+- **Footer**: policy links, "© <current year> PestKill Pest Solutions. All Rights Reserved." and
+  "Designed & Created By Prerit Mudgal". Only the name is a link, to https://wa.me/916375338302 in a new tab.
+- **Policy pages**: `/privacy-policy`, `/terms`, `/shipping-delivery`, `/replacement-policy` (expired-on-supply
+  only), `/disclaimer`. The text is in `frontend/src/data/policies.js`.
+- **Lead forms when the server is down**: the form shows a *Send my details on WhatsApp* button the visitor taps.
+  Nothing opens automatically, because phones block that. It never shows a false "received" message.
+
+## Production deployment checklist
+
+1. Review the branch `release/production-readiness` and merge it to `main` only after approval.
+2. On Render, set `SITE_URL=https://pestkillsolutions.in` so canonical links and the sitemap use the real domain.
+3. Keep `JWT_SECRET` (32+ characters), `DATABASE_URL`, `OWNER_*` and mail settings as they are. Nothing new is required.
+4. After deploy, the database adds the new columns and tables automatically. Nothing is dropped or reset.
+5. In Admin → Products → *MRP to check*: tick "checked against the printed pack" for each MRP you have
+   confirmed. Until then those products show "Price on request".
+6. In Admin → Licences: upload both licence copies, enter the authority and validity exactly as printed, and mark them verified.
+7. Check the PCO buyers list. Any approved buyer without a licence validity date must re-submit before ordering.
+8. Open the home page, a service page, the shop, a product, the cart and `/book` on a phone and on a desktop.
+
 ## Quality checks
 
 | Command | What it runs |
@@ -266,7 +320,8 @@ Run `npm test` in `backend/` to run the API tests, which cover these features.
 The browser tests:
 - check that every public page loads without console errors or Content-Security-Policy violations;
 - run accessibility checks (axe, WCAG 2 AA);
-- run the main journeys end to end: booking, sign-up with email code, password reset, shop and cart, the staff console, access control, 404 pages and the mobile menu.
+- run the main journeys end to end: booking (with location check), sign-up with email code, password reset, shop and cart, the staff console, access control, 404 pages and the mobile menu;
+- check the footer credit and the absence of social links, the WhatsApp fallback when the server is down, the official prices and GST note, and that removed claims stay removed.
 
 To use another Chromium-based browser, set `E2E_BROWSER_PATH`.
 

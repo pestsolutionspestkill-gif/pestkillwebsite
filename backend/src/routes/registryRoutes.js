@@ -4,7 +4,7 @@
 //   /api/reference-prices  staff only: comparison with our prices; edit, link, review status
 import express from 'express';
 import db, { audit, NOW } from '../db.js';
-import { requirePermission, ah } from '../middleware/rbac.js';
+import { requirePermission, ah, signFileToken, verifyFileToken } from '../middleware/rbac.js';
 import { str, intId, oneOf, ValidationError } from '../utils/validate.js';
 import { readDataUrl } from '../utils/files.js';
 
@@ -22,9 +22,10 @@ const dateValue = (v, field) => {
 /* ======================= Licences ======================= */
 const LIC_COLS = 'id, key, title, number, activity, issuing_authority, valid_from, valid_until, status, display, doc_mime, doc_size, sort, updated_at';
 // Authority and validity are published only after the licence has been verified against its copy.
+// The licence copy itself is private: the public list says only whether one is on file.
 const publicLicence = (l) => ({
   id: l.id, key: l.key, title: l.title, number: l.number, activity: l.activity, status: l.status,
-  has_document: Boolean(l.doc_size), document_url: l.doc_size ? `/api/licences/${l.id}/document` : null,
+  has_document: Boolean(l.doc_size),
   ...(l.status === 'verified' ? { issuing_authority: l.issuing_authority, valid_from: l.valid_from, valid_until: l.valid_until } : {}),
 });
 
@@ -36,10 +37,31 @@ licenceRouter.get('/all', requirePermission('settings.manage'), ah(async (_req, 
   res.json(await db.all(`SELECT ${LIC_COLS} FROM licences ORDER BY sort, id`));
 }));
 
+// Licence copies are never served from a permanent public URL. An owner asks for a link that is
+// valid for 5 minutes and bound to their account; every link issued and every view is audit-logged.
+licenceRouter.post('/:id/document-link', requirePermission('settings.manage'), ah(async (req, res) => {
+  const id = intId(req.params.id);
+  const l = await db.get('SELECT doc_size FROM licences WHERE id = ?', id);
+  if (!l?.doc_size) return res.status(404).json({ error: 'No licence copy uploaded.' });
+  const t = signFileToken(`licence:${id}`, req.user.id, 300);
+  audit(req, 'licence.document_link', 'licence', id);
+  res.json({ url: `/api/licences/${id}/document?t=${encodeURIComponent(t)}`, expires_in: 300 });
+}));
+
 licenceRouter.get('/:id/document', ah(async (req, res) => {
-  const l = await db.get('SELECT doc_mime, doc_data, doc_size, display, key FROM licences WHERE id = ?', intId(req.params.id));
-  if (!l || !l.display || !l.doc_size) return res.status(404).json({ error: 'Licence copy not available.' });
-  res.set({ 'Content-Type': l.doc_mime, 'Content-Disposition': `inline; filename="pestkill-${l.key}-licence.${l.doc_mime === 'application/pdf' ? 'pdf' : 'jpg'}"`, 'Cache-Control': 'public, max-age=600', 'X-Content-Type-Options': 'nosniff' });
+  const id = intId(req.params.id);
+  const tok = verifyFileToken(req.query.t, `licence:${id}`);
+  if (!tok) return res.status(403).json({ error: 'This link has expired or is not valid. Open the licence again from the admin console.' });
+  const l = await db.get('SELECT doc_mime, doc_data, doc_size, key FROM licences WHERE id = ?', id);
+  if (!l?.doc_size) return res.status(404).json({ error: 'Licence copy not available.' });
+  const viewer = await db.get('SELECT id, name, role FROM users WHERE id = ?', Number(tok.sub));
+  audit({ user: viewer || null, ip: req.ip }, 'licence.document_view', 'licence', id);
+  res.set({
+    'Content-Type': l.doc_mime,
+    'Content-Disposition': `inline; filename="pestkill-${l.key}-licence.${l.doc_mime === 'application/pdf' ? 'pdf' : l.doc_mime === 'image/png' ? 'png' : 'jpg'}"`,
+    'Cache-Control': 'private, no-store, max-age=0', 'Pragma': 'no-cache', 'X-Robots-Tag': 'noindex, nofollow, noarchive',
+    'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
+  });
   res.send(Buffer.from(l.doc_data));
 }));
 

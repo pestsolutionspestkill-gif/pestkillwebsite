@@ -61,9 +61,11 @@ const documentsOf = async (userId) => db.all('SELECT kind, mime, size, uploaded_
 const profile = async (userId) => {
   const b = await db.get('SELECT firm_name, licence_no, licence_valid_till, gstin, address, city, state, pincode, status, admin_note, applied_at, reviewed_at FROM buyer_profiles WHERE user_id = ?', userId);
   if (!b) return null;
+  // A missing validity date counts as "needs re-submission", never as valid.
   const expired = Boolean(b.licence_valid_till && b.licence_valid_till < istToday());
+  const validityMissing = !b.licence_valid_till;
   const daysLeft = b.licence_valid_till ? Math.round((Date.parse(b.licence_valid_till) - Date.parse(istToday())) / 86400000) : null;
-  return { ...b, licence_expired: expired, licence_days_left: daysLeft, documents: await documentsOf(userId) };
+  return { ...b, licence_expired: expired, licence_validity_missing: validityMissing, licence_days_left: daysLeft, documents: await documentsOf(userId) };
 };
 
 router.get('/me', auth, ah(async (req, res) => { res.json(await profile(req.user.id)); }));
@@ -126,8 +128,11 @@ router.patch('/:userId', requirePermission('buyers.manage'), ah(async (req, res)
   const note = str(req.body.note, { field: 'Note', max: 500 });
   if (status === 'rejected' && !note) throw new ValidationError('Add a short reason so the buyer knows what to fix.');
   if (status === 'approved') {
+    // Same rule as isApprovedBuyer: a recorded validity date that has not passed.
     const b = await db.get('SELECT licence_valid_till FROM buyer_profiles WHERE user_id = ?', userId);
-    if (b?.licence_valid_till && b.licence_valid_till < istToday()) throw new ValidationError('This licence has expired; ask the buyer to upload the renewed licence.');
+    if (!b) return res.status(404).json({ error: 'Application not found.' });
+    if (!b.licence_valid_till || !/^\d{4}-\d{2}-\d{2}$/.test(b.licence_valid_till)) throw new ValidationError('This application has no licence validity date. Ask the buyer to re-submit the form with the date their licence is valid till.');
+    if (b.licence_valid_till < istToday()) throw new ValidationError('This licence has expired; ask the buyer to upload the renewed licence.');
     if (!await db.get("SELECT 1 FROM buyer_documents WHERE user_id = ? AND kind = 'licence'", userId)) {
       throw new ValidationError('No licence copy has been uploaded yet. Check the licence before approving.');
     }

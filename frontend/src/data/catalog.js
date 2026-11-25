@@ -12,17 +12,20 @@ import {
    Official rates. Change a price here and every page, the booking
    wizard and the FAQs pick it up.
 ------------------------------------------------------------------- */
+// Official service prices (owner-confirmed). All prices EXCLUDE GST; applicable GST is charged separately.
+// Larger homes, commercial, industrial and complex sites are quoted after inspection.
 export const RATES = {
-  termitePost: { min: 6, max: 9 },
+  termitePost: { min: 7, max: 9 },
   termitePre: { min: 12, max: 15 },
-  porousPipe: { min: 22, max: 25 },
-  home: { '1BHK': 1200, '2BHK': 1500, '3BHK': 1500 },
+  porousPipe: { min: 22, max: 27 },
+  home: { '1BHK': 1200, '2BHK': 1500, '3BHK': 1800 },
 };
+export const GST_NOTE = 'Prices are exclusive of GST. Applicable GST will be charged separately.';
 
 const inr = (n) => `₹${n.toLocaleString('en-IN')}`;
 export const sqftLabel = (r) => `₹${r.min}–${r.max} per sq.ft.`;
 export const homeFrom = inr(RATES.home['1BHK']);
-export const homeRateLine = `${inr(RATES.home['1BHK'])} (1BHK) · ${inr(RATES.home['2BHK'])} (2BHK & 3BHK)`;
+export const homeRateLine = `${inr(RATES.home['1BHK'])} (1BHK) · ${inr(RATES.home['2BHK'])} (2BHK) · ${inr(RATES.home['3BHK'])} (3BHK), plus GST`;
 
 const homePricing = { unit: 'bhk', tiers: RATES.home };
 const sqftPricing = (r) => ({ unit: 'sqft', min: r.min, max: r.max, label: sqftLabel(r) });

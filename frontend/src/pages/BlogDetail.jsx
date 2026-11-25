@@ -97,7 +97,7 @@ Comparison: Porous Pipe vs Traditional Treatment
 
 | Feature | Porous Pipe System | Traditional Drilling |
 |---------|------------------|-------------------|
-| Cost | ₹22-25/sq.ft. (ek baar) | ₹6-9/sq.ft. (har treatment) |
+| Cost | ₹22-27/sq.ft. (ek baar) | ₹7-9/sq.ft. (har treatment) |
 | Longevity | 10-15 years | 5-7 years |
 | Re-treatment | Easy | Difficult |
 
@@ -113,13 +113,13 @@ Q1: Is porous pipe treatment necessary for every new home?
 Ans: Ji haan, highly recommended hai.
 
 Q2: How much does it cost in Rajasthan?
-Ans: Porous pipe system ₹22-25 per sq.ft. hota hai. Normal pre-construction soil treatment ₹12-15 per sq.ft. hai.
+Ans: Porous pipe system ₹22-27 per sq.ft. hota hai. Normal pre-construction soil treatment ₹12-15 per sq.ft. hai.
 
 Q3: Can we install after construction?
 Ans: Possible hai but costly aur difficult hai.
 
 Q4: How long does the treatment last?
-Ans: 10-15 saal tak valid hai warranty ke saath.
+Ans: Ye product, mitti aur construction par depend karta hai. Warranty ki shartein aapke quotation par likhi hoti hain.
 
 Get Professional Pre-Construction Termite Treatment
 
@@ -127,7 +127,7 @@ Naya ghar bana rahe hain? Abhi hi free consultation book karein!
 
 Call: +91-63753-38302
 WhatsApp: +91-63753-38302`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'termite-prevention-tips': {
     title: '10 Effective Termite Prevention Tips for Your Home',
@@ -158,7 +158,7 @@ WhatsApp: +91-63753-38302`,
 **10. Professional Treatment**: Consider preventive soil treatment before construction if you're building a new home.
 
 Remember, early detection is key to preventing costly damage. If you notice any signs of termites like mud tubes, discarded wings, or wood that sounds hollow, contact a professional immediately.`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'why-cockroaches-in-home': {
     title: 'Why Do Cockroaches Invade Your Home?',
@@ -192,7 +192,7 @@ Remember, early detection is key to preventing costly damage. If you notice any 
 **Health Risks:**
 
 Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. It's important to address infestations quickly with professional help.`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'rodent-dangers-health': {
     title: 'Health Dangers of Rodent Infestations',
@@ -235,7 +235,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
 - Keep food stored properly
 - Remove clutter
 - Professional pest control`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'bed-bugs-signs': {
     title: 'How to Identify Bed Bug Infestations Early',
@@ -284,7 +284,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
 - Keep luggage raised
 - Check luggage before leaving
 - Wash clothes immediately upon return`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'monsoon-pest-control': {
     title: 'Monsoon Pest Control: Essential Guide',
@@ -328,7 +328,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
 - Use cockroach gels in kitchen
 - Store food properly
 - Use mosquito nets`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'kitchen-pest-prevention': {
     title: 'Kitchen Pest Prevention Guide',
@@ -382,7 +382,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
 - Vinegar traps for flies
 - Cucumber slices for ants
 - Mint for cockroaches`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'office-pest-control': {
     title: 'Office Pest Control: A Complete Guide',
@@ -436,7 +436,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
 - Scheduled maintenance
 - Documentation for compliance
 - Emergency response`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'pest-control-warehouse': {
     title: 'Warehouse Pest Management Guide',
@@ -492,7 +492,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
 - Stack cleanliness
 - Proper pallets
 - Climate control`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'home-hygiene-tips': {
     title: 'Home Hygiene Tips to Prevent Pests',
@@ -543,7 +543,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
 - Vinegar in drains
 - Bay leaves in pantry
 - Citrus peels (remove regularly)`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'natural-pest-control': {
     title: 'Natural vs Chemical Pest Control',
@@ -612,7 +612,7 @@ Cockroaches can spread diseases like Salmonella, E. coli, and cause allergies. I
 **Integrated Approach:**
 
 Many professionals recommend using both for best results.`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'pest-control-questions': {
     title: '15 Questions About Pest Control - Answered',
@@ -656,7 +656,7 @@ Depends on property size and pest type; get a quote.
 
 **9. Do you guarantee your work?**
 
-Yes, we offer warranties on most treatments.
+Where a warranty applies, its period and terms are written on your quotation.
 
 **10. Are natural treatments effective?**
 
@@ -681,7 +681,7 @@ We offer both traditional and green options.
 **15. How do I schedule service?**
 
 Call us or book online for inspection.`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'restaurant-pest-control': {
     title: 'Restaurant Pest Control: Complete Guide',
@@ -741,7 +741,7 @@ Call us or book online for inspection.`,
 - Staff training
 - Documentation
 - Health audit preparation`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'pest-control-warranty': {
     title: 'Understanding Pest Control Warranty Options',
@@ -792,7 +792,7 @@ Call us or book online for inspection.`,
 - Allow annual inspections
 - Follow prevention tips
 - Report issues immediately`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'seasonal-pest-calendar': {
     title: 'Seasonal Pest Calendar: Year-Round Protection',
@@ -839,7 +839,7 @@ Call us or book online for inspection.`,
 *Fall:* Exterior treatments, rodent proofing, leaf cleanup
 
 *Winter:* Indoor treatments, storage checks, maintenance`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   },
   'pest-control-costs': {
     title: 'Pest Control Services: What to Expect to Pay',
@@ -864,14 +864,16 @@ Call us or book online for inspection.`,
 
 - 1BHK: ₹1,200
 - 2BHK: ₹1,500
-- 3BHK: ₹1,500
+- 3BHK: ₹1,800
 - Bigger homes and villas: quote after inspection
 
 *Anti-Termite Treatment:*
 
-- Post-construction (existing buildings): ₹6-9/sq ft
+- Post-construction (existing buildings): ₹7-9/sq ft
 - Pre-construction (soil treatment): ₹12-15/sq ft
-- Porous pipe system: ₹22-25/sq ft
+- Porous pipe system: ₹22-27/sq ft
+
+*All prices are exclusive of GST. Applicable GST is charged separately.*
 
 *Commercial Sites:*
 
@@ -891,7 +893,7 @@ Call us or book online for inspection.`,
 - Verify certifications
 - Ask about guarantees
 - Consider annual contracts`,
-    author: 'Pest Kill Expert Team'
+    author: 'PestKill Expert Team'
   }
 };
 

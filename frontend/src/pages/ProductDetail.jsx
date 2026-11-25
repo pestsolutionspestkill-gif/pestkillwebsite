@@ -108,7 +108,8 @@ const ProductDetail = () => {
             <ul className="pd-assure">
               <li><BadgeCheck size={17} /> Genuine product, sealed manufacturer pack</li>
               <li><ReceiptText size={17} /> Invoice with every order</li>
-              <li><Truck size={17} /> Dispatched from Jaipur; delivery charges, if any, confirmed before dispatch</li>
+              <li><Truck size={17} /> Delivered across India from Jaipur; timeline and any delivery charge confirmed before dispatch</li>
+              <li><ReceiptText size={17} /> Expired on arrival? Replaced with a fresh lot. <Link to="/replacement-policy">Replacement policy</Link></li>
             </ul>
 
             <BuyerBanner />

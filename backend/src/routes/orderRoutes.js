@@ -54,7 +54,7 @@ router.post('/', auth, ah(async (req, res) => {
     let count = 0;
     const lines = [];
     for (const [productId, qty] of wanted) {
-      const p = await t.get('SELECT id, name, brand, pack_size, mrp, pco_price, offer_price, offer_ends, stock, is_active FROM products WHERE id = ? FOR UPDATE', productId);
+      const p = await t.get('SELECT id, name, brand, pack_size, mrp, mrp_verified, pco_price, offer_price, offer_ends, stock, is_active FROM products WHERE id = ? FOR UPDATE', productId);
       if (!p || !p.is_active) throw new ValidationError('A product in your cart is no longer available.');
       const price = bestPrice(p, { pco: true });
       if (price == null) throw new ValidationError(`${p.name} (${p.pack_size}) is price-on-request. Remove it and ask us for a quote.`);
@@ -118,6 +118,29 @@ router.patch('/:id', requirePermission('orders.manage'), ah(async (req, res) => 
   const row = await setStatus(id, status, str(req.body.adminNote, { field: 'Note', max: 500 }));
   if (!row) return res.status(404).json({ error: 'Order not found.' });
   audit(req, 'order.update', 'order', id, { status });
+  res.json((await withItems([row]))[0]);
+}));
+
+// Record a manual payment (COD, UPI or bank transfer). Only staff with order rights can do this, and a
+// payment reference (UTR / transaction ID / receipt number) is required, so an order is never marked
+// paid without a confirmation to show for it.
+router.patch('/:id/payment', requirePermission('orders.manage'), ah(async (req, res) => {
+  const id = intId(req.params.id);
+  const status = oneOf(req.body.status, ['paid', 'unpaid'], 'payment status');
+  const ref = str(req.body.reference, { field: 'Payment reference', max: 120 });
+  const o = await db.get('SELECT status, payment_method FROM orders WHERE id = ?', id);
+  if (!o) return res.status(404).json({ error: 'Order not found.' });
+  if (status === 'paid') {
+    if (o.status === 'cancelled') throw new ValidationError('A cancelled order cannot be marked paid.');
+    if (!ref || ref.length < 4) throw new ValidationError(o.payment_method === 'cod'
+      ? 'Enter the cash receipt number or a note of who collected the payment.'
+      : 'Enter the UPI / bank transaction reference (UTR) from the payment confirmation.');
+  }
+  const row = await db.get(status === 'paid'
+    ? `UPDATE orders SET payment_status = 'paid', payment_ref = ?, paid_at = ${NOW}, payment_recorded_by = ?, updated_at = ${NOW} WHERE id = ? RETURNING *`
+    : `UPDATE orders SET payment_status = 'unpaid', payment_ref = NULL, paid_at = NULL, payment_recorded_by = ?, updated_at = ${NOW} WHERE id = ? RETURNING *`,
+  ...(status === 'paid' ? [ref, req.user.id, id] : [req.user.id, id]));
+  audit(req, `order.payment_${status}`, 'order', id, { reference: ref });
   res.json((await withItems([row]))[0]);
 }));
 

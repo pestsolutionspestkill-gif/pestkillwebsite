@@ -8,12 +8,13 @@ import { serviceMedia, creditLine } from '../data/media';
 import { submitLead } from '../lib/api';
 import './ServiceDetail.css';
 import Credentials, { LicenceLine } from '../components/Credentials';
+import FormError from '../components/FormError';
 
 const baseServices = {
   'termite-control': {
     name: 'Termite Treatment',
     title: 'Complete Termite Control & Prevention',
-    desc: 'Protect your home with government-certified termite treatment. Up to 10-year warranty.',
+    desc: 'Protect your home with professional pre- and post-construction termite treatment. Warranty terms are written on your quotation.',
     problemTitle: 'What is Termite Problem?',
     problemDesc: 'Termites are silent destroyers that can cause massive damage to your property. They feed on wood, paper, and cellulose materials, weakening the structural integrity of your home. In India, subterranean termites are the most common species causing damage to residential and commercial buildings.',
     diseasesTitle: 'Health & Property Risks',
@@ -32,7 +33,7 @@ const baseServices = {
       'Wood treatment for affected areas',
       'Chemical barrier creation around foundation',
       'Ventilation improvement recommendations',
-      'Annual monitoring and warranty visits'
+      'Annual monitoring visits on request'
     ],
     preventionTitle: 'How to Prevent Termites',
     prevention: [
@@ -43,7 +44,7 @@ const baseServices = {
       'Avoid wood-to-soil contact',
       'Annual professional inspection'
     ],
-    features: ['Pre-construction treatment', 'Post-construction treatment', 'Soil treatment', 'Wood treatment', '10-year warranty', 'Free annual inspection']
+    features: ['Pre-construction treatment', 'Post-construction treatment', 'Soil treatment', 'Wood treatment', 'Written treatment report', 'Annual inspection on request']
   },
   'cockroach-control': {
     name: 'Cockroach Control',
@@ -79,12 +80,12 @@ const baseServices = {
       'Seal cracks and gaps',
       'Don\'t leave pet food overnight'
     ],
-    features: ['Gel treatment', 'Spray application', 'Crack & crevice treatment', 'Follow-up visit', '90-day guarantee']
+    features: ['Gel treatment', 'Spray application', 'Crack & crevice treatment', 'Follow-up visit', 'Written treatment report']
   },
   'rodent-control': {
     name: 'Rodent Control',
     title: 'Rat & Mouse Control Solutions',
-    desc: 'Permanent rat control solutions with proper proofing and monitoring. 1-year warranty.',
+    desc: 'Rat and mouse control with proofing, bait stations and monitoring.',
     problemTitle: 'What is Rodent Problem?',
     problemDesc: 'Rats and mice are harmful pests that can infest homes, offices, and warehouses. They breed rapidly and can cause extensive damage to property and health. The most common rodents in India are house mouse, roof rat, and Norway rat.',
     diseasesTitle: 'Health Risks - Diseases from Rodents',
@@ -116,7 +117,7 @@ const baseServices = {
       'Trim trees and bushes away from building',
       'Secure garbage bins'
     ],
-    features: ['Rat control', 'Mouse control', 'Proofing solutions', 'Monitoring stations', '1-year warranty']
+    features: ['Rat control', 'Mouse control', 'Proofing solutions', 'Monitoring stations', 'Written treatment report']
   },
   'bed-bugs': {
     name: 'Bed Bug Treatment',
@@ -231,7 +232,7 @@ const ServiceDetail = () => {
       );
       setSent(true);
     } catch (err) {
-      setFormError(err.message);
+      setFormError(err);
     } finally {
       setSending(false);
     }
@@ -331,7 +332,7 @@ const ServiceDetail = () => {
             <div className="sd-quote-copy">
               <span className="eyebrow light">Free Inspection</span>
               <h2>Get a quote for {service.name.toLowerCase()}</h2>
-              <p>Share a few details and our specialist will call you within 30 minutes.</p>
+              <p>Share a few details and our specialist will call you back during working hours.</p>
               <div className="sd-quote-links">
                 <a href={`tel:${phoneNumber}`}><Phone size={16} /> Call now</a>
                 <a href={wa}><MessageCircle size={16} /> WhatsApp</a>
@@ -349,14 +350,14 @@ const ServiceDetail = () => {
                   <input className="form-input" type="text" placeholder="Your name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
                   <input className="form-input" type="tel" placeholder="Phone number" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required />
                   <textarea className="form-input" rows="3" placeholder="Describe your pest problem" value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} />
-                  {formError && <p className="form-error" role="alert">{formError}</p>}
+                  <FormError error={formError} />
                   <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={sending}>{sending ? 'Sending…' : <>Get Free Quote <ArrowRight size={18} /></>}</button>
                   <LicenceLine kind="pco" />
                 </form>
               )}
             </div>
           </div>
-          <p className="sd-author">Written by the <strong>PestKill Expert Team</strong> — certified pest control specialists serving Rajasthan, Delhi NCR and UP.</p>
+          <p className="sd-author">Written by the <strong>PestKill Expert Team</strong> — licensed pest control specialists serving customers across India from Jaipur.</p>
         </div>
       </section>
     </div>

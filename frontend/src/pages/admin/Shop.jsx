@@ -171,7 +171,7 @@ const ProductDrawer = ({ product, brands, categories, onClose, onSaved, onDelete
                 <label>PCO price (₹, optional)<input type="number" min="0" step="0.01" value={form.pcoPrice} onChange={set('pcoPrice')} placeholder="Shown only to approved buyers" /></label>
               </div>
               {p?.mrp_note && !form.mrpVerified && <p className="mrp-warn"><AlertTriangle size={15} /> MRP source: {p.mrp_note}. Check it against the pack.</p>}
-              <label className="check-row"><input type="checkbox" checked={form.mrpVerified} onChange={set('mrpVerified')} /> I have checked this MRP against the printed pack</label>
+              <label className="check-row"><input type="checkbox" checked={form.mrpVerified} onChange={set('mrpVerified')} /> I have checked this MRP against the printed pack (customers see "Price on request" until this is ticked)</label>
 
               <h4>Offer <small className="adm-muted">(shown to everyone; leave empty for no offer)</small></h4>
               <div className="inv-grid three">
@@ -441,6 +441,16 @@ const OrderDrawer = ({ order, onClose, onSaved, notify }) => {
   const [status, setStatus] = useState(order.status);
   const [note, setNote] = useState(order.admin_note || '');
   const [busy, setBusy] = useState(false);
+  const [payRef, setPayRef] = useState('');
+  const recordPayment = async (paid) => {
+    if (!paid && !window.confirm('Mark this order as NOT paid? The recorded reference will be removed.')) return;
+    setBusy(true);
+    try {
+      const o = await api(`/orders/${order.id}/payment`, { method: 'PATCH', body: { status: paid ? 'paid' : 'unpaid', reference: paid ? payRef : null } });
+      onSaved(o); setPayRef(''); notify(paid ? `Payment recorded for order #${o.id}` : `Order #${o.id} marked unpaid`);
+    } catch (err) { notify(err.message, 'error'); }
+    setBusy(false);
+  };
   const save = async () => {
     if (status === 'cancelled' && order.status !== 'cancelled' && !window.confirm('Cancel this order? Stock will be returned.')) return;
     setBusy(true);
@@ -467,7 +477,7 @@ const OrderDrawer = ({ order, onClose, onSaved, notify }) => {
           <div><dt>Buyer</dt><dd>{order.user_name}{order.user_email ? ` · ${order.user_email}` : ''}</dd></div>
           {order.gstin && <div><dt>GSTIN</dt><dd>{order.gstin}</dd></div>}
           <div><dt>Deliver to</dt><dd><MapPin size={13} /> {[order.address, order.city, order.pincode].filter(Boolean).join(', ')}</dd></div>
-          <div><dt>Payment</dt><dd>{PAYMENT_LABELS[order.payment_method] || '—'}</dd></div>
+          <div><dt>Payment</dt><dd>{PAYMENT_LABELS[order.payment_method] || '—'} · {order.payment_status === 'paid' ? <strong>Paid{order.payment_ref ? ` (ref ${order.payment_ref})` : ''}{order.paid_at ? `, ${fmtDate(order.paid_at)}` : ''}</strong> : 'Not yet received'}</dd></div>
           {order.notes && <div><dt>Buyer note</dt><dd className="pre">{order.notes}</dd></div>}
         </dl>
         {can('orders.manage') && (
@@ -475,6 +485,20 @@ const OrderDrawer = ({ order, onClose, onSaved, notify }) => {
             <label>Status<select value={status} onChange={(e) => setStatus(e.target.value)} disabled={order.status === 'cancelled'}>{ORDER_STATUSES.map((s) => <option key={s} value={s}>{label(s)}</option>)}</select></label>
             <label>Note to buyer<textarea rows="3" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Dispatch details, courier, payment received…" /></label>
             <button type="button" className="btn btn-sm btn-primary" disabled={busy || order.status === 'cancelled'} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>
+          </div>
+        )}
+        {can('orders.manage') && order.status !== 'cancelled' && (
+          <div className="drawer-form pay-form">
+            <h4>Payment</h4>
+            {order.payment_status === 'paid' ? (
+              <button type="button" className="btn btn-sm btn-outline" disabled={busy} onClick={() => recordPayment(false)}>Mark as not paid</button>
+            ) : (
+              <>
+                <label>Payment reference<input value={payRef} onChange={(e) => setPayRef(e.target.value)} maxLength={120} placeholder={order.payment_method === 'cod' ? 'Cash receipt no. / collected by' : 'UPI or bank UTR / transaction ID'} /></label>
+                <small className="adm-muted">Record a payment only after you have the confirmation (UPI/bank credit or cash received).</small>
+                <button type="button" className="btn btn-sm btn-primary" disabled={busy || payRef.trim().length < 4} onClick={() => recordPayment(true)}>Record payment received</button>
+              </>
+            )}
           </div>
         )}
       </aside>
@@ -503,7 +527,7 @@ export const ShopOrders = ({ notify }) => {
                 <td><strong>{o.firm_name || o.user_name}</strong><small>{o.city} · {o.phone}</small></td>
                 <td className="clip">{o.items.map((i) => `${i.name} ${i.pack_size} ×${i.quantity}`).join(', ')}</td>
                 <td className="nowrap"><strong>{rupees(o.total)}</strong></td>
-                <td className="nowrap">{PAYMENT_LABELS[o.payment_method] || '—'}</td>
+                <td className="nowrap">{PAYMENT_LABELS[o.payment_method] || '—'}<small>{o.payment_status === 'paid' ? 'Paid' : 'Unpaid'}</small></td>
                 <td><Badge value={o.status} /></td>
               </tr>
             ))}</tbody>
@@ -511,7 +535,52 @@ export const ShopOrders = ({ notify }) => {
         </div>
       </State>
       {open && <OrderDrawer key={open.id} order={open} notify={notify} onClose={() => setOpen(null)} onSaved={(o) => { setData((rows) => rows.map((r) => (r.id === o.id ? o : r))); setOpen(o); }} />}
+      <Replacements notify={notify} />
     </>
+  );
+};
+
+/** Expired-product replacement requests raised by buyers. */
+const REP_STATUS = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected', replaced: 'Replaced' };
+const Replacements = ({ notify }) => {
+  const { can } = useAuth();
+  const { data, setData, error, loading } = useLoad('/replacements');
+  const decide = async (r, status) => {
+    const note = status === 'rejected' ? window.prompt('Reason (shown to the buyer):') : null;
+    if (status === 'rejected' && !note) return;
+    try {
+      const u = await api(`/replacements/${r.id}`, { method: 'PATCH', body: { status, note } });
+      setData((rows) => rows.map((x) => (x.id === r.id ? { ...x, ...u } : x)));
+      notify(`Request #${r.id}: ${REP_STATUS[status]}`);
+    } catch (err) { notify(err.message, 'error'); }
+  };
+  return (
+    <section className="panel rep-admin">
+      <h3>Expired-product replacement requests</h3>
+      <p className="adm-muted">Only products that were already expired when supplied qualify. Check the batch and expiry against your dispatch record before approving.</p>
+      <State loading={loading && !data} error={error} empty={data?.length === 0 && 'No replacement requests.'}>
+        <div className="table-wrap flat">
+          <table className="adm-table">
+            <thead><tr><th>Request</th><th>Buyer</th><th>Product</th><th>Batch / expiry</th><th>Photos</th><th>Status</th><th /></tr></thead>
+            <tbody>{data?.map((r) => (
+              <tr key={r.id}>
+                <td className="nowrap"><strong>#{r.id}</strong><small>Order #{r.order_id} · {fmtDate(r.created_at)}</small></td>
+                <td><strong>{r.firm_name || r.user_name}</strong><small>{r.user_phone}</small></td>
+                <td>{r.product_name}<small>{r.quantity} pack(s){r.details ? ` · ${r.details}` : ''}</small></td>
+                <td className="nowrap">{r.batch_no}<small>Expiry {r.expiry_date}</small></td>
+                <td>{r.photos.map((p, i) => <button key={p} type="button" className="text-btn" onClick={() => openPrivateFile(p.replace(/^\/api/, '')).catch((e) => notify(e.message, 'error'))}>{i + 1}</button>)}</td>
+                <td><Badge value={r.status} />{r.admin_note && <small>{r.admin_note}</small>}</td>
+                <td className="nowrap">{can('orders.manage') && r.status === 'pending' && <>
+                  <button type="button" className="text-btn" onClick={() => decide(r, 'approved')}>Approve</button>
+                  <button type="button" className="text-btn danger" onClick={() => decide(r, 'rejected')}>Reject</button>
+                </>}
+                {can('orders.manage') && r.status === 'approved' && <button type="button" className="text-btn" onClick={() => decide(r, 'replaced')}>Mark replaced</button>}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </State>
+    </section>
   );
 };
 

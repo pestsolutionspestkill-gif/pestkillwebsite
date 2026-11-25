@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { CalendarCheck, MessageSquareWarning, Package, UserRound, LogOut, Plus, ArrowRight, CheckCircle, ReceiptText, Printer, Store, RotateCcw } from 'lucide-react';
 import { useBuyer } from '../hooks/useBuyer';
 import Bookings from './dashboard/Bookings';
+import ReplacementForm, { ReplacementRequests } from './dashboard/Replacement';
 import { useAuth } from '../context/AuthContext';
 import { api, tokenStore } from '../lib/api';
 import './Dashboard.css';
@@ -76,10 +77,14 @@ const Complaints = () => {
   );
 };
 
+const PAY = { cod: 'cash on delivery', upi: 'UPI', bank: 'bank transfer' };
+
 const Orders = () => {
   const { data, setState, error } = useList('/orders/my-orders');
+  const reps = useList('/replacements/mine');
   const { buyer } = useBuyer();
   const [busy, setBusy] = useState(null);
+  const [reporting, setReporting] = useState(null);
   const { add } = useCart();
   const navigate = useNavigate();
   // Puts the same products and quantities back in the cart (current prices apply).
@@ -119,6 +124,11 @@ const Orders = () => {
                 </ul>
               )}
               <p>{[o.address, o.city, o.pincode].filter(Boolean).join(', ')}</p>
+              <p className="dash-pay">Payment ({PAY[o.payment_method] || 'to be confirmed'}): {o.payment_status === 'paid' ? <strong>received{o.payment_ref ? ` · ref ${o.payment_ref}` : ''}</strong> : 'awaiting confirmation by our team'}</p>
+              <ReplacementRequests requests={(reps.data || []).filter((r) => r.order_id === o.id)} />
+              {reporting === o.id
+                ? <ReplacementForm order={o} onDone={(r) => { setReporting(null); if (r) reps.reload(); }} />
+                : ['shipped', 'delivered'].includes(o.status) && o.items?.length > 0 && <button type="button" className="text-btn" onClick={() => setReporting(o.id)}>Received an expired product? Request a replacement</button>}
               {o.admin_note && <div className="dash-reply"><strong>PestKill team</strong><p>{o.admin_note}</p></div>}
               {o.items?.length > 0 && o.status !== 'pending' && <button type="button" className="btn btn-outline btn-sm dash-cancel" onClick={() => reorder(o)}><RotateCcw size={14} /> Order again</button>}
               {o.status === 'pending' && <button type="button" className="btn btn-outline btn-sm dash-cancel" disabled={busy === o.id} onClick={() => cancel(o)}>{busy === o.id ? 'Cancelling…' : 'Cancel order'}</button>}

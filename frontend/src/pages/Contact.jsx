@@ -5,6 +5,7 @@ import { Phone, MessageCircle, Mail, MapPin, Clock, CheckCircle, Send } from 'lu
 import { submitLead } from '../lib/api';
 import './Contact.css';
 import Credentials, { LicenceLine } from '../components/Credentials';
+import FormError from '../components/FormError';
 
 const Contact = () => {
   const { phoneNumber, whatsappNumber, email, officeAddress, workingHours } = businessConfig;
@@ -25,11 +26,11 @@ const Contact = () => {
     try {
       await submitLead(
         { type: 'contact', name: formData.name, phone: formData.phone, email: formData.email, service: formData.subject, message: formData.message, source: 'contact-page' },
-        { whatsappNumber, whatsappText: `Hello Pest Kill,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nSubject: ${formData.subject}\nMessage: ${formData.message}` },
+        { whatsappNumber, whatsappText: `Hello PestKill,\n\nName: ${formData.name}\nPhone: ${formData.phone}\nEmail: ${formData.email}\nSubject: ${formData.subject}\nMessage: ${formData.message}` },
       );
       setSubmitted(true);
     } catch (err) {
-      setFormError(err.message);
+      setFormError(err);
     } finally {
       setSending(false);
     }
@@ -121,7 +122,7 @@ const Contact = () => {
                     <label className="form-label" htmlFor="c-message">Message *</label>
                     <textarea name="message" id="c-message" className="form-input" rows="5" value={formData.message} onChange={handleChange} required />
                   </div>
-                  {formError && <p className="form-error" role="alert">{formError}</p>}
+                  <FormError error={formError} />
                   <button type="submit" className="btn btn-primary" disabled={sending}><Send size={16} />{sending ? 'Sending…' : 'Send message'}</button>
                   <LicenceLine kind="pco" />
                   <LicenceLine kind="sale" />

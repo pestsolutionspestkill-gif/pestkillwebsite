@@ -85,7 +85,7 @@ const RodentControl = () => {
                 <ul>
                   <li>Professional baits</li>
                   <li>Safe placement</li>
-                  <li>1-year warranty</li>
+                  <li>Written treatment report</li>
                 </ul>
               </div>
             </div>
@@ -105,7 +105,7 @@ const RodentControl = () => {
               </div>
               <div className="faq-item">
                 <h4>Do you offer warranty?</h4>
-                <p>Yes, we offer 1-year warranty on all rodent control treatments.</p>
+                <p>Warranty terms depend on the site and the proofing work done, and are written on your quotation.</p>
               </div>
             </div>
 
@@ -120,7 +120,7 @@ const RodentControl = () => {
       <section className="cta-section">
         <div className="container">
           <h2>Get Rid of Rodents Forever</h2>
-          <p>Professional rodent control with guaranteed results!</p>
+          <p>Professional rodent control with proofing and monitoring.</p>
           <div className="cta-buttons">
             <Link to="/contact" className="btn btn-primary">Get Free Quote</Link>
             <a href="tel:+916375338302" className="btn btn-outline"><Phone size={16} style={{marginRight:'6px',verticalAlign:'middle'}} />Call: +91-63753-38302</a>
