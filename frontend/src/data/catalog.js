@@ -12,15 +12,9 @@ import {
    Official rates. Change a price here and every page, the booking
    wizard and the FAQs pick it up.
 ------------------------------------------------------------------- */
-// Official service prices (owner-confirmed). All prices EXCLUDE GST; applicable GST is charged separately.
-// Larger homes, commercial, industrial and complex sites are quoted after inspection.
-export const RATES = {
-  termitePost: { min: 7, max: 9 },
-  termitePre: { min: 12, max: 15 },
-  porousPipe: { min: 22, max: 27 },
-  home: { '1BHK': 1200, '2BHK': 1500, '3BHK': 1800 },
-};
-export const GST_NOTE = 'Prices are exclusive of GST. Applicable GST will be charged separately.';
+// Official service prices live in ./pricing.js (shared with the server and PestKill AI).
+import { RATES, GST_NOTE } from './pricing';
+export { RATES, GST_NOTE };
 
 const inr = (n) => `₹${n.toLocaleString('en-IN')}`;
 export const sqftLabel = (r) => `₹${r.min}–${r.max} per sq.ft.`;

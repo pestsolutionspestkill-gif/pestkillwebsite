@@ -16,7 +16,7 @@ export class ApiError extends Error {
   }
 }
 
-export const api = async (path, { method = 'GET', body, signal } = {}) => {
+export const api = async (path, { method = 'GET', body, signal, headers: extra } = {}) => {
   const token = tokenStore.get();
   let res;
   try {
@@ -26,6 +26,7 @@ export const api = async (path, { method = 'GET', body, signal } = {}) => {
       headers: {
         ...(body ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(extra || {}),
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -36,7 +37,9 @@ export const api = async (path, { method = 'GET', body, signal } = {}) => {
   const data = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) {
     if (res.status === 401 && token) window.dispatchEvent(new Event('pk:unauthorized'));
-    throw new ApiError(data?.error || 'Something went wrong. Please try again.', res.status);
+    const err = new ApiError(data?.error || 'Something went wrong. Please try again.', res.status);
+    if (data?.code) err.code = data.code;
+    throw err;
   }
   return data;
 };

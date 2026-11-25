@@ -297,6 +297,42 @@ Run `npm test` in `backend/` to run the API tests, which cover these features.
 - **Lead forms when the server is down**: the form shows a *Send my details on WhatsApp* button the visitor taps.
   Nothing opens automatically, because phones block that. It never shows a false "received" message.
 
+## PestKill AI
+
+The page is `/pestkill-ai`. It is linked from the header, the phone bottom bar ("AI"), product pages, service pages and the explore drawer. Staff use it from **Admin → PestKill AI**.
+
+| Tool | Who | What it does |
+|---|---|---|
+| Ask | everyone | Questions about pests, services, prices, bookings, products and policies, in English or Hindi. Answers cite sources such as [S1]. |
+| Identify from photo | everyone | Photo of a pest or damage → likely pest, confidence, visible evidence, look-alikes, next step. The photo is not stored. |
+| Diagnose | everyone | A guided questionnaire → preliminary assessment, risk level and next step. Labelled as preliminary. |
+| Estimate price | everyone | Computed by `frontend/src/data/pricing.js` (the same price list the site uses), with GST at 18% shown separately. Works without AI. |
+| Account answers | signed-in customers | The customer's own bookings (grouped by property), reports, products used, warranty, orders, complaints. Nothing else. |
+| Field assistant | technicians, managers, owner | Checklists and visit reports drafted from the technician's notes, using only their assigned jobs. |
+| Business insights | owner, managers with reports access | Read-only summaries: leads to follow up, workload, complaints, stock, unpaid orders, pending approvals. |
+
+**How it is built** (`backend/src/ai/`, routes in `backend/src/routes/aiRoutes.js`):
+- `provider.js`: the model adapter.
+  - Uses the official Anthropic SDK, model `claude-opus-5-5`, with the server-side fallback on refusals.
+  - The rule block is cached.
+  - Errors are mapped to clear messages: not configured, busy, unreachable, key rejected.
+- `knowledge.js`: verified knowledge with BM25 keyword search, English and Hindi.
+  - It indexes business facts, prices, policies, the Knowledge Centre, the live catalogue (only checked MRPs), published documents, verified label dose records and technical standards.
+- `context.js`: role-scoped account data, read-only.
+- `prompt.js`: the rules. Never state doses, rates, re-entry times, approvals, warranties or prices that are not in a verified source. Identification is provisional. No local-office claims.
+- Conversations, feedback (helpful / not helpful) and per-call usage (tokens, latency, errors) are stored. Visitors' conversations are reachable only with a random key held in their browser.
+- Limits: 20 requests per 10 minutes per connection, plus daily caps (25 for visitors, 80 for customers, 300 for staff), adjustable by environment variables.
+- **Admin → PestKill AI** shows the owner usage, errors and recent feedback.
+
+**Switching it on** needs approval because it is paid per use:
+1. Create an API key in the Anthropic Console.
+2. On Render, set `ANTHROPIC_API_KEY`, then redeploy.
+Without the key, the page says AI answers are off. The estimate and verified search still work, and nothing is ever made up.
+
+**Tests**:
+- `backend/test/ai.test.js` runs the real server against a local stand-in for the model API. It covers grounding, prices, role scoping, photo validation, errors, limits and the absence of key leaks.
+- `npm run ai:eval` in `backend/` runs 12 safety and grounding checks against a configured server. It makes paid calls, so run it only after the key is set.
+
 ## Production deployment checklist
 
 1. Review the branch `release/production-readiness` and merge it to `main` only after approval.
@@ -308,6 +344,7 @@ Run `npm test` in `backend/` to run the API tests, which cover these features.
 6. In Admin → Licences: upload both licence copies, enter the authority and validity exactly as printed, and mark them verified.
 7. Check the PCO buyers list. Any approved buyer without a licence validity date must re-submit before ordering.
 8. Open the home page, a service page, the shop, a product, the cart and `/book` on a phone and on a desktop.
+9. PestKill AI: after approval, set `ANTHROPIC_API_KEY` on Render, redeploy, then run `npm run ai:eval` in `backend/` against the live URL and read any FAIL lines.
 
 ## Quality checks
 

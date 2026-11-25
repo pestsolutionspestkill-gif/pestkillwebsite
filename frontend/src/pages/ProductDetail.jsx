@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { refineHead } from '../seo/RouteSeo';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronRight, Minus, Plus, ShieldAlert, BadgeCheck, ReceiptText, Truck, Zap, MessageCircle } from 'lucide-react';
+import { ChevronRight, Minus, Plus, ShieldAlert, BadgeCheck, ReceiptText, Truck, Zap, MessageCircle, Sparkles } from 'lucide-react';
 import businessConfig from '../data/businessConfig';
 import { api } from '../lib/api';
 import { usePreloaded } from '../lib/preload';
@@ -129,6 +129,7 @@ const ProductDetail = () => {
             </div>
             <LicenceLine kind="sale" />
 
+            <Link className="ask-ai" to={`/pestkill-ai?product=${encodeURIComponent(p.slug)}&page=${encodeURIComponent(`Product: ${p.brand} ${p.name} ${p.pack_size}`)}`}><Sparkles size={16} /> Ask PestKill AI about {p.name}: documents, packs, PCO buying</Link>
             <ProductExtras product={p} />
           </div>
         </div>

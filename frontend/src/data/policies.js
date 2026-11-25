@@ -1,7 +1,7 @@
 // Policy pages. They state only what PestKill actually does; anything not decided by the owner is
 // described as "set out in your quotation / order confirmation" rather than invented here.
-import businessConfig from './businessConfig';
-import { GST_NOTE } from './catalog';
+import businessConfig from './businessConfig.js';
+import { GST_NOTE } from './pricing.js';
 
 const { businessName, officeAddress, phoneNumber, email, gstin, udyam, licenceNumber, saleLicenceNumber } = businessConfig;
 const contact = `${businessName}, ${officeAddress}. Phone / WhatsApp: ${phoneNumber}. Email: ${email}.`;

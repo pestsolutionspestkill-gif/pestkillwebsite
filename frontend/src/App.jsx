@@ -41,6 +41,7 @@ const KnowledgeGuide = lazy(() => import('./pages/Knowledge').then((m) => ({ def
 const ShopLanding = lazy(() => import('./pages/ShopLanding'));
 const TechnicalStandards = lazy(() => import('./pages/TechnicalStandards'));
 const Policy = lazy(() => import('./pages/Policy'));
+const PestKillAI = lazy(() => import('./pages/PestKillAI'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Cart = lazy(() => import('./pages/Cart'));
 const PcoAccount = lazy(() => import('./pages/PcoAccount'));
@@ -84,6 +85,7 @@ function App() {
           <Route path="/knowledge" element={<KnowledgeIndex />} />
           <Route path="/knowledge/:slug" element={<KnowledgeGuide />} />
           <Route path="/technical-standards" element={<TechnicalStandards />} />
+          <Route path="/pestkill-ai" element={<PestKillAI />} />
           {['privacy-policy', 'terms', 'shipping-delivery', 'replacement-policy', 'disclaimer'].map((s) => <Route key={s} path={`/${s}`} element={<Policy slug={s} />} />)}
           <Route path="/pests/:slug" element={<PestDetail />} />
           <Route path="/business" element={<Business />} />

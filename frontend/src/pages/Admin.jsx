@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, CalendarCheck, MessageSquareWarning, Briefcase, Users, UserCog, KeyRound, ScrollText,
   LogOut, Search, X, Phone, MessageCircle, Mail, MapPin, RefreshCw, Trash2, Plus, Lock, ShieldCheck, CheckCircle,
-  BarChart3, CalendarDays, Wrench, ReceiptText, Award, Package, ShoppingBag, Store, RotateCcw, FileText, Tags, BadgeCheck, BookOpen, IndianRupee,
+  BarChart3, CalendarDays, Wrench, ReceiptText, Award, Package, ShoppingBag, Store, RotateCcw, FileText, Tags, BadgeCheck, BookOpen, IndianRupee, Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, waLink } from '../lib/api';
@@ -18,6 +18,7 @@ import Claims from './admin/Claims';
 import { DocumentsAdmin, CatalogueAdmin } from './admin/Technical';
 import JobPhotos from './admin/JobPhotos';
 import { LicencesAdmin, StandardsAdmin, ReferencePricesAdmin } from './admin/Registry';
+import AiAdmin from './admin/AiAdmin';
 import './Admin.css';
 
 const COMPLAINT_STATUSES = ['pending', 'in_progress', 'resolved', 'closed'];
@@ -543,6 +544,7 @@ const Admin = () => {
     { id: 'jobs', label: 'My jobs', icon: Wrench, show: isTechnician },
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, show: can('reports.view') },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, show: can('reports.view') },
+    { id: 'ai', label: 'PestKill AI', icon: Sparkles, show: true },
     { id: 'bookings', label: 'Bookings', icon: CalendarCheck, show: can('services.view') || can('services.assign') },
     { id: 'schedule', label: 'Schedule', icon: CalendarDays, show: can('services.view') || can('services.assign') },
     { id: 'claims', label: 'Warranty claims', icon: RotateCcw, show: can('services.view') || can('services.assign') || can('services.manage') },
@@ -615,6 +617,7 @@ const Admin = () => {
             </header>
             {current.id === 'overview' && <Overview go={go} />}
             {current.id === 'jobs' && <MyJobs notify={notify} />}
+            {current.id === 'ai' && <AiAdmin />}
             {current.id === 'analytics' && <Analytics />}
             {current.id === 'bookings' && <Bookings notify={notify} onInvoice={(l) => { setInvoiceLead(l); setActive('invoices'); }} />}
             {current.id === 'schedule' && <Schedule onOpen={() => setActive('bookings')} />}

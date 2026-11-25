@@ -24,7 +24,7 @@ const wa = (text) => `https://wa.me/${businessConfig.whatsappNumber.replace(/[^0
 
 const ROLES = [
   { key: 'pco', title: 'Pest Control Operator', icon: Wrench, intro: 'Buy professional products, calculate doses from verified label data and download SDS.',
-    links: [['PCO shop: all products', '/shop'], ['Open or check your PCO account', '/pco-account'], ['Dosage calculator', '/shop/dose-calculator'], ['SDS, labels and datasheets', '/shop/library'], ['Pest knowledge centre', '/knowledge'], ['Technical standards (IS 6313)', '/technical-standards']] },
+    links: [['PCO shop: all products', '/shop'], ['Open or check your PCO account', '/pco-account'], ['Dosage calculator', '/shop/dose-calculator'], ['SDS, labels and datasheets', '/shop/library'], ['Pest knowledge centre', '/knowledge'], ['Technical standards (IS 6313)', '/technical-standards'], ['PestKill AI: ask about products and documents', '/pestkill-ai']] },
   { key: 'architect', title: 'Architect', icon: Ruler, intro: 'Specify anti-termite protection at design stage and get technical documents for your drawings.',
     links: [['Porous pipe anti-termite system', '/services/anti-termite-piping'], ['Pre-construction termite treatment', '/termite-control'], ['Technical documents', '/shop/library'], ['Send a project enquiry', '/contact?subject=Architect%20project%20enquiry']] },
   { key: 'builder', title: 'Builder / Developer', icon: Building2, intro: 'Pre-construction treatment with certificates your buyers can verify, for every project size.',

@@ -36,7 +36,7 @@ before(async () => {
   server = spawn(process.execPath, ['src/server.js'], {
     cwd: ROOT,
     env: { ...process.env, PORT: String(PORT), PGLITE_DIR: 'memory://', DATABASE_URL: '', RENDER: '', SITE_URL: '', NODE_ENV: 'test', JWT_SECRET: 'x'.repeat(40),
-      OWNER_NAME: 'Test Owner', OWNER_EMAIL: 'owner@test.local', OWNER_PASSWORD: 'OwnerPass123', GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on', RATE_LIMITS: process.env.KEEP_LIMITS ? '' : 'off' },
+      OWNER_NAME: 'Test Owner', OWNER_EMAIL: 'owner@test.local', OWNER_PASSWORD: 'OwnerPass123', GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on', RATE_LIMITS: process.env.KEEP_LIMITS ? '' : 'off', ANTHROPIC_API_KEY: '', ANTHROPIC_AUTH_TOKEN: '', ANTHROPIC_BASE_URL: '' },
   });
   server.stdout.on('data', (d) => { log += d; });
   server.stderr.on('data', (d) => { log += d; });
@@ -653,4 +653,16 @@ test('PCO eligibility needs an unexpired licence date, in approval as in orderin
   assert.equal(r.s, 400, 'a validity date is required');
   const me = (await call('GET', '/buyers/me', null, P)).j;
   assert.ok(!me || me.status !== 'approved');
+});
+
+test('PestKill AI without an API key: says so, never returns a made-up answer', async () => {
+  const st = (await call('GET', '/ai/status')).j;
+  assert.equal(st.configured, false);
+  assert.equal(st.model, null);
+  const r = await call('POST', '/ai/chat', { message: 'How much is 2BHK pest control?' });
+  assert.equal(r.s, 503);
+  assert.equal(r.j.code, 'AI_NOT_CONFIGURED');
+  assert.equal(r.j.message, undefined, 'no answer text');
+  const q = (await call('POST', '/ai/quote', { service: 'general', size: '2BHK' })).j;
+  assert.deepEqual([q.subtotal.min, q.gst.min, q.total.min], [1500, 270, 1770]);
 });
