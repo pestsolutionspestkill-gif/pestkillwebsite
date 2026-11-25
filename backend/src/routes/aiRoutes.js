@@ -30,7 +30,7 @@ const clientKey = (req) => (req.user ? `u:${req.user.id}` : `ip:${hash(req.ip)}`
 
 router.get('/status', optionalAuth, (req, res) => {
   const cfg = aiConfig();
-  res.json({ configured: cfg.configured, provider: cfg.provider, model: cfg.configured ? cfg.model : null, modes: modesFor(req.user), signedIn: Boolean(req.user) });
+  res.json({ configured: cfg.configured, provider: cfg.provider, model: cfg.configured ? cfg.model : null, modes: modesFor(req.user), signedIn: Boolean(req.user), sharesWithProvider: cfg.limitPersonalData });
 });
 
 router.get('/search', searchLimiter, ah(async (req, res) => {
@@ -86,10 +86,11 @@ router.post('/chat', chatLimiter, optionalAuth, ah(async (req, res) => {
   const found = await search(query, { k: 7 });
   const sources = [...await coreSources(), ...found.filter((s) => s.id !== 'business' && s.id !== 'pricing')];
   let account = 'Visitor (not signed in). No account records available.';
+  const limit = aiConfig().limitPersonalData;
   if (req.user) {
-    if (mode === 'insights') account = await adminContext();
-    else if (mode === 'field') account = await technicianContext(req.user);
-    else account = await customerContext(req.user);
+    if (mode === 'insights') account = await adminContext({ limit });
+    else if (mode === 'field') account = await technicianContext(req.user, { limit });
+    else account = await customerContext(req.user, { limit });
   }
   let est = '';
   if (mode === 'quote' && b.quote) {

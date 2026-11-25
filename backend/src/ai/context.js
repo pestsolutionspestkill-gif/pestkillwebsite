@@ -17,18 +17,18 @@ export const modesFor = (user) => {
 };
 
 /** Customer's own records: the "Digital Pest Passport" view, built only from what is recorded. */
-export const customerContext = async (user) => {
+export const customerContext = async (user, { limit = false } = {}) => {
   const leads = await db.all(`SELECT id, ref, service, property, address, city, status, preferred_date, scheduled_at, completed_at, warranty,
       completion_notes, chemicals_used, created_at FROM leads WHERE user_id = ? ORDER BY created_at DESC LIMIT 30`, user.id);
   const orders = await db.all(`SELECT id, status, payment_status, payment_method, total, created_at FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 10`, user.id);
   const complaints = await db.all('SELECT id, subject, status, response, created_at FROM complaints WHERE user_id = ? ORDER BY created_at DESC LIMIT 10', user.id);
   const buyer = await db.get('SELECT status, licence_valid_till FROM buyer_profiles WHERE user_id = ?', user.id);
-  const lines = [`Customer: ${user.name}.`];
+  const lines = [limit ? 'Customer: signed-in account holder (personal details withheld).' : `Customer: ${user.name}.`];
   if (!leads.length) lines.push('No bookings recorded for this account.');
   // Group visits by address: one "property" per address.
   const props = new Map();
   for (const l of leads) {
-    const key = `${clip(l.address, 120) || 'Address not recorded'}${l.city ? `, ${l.city}` : ''}`;
+    const key = limit ? (l.city || 'City not recorded') : `${clip(l.address, 120) || 'Address not recorded'}${l.city ? `, ${l.city}` : ''}`;
     if (!props.has(key)) props.set(key, []);
     props.get(key).push(l);
   }
@@ -51,18 +51,20 @@ export const customerContext = async (user) => {
 };
 
 /** Technician: only jobs assigned to them. */
-export const technicianContext = async (user) => {
+export const technicianContext = async (user, { limit = false } = {}) => {
   const jobs = await db.all(`SELECT ref, service, property, address, city, status, scheduled_at, area_sqft, message, completion_notes, chemicals_used
     FROM leads WHERE technician_id = ? AND (status NOT IN ('completed','cancelled') OR completed_at >= ${NOW} - interval '14 days')
     ORDER BY (scheduled_at IS NULL), scheduled_at LIMIT 20`, user.id);
-  if (!jobs.length) return `Technician: ${user.name}. No jobs assigned right now.`;
-  return [`Technician: ${user.name}. Assigned jobs:`, ...jobs.map((j) => `  - ${j.ref}: ${j.service}; ${j.property || ''}; ${clip(j.address, 100)}${j.city ? `, ${j.city}` : ''}; status ${j.status}` +
+  const who = limit ? 'Technician' : `Technician: ${user.name}.`;
+  if (!jobs.length) return `${who} No jobs assigned right now.`;
+  return [`${who} Assigned jobs:`, ...jobs.map((j) => `  - ${j.ref}: ${j.service}; ${j.property || ''}; ${limit ? '' : clip(j.address, 100)}${j.city ? `, ${j.city}` : ''}; status ${j.status}` +
     `${j.scheduled_at ? `; scheduled ${day(j.scheduled_at)}` : ''}${j.area_sqft ? `; area ${j.area_sqft} sq.ft.` : ''}${j.message ? `; customer note: ${clip(j.message, 160)}` : ''}` +
     `${j.completion_notes ? `; report so far: ${clip(j.completion_notes, 200)}` : ''}${j.chemicals_used ? `; products recorded: ${clip(j.chemicals_used, 120)}` : ''}`)].join('\n');
 };
 
 /** Owner / manager: aggregated business data (no passwords, no documents). */
-export const adminContext = async () => {
+export const adminContext = async ({ limit = false } = {}) => {
+  const nm = (n) => (limit ? '' : ` ${clip(n, 40)}`);
   const q = async (sql, ...p) => (await db.get(sql, ...p))?.n ?? 0;
   const byStatus = await db.all("SELECT status, COUNT(*)::int n FROM leads WHERE created_at >= NOW() - interval '90 days' GROUP BY status ORDER BY n DESC");
   const newLeads = await db.all("SELECT ref, name, service, city, status, created_at FROM leads WHERE created_at >= NOW() - interval '7 days' ORDER BY created_at DESC LIMIT 15");
@@ -81,8 +83,8 @@ export const adminContext = async () => {
   return [
     'Business data (read-only, from the PestKill database):',
     `Bookings/leads last 90 days by status: ${byStatus.map((s) => `${s.status} ${s.n}`).join(', ') || 'none'}.`,
-    `New leads last 7 days: ${newLeads.map((l) => `${l.ref} ${clip(l.name, 40)} (${l.service || '—'}, ${l.city || '—'}, ${l.status}, ${day(l.created_at)})`).join('; ') || 'none'}.`,
-    `Leads still "new" after a day (follow up): ${followUp.map((l) => `${l.ref} ${clip(l.name, 40)} ${l.service || ''} ${day(l.created_at)}`).join('; ') || 'none'}.`,
+    `New leads last 7 days: ${newLeads.map((l) => `${l.ref}${nm(l.name)} (${l.service || '—'}, ${l.city || '—'}, ${l.status}, ${day(l.created_at)})`).join('; ') || 'none'}.`,
+    `Leads still "new" after a day (follow up): ${followUp.map((l) => `${l.ref}${nm(l.name)} ${l.service || ''} ${day(l.created_at)}`).join('; ') || 'none'}.`,
     `Open jobs without a technician: ${unassigned}. Jobs completed last 30 days: ${completed30}.`,
     `Pending complaints: ${complaints.map((c) => `#${c.id} "${clip(c.subject, 80)}" ${day(c.created_at)}`).join('; ') || 'none'}. Open warranty claims: ${claims}.`,
     `Low stock (≤5): ${lowStock.map((p) => `${p.brand} ${p.name} ${p.pack_size}: ${p.stock}`).join('; ') || 'none'}. Batch expiry dates are not tracked in the system.`,

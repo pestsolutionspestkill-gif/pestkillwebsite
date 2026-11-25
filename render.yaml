@@ -24,6 +24,8 @@ services:
         sync: false
       - key: SITE_URL                # Your public address, e.g. https://www.pestkill.in (used in sitemap and canonical links)
         sync: false
+      - key: GEMINI_API_KEY          # PestKill AI on Google Gemma 4 (free tier). Create at https://aistudio.google.com/apikey
+        sync: false
       - key: ANTHROPIC_API_KEY       # Optional: switches PestKill AI answers on (paid per use; set only after approval)
         sync: false
       - key: GOOGLE_SITE_VERIFICATION # Optional: the content="..." code from Google Search Console (HTML tag method)

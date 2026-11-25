@@ -54,7 +54,7 @@ router.post('/', auth, ah(async (req, res) => {
     let count = 0;
     const lines = [];
     for (const [productId, qty] of wanted) {
-      const p = await t.get('SELECT id, name, brand, pack_size, mrp, mrp_verified, pco_price, offer_price, offer_ends, stock, is_active FROM products WHERE id = ? FOR UPDATE', productId);
+      const p = await t.get('SELECT id, name, brand, pack_size, mrp, mrp_verified, mrp_source_url, mrp_checked_on, pco_price, offer_price, offer_ends, stock, is_active FROM products WHERE id = ? FOR UPDATE', productId);
       if (!p || !p.is_active) throw new ValidationError('A product in your cart is no longer available.');
       const price = bestPrice(p, { pco: true });
       if (price == null) throw new ValidationError(`${p.name} (${p.pack_size}) is price-on-request. Remove it and ask us for a quote.`);

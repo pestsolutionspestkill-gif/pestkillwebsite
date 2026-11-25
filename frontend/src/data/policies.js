@@ -5,7 +5,7 @@ import { GST_NOTE } from './pricing.js';
 
 const { businessName, officeAddress, phoneNumber, email, gstin, udyam, licenceNumber, saleLicenceNumber } = businessConfig;
 const contact = `${businessName}, ${officeAddress}. Phone / WhatsApp: ${phoneNumber}. Email: ${email}.`;
-export const POLICY_UPDATED = '2026-11-25';
+export const POLICY_UPDATED = '2026-11-26';
 
 export const POLICIES = {
   'privacy-policy': {
@@ -29,6 +29,10 @@ export const POLICIES = {
         'Only staff who need it for their work. Technicians see the details of jobs assigned to them.',
         'PCO licence and GST documents are visible only to the owner and staff with buyer-verification rights.',
         'We do not sell your information. We share it only when needed to deliver a service or order (for example, a courier needs your address) or when the law requires it.',
+      ]],
+      ['PestKill AI', [
+        'Questions and photos you send to PestKill AI are passed to the AI service that writes the answer. PestKill stores the text of your conversation (not your photos) so you can see it again.',
+        'The AI service we use is Google’s Gemma model through Google’s Gemini API free tier. Google may use content sent through the free tier to improve its products. For this reason PestKill AI does not send your name, address or phone number, and you should not type personal or sensitive details into it.',
       ]],
       ['WhatsApp, phone and email', [
         'If you choose to contact us on WhatsApp, your message is handled under WhatsApp’s own terms as well as this policy.',

@@ -341,6 +341,9 @@ const SCHEMA = `
   ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_note TEXT;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_verified INTEGER NOT NULL DEFAULT 0;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_verified_at TEXT;
+  -- A public page showing this exact product and pack with a labelled MRP, and the day it was read.
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_source_url TEXT;
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_checked_on TEXT;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS mrp_verified_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS usage_info TEXT;
   ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1;
@@ -618,6 +621,19 @@ export const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-'
 // - refreshes products the owner has never edited (updated_at IS NULL),
 // - never touches products, prices or photos the owner changed in the console.
 // Licences, standards and reference prices: new rows only, never overwriting admin edits.
+// Records verified public MRP sources once per MRP_SOURCES_VERSION. Only where the stored MRP equals
+// the page's figure; never changes a price.
+const seedMrpSources = async () => {
+  const { MRP_SOURCES, MRP_CHECKED_ON, MRP_SOURCES_VERSION } = await import('./data/mrpSources.js');
+  const done = Number((await db.get("SELECT value FROM app_settings WHERE key = 'mrp_sources_version'"))?.value || 0);
+  if (done >= MRP_SOURCES_VERSION) return;
+  for (const [brand, name, pack, mrp, url] of MRP_SOURCES) {
+    await db.run(`UPDATE products SET mrp_source_url = ?, mrp_checked_on = ?, mrp_note = COALESCE(mrp_note, ?)
+      WHERE brand = ? AND name = ? AND pack_size = ? AND mrp = ?`, url, MRP_CHECKED_ON, `Public listing (labelled MRP), checked ${MRP_CHECKED_ON}`, brand, name, pack, mrp);
+  }
+  await db.run("INSERT INTO app_settings (key, value) VALUES ('mrp_sources_version', ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", String(MRP_SOURCES_VERSION));
+};
+
 const seedRegistry = async () => {
   const { LICENCES, STANDARDS, REFERENCE_PRICES, REFERENCE_CHECKED_ON, REGISTRY_VERSION } = await import('./data/registry.js');
   for (const l of LICENCES) {
@@ -691,6 +707,7 @@ export const initDb = async () => {
   await db.run("UPDATE users SET role = 'client' WHERE role = 'user' OR role IS NULL");
   await seedProducts();
   await seedRegistry();
+  await seedMrpSources();
   return db;
 };
 

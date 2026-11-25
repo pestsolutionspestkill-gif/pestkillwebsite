@@ -12,7 +12,7 @@ const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
 
 const BASE_SQL = `SELECT p.id, p.slug, p.name, p.brand, p.technical, p.formulation, p.category, p.pack_size, p.pack_style,
-  p.mrp, p.pco_price, p.offer_price, p.offer_label, p.offer_ends, p.mrp_note, p.mrp_verified, p.mrp_verified_at, p.usage_info, p.description, p.stock, p.is_active, p.sort, p.updated_at,
+  p.mrp, p.pco_price, p.offer_price, p.offer_label, p.offer_ends, p.mrp_note, p.mrp_verified, p.mrp_verified_at, p.mrp_source_url, p.mrp_checked_on, p.usage_info, p.description, p.stock, p.is_active, p.sort, p.updated_at,
   p.how_to_use, p.storage_info, p.faqs, p.target_pests, p.dose_per_litre, p.solution_per_sqm, p.dose_note,
   pi.updated_at AS image_updated, pi.source_url AS image_source, pi.credit AS image_credit, pi.licence_note AS image_licence
   FROM products p LEFT JOIN product_images pi ON pi.product_id = p.id`;
@@ -21,7 +21,9 @@ const BASE_SQL = `SELECT p.id, p.slug, p.name, p.brand, p.technical, p.formulati
 const istToday = () => new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
 // An MRP is shown and sold at only after staff have checked it against the printed pack. Until then
 // the product is "price on request" for customers (staff still see the stored figure and its source).
-export const verifiedMrp = (p) => (p.mrp != null && Number(p.mrp_verified) === 1 ? p.mrp : null);
+// Shown when checked against the printed pack, or matched to a public page (URL and date recorded).
+export const mrpIsVerified = (p) => p.mrp != null && (Number(p.mrp_verified) === 1 || Boolean(p.mrp_source_url && p.mrp_checked_on));
+export const verifiedMrp = (p) => (mrpIsVerified(p) ? p.mrp : null);
 export const activeOffer = (p) => (p.offer_price != null && verifiedMrp(p) != null && p.offer_price < p.mrp && (!p.offer_ends || p.offer_ends >= istToday())
   ? { price: p.offer_price, label: p.offer_label || null, ends: p.offer_ends || null } : null);
 // Lowest applicable price: verified MRP, a running public offer, or the PCO price (approved buyers only).
@@ -64,7 +66,8 @@ const shape = (p, { pco, staff }) => ({
   technical: p.technical,
   formulation: p.formulation,
   category: p.category,
-  pack_size: p.pack_size,
+  // Placeholder sizes ("Standard pack") are shown to customers as a question, not as a size.
+  pack_size: !staff && /^(standard pack|pack|standard|na|-)$/i.test(String(p.pack_size).trim()) ? 'Pack size on request' : p.pack_size,
   pack_style: p.pack_style,
   mrp: staff ? p.mrp : verifiedMrp(p),
   pco_price: pco || staff ? p.pco_price : null,
@@ -82,7 +85,7 @@ const shape = (p, { pco, staff }) => ({
   image_url: p.image_updated ? `/api/products/${p.id}/image?v=${encodeURIComponent(p.image_updated)}` : null,
   // Where the photo came from (shown as a credit; empty until staff record it).
   image_meta: p.image_updated ? { source_url: p.image_source || null, credit: p.image_credit || null, licence: p.image_licence || null } : null,
-  ...(staff ? { offer_price: p.offer_price, offer_label: p.offer_label, offer_ends: p.offer_ends, is_active: p.is_active, mrp_note: p.mrp_note, mrp_verified: p.mrp_verified, mrp_verified_at: p.mrp_verified_at, sort: p.sort, target_pests: p.target_pests } : {}),
+  ...(staff ? { offer_price: p.offer_price, offer_label: p.offer_label, offer_ends: p.offer_ends, is_active: p.is_active, mrp_note: p.mrp_note, mrp_verified: p.mrp_verified, mrp_verified_at: p.mrp_verified_at, mrp_source_url: p.mrp_source_url, mrp_checked_on: p.mrp_checked_on, mrp_public: mrpIsVerified(p), sort: p.sort, target_pests: p.target_pests } : {}),
 });
 
 const viewer = async (req) => {
@@ -110,7 +113,8 @@ export const listProducts = async (query, v = { staff: false, pco: false }) => {
     where.push('(p.name ILIKE ? OR p.brand ILIKE ? OR p.technical ILIKE ? OR p.category ILIKE ? OR p.usage_info ILIKE ?)');
     params.push(q, q, q, q, q);
   }
-  const order = { 'price-asc': 'CASE WHEN p.mrp_verified = 1 THEN p.mrp END ASC NULLS LAST', 'price-desc': 'CASE WHEN p.mrp_verified = 1 THEN p.mrp END DESC NULLS LAST', name: 'p.name ASC, p.mrp ASC' }[req.query.sort] || 'p.sort ASC, p.id ASC';
+  const shownMrp = "CASE WHEN p.mrp_verified = 1 OR (p.mrp_source_url IS NOT NULL AND p.mrp_checked_on IS NOT NULL) THEN p.mrp END";
+  const order = { 'price-asc': `${shownMrp} ASC NULLS LAST`, 'price-desc': `${shownMrp} DESC NULLS LAST`, name: 'p.name ASC, p.mrp ASC' }[req.query.sort] || 'p.sort ASC, p.id ASC';
   let rows = await db.all(`${BASE_SQL} ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY ${order} LIMIT 500`, ...params);
   const pest = PESTS[req.query.pest] ? req.query.pest : null;
   if (pest) rows = rows.filter((p) => pestsFor(p).includes(pest));
@@ -162,12 +166,12 @@ export const productDetail = async (key, v = { staff: false, pco: false }) => {
   const variants = await db.all(`${BASE_SQL} WHERE p.brand = ? AND p.name = ? AND p.is_active = 1 ORDER BY p.mrp ASC NULLS LAST, p.id`, p.brand, p.name);
   // Alternatives with the same active ingredient from other products (one pack per product).
   const equivalents = p.technical
-    ? await db.all(`SELECT DISTINCT ON (p.brand, p.name) p.id, p.slug, p.name, p.brand, p.pack_size, p.mrp, p.mrp_verified, p.technical
+    ? await db.all(`SELECT DISTINCT ON (p.brand, p.name) p.id, p.slug, p.name, p.brand, p.pack_size, p.mrp, p.mrp_verified, p.mrp_source_url, p.mrp_checked_on, p.technical
         FROM products p WHERE p.is_active = 1 AND lower(p.technical) = lower(?) AND NOT (p.brand = ? AND p.name = ?)
         ORDER BY p.brand, p.name, p.mrp ASC NULLS LAST LIMIT 4`, p.technical, p.brand, p.name)
     : [];
   return { ...shape(p, v), variants: variants.map((x) => ({ id: x.id, slug: x.slug, pack_size: x.pack_size, mrp: v.staff ? x.mrp : verifiedMrp(x) })),
-    equivalents: equivalents.map(({ mrp_verified: _, ...e }) => ({ ...e, mrp: v.staff ? e.mrp : verifiedMrp({ ...e, mrp_verified: _ }) })),
+    equivalents: equivalents.map(({ mrp_verified: mv, mrp_source_url: su, mrp_checked_on: co, ...e }) => ({ ...e, mrp: v.staff ? e.mrp : verifiedMrp({ ...e, mrp_verified: mv, mrp_source_url: su, mrp_checked_on: co }) })),
     documents: await documentsFor(p.id, levelsFor(v)),
     // Verified label dosage records (used by the dosage calculator).
     doses: await verifiedDosesFor(p.id) };
@@ -217,7 +221,11 @@ const applyChanges = async (t, req, id, body) => {
   if (stock !== undefined) changes.stock = stock;
   if ('mrp' in changes) changes.price = changes.mrp;
   // A changed MRP needs to be checked against the pack again (unless it is confirmed in the same save).
-  if ('mrp' in changes && Number(changes.mrp) !== Number(before.mrp) && changes.mrp_verified !== 1) changes.mrp_verified = 0;
+  if ('mrp' in changes && Number(changes.mrp) !== Number(before.mrp)) {
+    if (changes.mrp_verified !== 1) changes.mrp_verified = 0;
+    // The recorded public source no longer describes this figure.
+    changes.mrp_source_url = null; changes.mrp_checked_on = null;
+  }
   if (changes.mrp_verified === 1 && (Number(before.mrp_verified) !== 1 || 'mrp' in changes)) { changes.mrp_verified_at = new Date().toISOString(); changes.mrp_verified_by = req.user.id; }
   if (changes.mrp_verified === 0) { changes.mrp_verified_at = null; changes.mrp_verified_by = null; }
   checkPrices({ ...before, ...changes });
@@ -290,6 +298,73 @@ router.post('/', requirePermission('products.create'), ah(async (req, res) => {
   const row = await db.get(`INSERT INTO products (${keys.join(', ')}, updated_at) VALUES (${keys.map(() => '?').join(', ')}, ${NOW}) RETURNING id`, ...keys.map((k) => cols[k]));
   audit(req, 'product.create', 'product', row.id, { name: f.name, mrp: f.mrp });
   res.status(201).json(shape(await db.get(`${BASE_SQL} WHERE p.id = ?`, row.id), { staff: true, pco: true }));
+}));
+
+// MRP import from a manufacturer price list (or printed packs). Each row: brand, name, pack, mrp.
+//   exact brand + name + pack          -> MRP updated
+//   one placeholder pack ("Standard pack" / "Pack") for that product -> pack size and MRP set
+//   product known, pack new            -> a new pack row is added (copy of the product)
+//   anything else                      -> reported, not applied
+// apply=false returns the plan only. Applying requires confirm=true: the person attests that every
+// figure is copied from the manufacturer's current MRP list or the printed pack.
+const PLACEHOLDER_PACK = /^(standard pack|pack|standard|na|-)$/i;
+const normKey = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+const normPack = (s) => normKey(s).replace(/\s*(ltr|litre|liter|lt)\b/g, ' l').replace(/\s*(gm|gms|grams?)\b/g, ' g').replace(/(\d)\s*(ml|l|g|kg)\b/g, '$1 $2').replace(/\s+/g, ' ').trim();
+router.post('/mrp-import', requirePermission('products.edit'), ah(async (req, res) => {
+  const rows = Array.isArray(req.body?.rows) ? req.body.rows.slice(0, 1000) : [];
+  if (!rows.length) throw new ValidationError('Paste at least one row: brand, product, pack, MRP.');
+  const apply = req.body.apply === true;
+  if (apply && req.body.confirm !== true) throw new ValidationError('Confirm that every MRP is copied from the manufacturer price list or the printed pack.');
+  const sourceNote = str(req.body.source, { field: 'Source', max: 120 }) || 'Manufacturer MRP price list';
+  const all = await db.all('SELECT id, slug, brand, name, pack_size, mrp, offer_price, pco_price, technical, formulation, category, pack_style, usage_info, description, how_to_use, storage_info, target_pests, faqs, sort, is_active FROM products');
+  const plan = [];
+  const claimed = new Set();
+  for (const [i, r] of rows.entries()) {
+    const brand = str(r.brand, { field: 'Brand', max: 80 });
+    const name = str(r.name, { field: 'Product', max: 120 });
+    const pack = str(r.pack, { field: 'Pack', max: 40 });
+    const mrp = Number(String(r.mrp ?? '').replace(/[₹,\s]/g, ''));
+    const line = { row: i + 1, brand, name, pack, mrp: Number.isFinite(mrp) ? mrp : null };
+    if (!brand || !name || !pack || !Number.isFinite(mrp) || mrp <= 0 || mrp > 10000000) { plan.push({ ...line, action: 'invalid', reason: 'Needs brand, product, pack and an MRP above 0.' }); continue; }
+    const same = all.filter((p) => normKey(p.brand) === normKey(brand) && normKey(p.name) === normKey(name));
+    if (!same.length) { plan.push({ ...line, action: 'unmatched', reason: 'No product with this brand and name.' }); continue; }
+    let target = same.find((p) => normPack(p.pack_size) === normPack(pack) && !claimed.has(p.id));
+    let action = 'update';
+    if (!target) {
+      const placeholder = same.find((p) => PLACEHOLDER_PACK.test(p.pack_size.trim()) && !claimed.has(p.id));
+      if (placeholder) { target = placeholder; action = 'set-pack'; } else { target = same[0]; action = 'create'; }
+    }
+    if (action !== 'create') claimed.add(target.id);
+    const offer = action === 'create' ? null : target.offer_price;
+    if (offer != null && offer >= mrp) { plan.push({ ...line, action: 'conflict', productId: target.id, reason: `Running offer ₹${offer} is not below this MRP; change the offer first.` }); continue; }
+    if (action !== 'create' && target.pco_price != null && target.pco_price > mrp) { plan.push({ ...line, action: 'conflict', productId: target.id, reason: `PCO price ₹${target.pco_price} is above this MRP.` }); continue; }
+    plan.push({ ...line, action, productId: target.id, currentPack: target.pack_size, currentMrp: target.mrp });
+  }
+  const counts = plan.reduce((m, x) => ({ ...m, [x.action]: (m[x.action] || 0) + 1 }), {});
+  if (!apply) return res.json({ plan, counts, applied: false });
+
+  const today = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+  const note = `${sourceNote}, entered ${today}`;
+  await db.tx(async (t) => {
+    for (const x of plan) {
+      if (x.action === 'update' || x.action === 'set-pack') {
+        await t.run(`UPDATE products SET mrp = ?, price = ?, pack_size = ?, mrp_note = ?, mrp_verified = 1, mrp_verified_at = ?, mrp_verified_by = ?,
+          mrp_source_url = NULL, mrp_checked_on = NULL, updated_at = ${NOW} WHERE id = ?`, x.mrp, x.mrp, x.action === 'set-pack' ? x.pack : x.currentPack, note, new Date().toISOString(), req.user.id, x.productId);
+      } else if (x.action === 'create') {
+        const src = all.find((p) => p.id === x.productId);
+        let slug = slugify(`${src.brand} ${src.name} ${x.pack}`);
+        if (await t.get('SELECT 1 FROM products WHERE slug = ?', slug)) slug = `${slug}-${Date.now().toString(36)}`;
+        const row = await t.get(`INSERT INTO products (name, brand, technical, formulation, category, pack_size, pack_style, mrp, price, mrp_note, mrp_verified, mrp_verified_at, mrp_verified_by,
+            usage_info, description, how_to_use, storage_info, target_pests, faqs, sort, slug, is_active, stock, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ${NOW}) RETURNING id`,
+        src.name, src.brand, src.technical, src.formulation, src.category, x.pack, src.pack_style, x.mrp, x.mrp, note, new Date().toISOString(), req.user.id,
+        src.usage_info, src.description, src.how_to_use, src.storage_info, src.target_pests, src.faqs, (src.sort || 0) + 1, slug, src.is_active);
+        x.productId = row.id;
+      }
+    }
+  });
+  audit(req, 'product.mrp_import', 'product', null, { counts, source: sourceNote });
+  res.json({ plan, counts, applied: true });
 }));
 
 // Bulk price / offer / stock editor: all rows are saved together or none are.

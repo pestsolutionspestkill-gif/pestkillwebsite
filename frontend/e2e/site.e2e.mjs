@@ -27,7 +27,7 @@ before(async () => {
     cwd: backendDir,
     env: { ...process.env, PORT: String(PORT), PGLITE_DIR: 'memory://', DATABASE_URL: '', NODE_ENV: 'test', RATE_LIMITS: 'off', SITE_URL: '',
       JWT_SECRET: 'e'.repeat(40), OWNER_NAME: 'E2E Owner', OWNER_EMAIL: OWNER.email, OWNER_PASSWORD: OWNER.password,
-      GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on', ANTHROPIC_API_KEY: '', ANTHROPIC_AUTH_TOKEN: '', ANTHROPIC_BASE_URL: '' },
+      GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on', ANTHROPIC_API_KEY: '', ANTHROPIC_AUTH_TOKEN: '', ANTHROPIC_BASE_URL: '', GEMINI_API_KEY: '', AI_PROVIDER: '' },
   });
   server.stdout.on('data', (d) => { log += d; });
   server.stderr.on('data', (d) => { log += d; });
@@ -806,10 +806,14 @@ test('prices and claims: official rates with GST note; unverified claims are gon
   }
   await page.goto(`${BASE}/`);
   assert.match(await page.textContent('main'), /dispatched from Jaipur/);
-  // An MRP not yet checked against the pack is never shown to customers.
-  await page.goto(`${BASE}/shop/envu-agenda-25-ec-100-ml`);
+  // An MRP with no checked source (pack or public page) is never shown to customers…
+  await page.goto(`${BASE}/shop/syngenta-icon-10-cs-100-ml`);
   await page.waitForSelector('.pd-info');
   assert.match(await page.textContent('.pd-info'), /Price on request/);
+  // …while one matched to a public listing (URL and date recorded) is.
+  await page.goto(`${BASE}/shop/envu-agenda-25-ec-100-ml`);
+  await page.waitForSelector('.pd-info');
+  assert.match(await page.textContent('.pd-info'), /₹320/);
   await page.context().close();
 });
 
@@ -876,9 +880,37 @@ test('PestKill AI in the console: owner gets insights and usage; customers canno
   await page.waitForSelector('.ai-admin .toolbar button:has-text("Business insights")');
   assert.ok(await page.$('.ai-admin .toolbar button:has-text("Field assistant")'));
   await page.waitForSelector('.ai-overview');
-  assert.match(await page.textContent('.ai-overview'), /Not configured: add ANTHROPIC_API_KEY/);
+  assert.match(await page.textContent('.ai-overview'), /Not configured: add GEMINI_API_KEY/);
   assert.deepEqual(await page.problems(), []);
   await page.context().close();
   const r = await api('POST', '/ai/chat', { mode: 'insights', message: 'leads' });
   assert.equal(r.s, 401);
+});
+
+test('MRP import: owner pastes a price list, previews, confirms; customers see the MRP and real pack size', async () => {
+  const page = await openPage();
+  await page.goto(`${BASE}/login`);
+  await page.fill('#email', OWNER.email);
+  await page.fill('#password', OWNER.password);
+  await page.click('form button[type="submit"]');
+  await page.waitForURL('**/admin**');
+  await page.click('.admin-side button:has-text("Products")');
+  await page.click('button:has-text("Import MRP list")');
+  // Test fixture figures only (not real MRPs).
+  await page.fill('.mrp-import textarea', 'Brand, Product, Pack, MRP\nKalyani\tPexter\t1 L\t1999\nKalyani, Nonexistent Product, 1 L, 50');
+  await page.click('.mrp-import button:has-text("Preview")');
+  await page.waitForSelector('.mrp-import table');
+  const preview = await page.textContent('.mrp-import table');
+  assert.match(preview, /Pexter[\s\S]*1 L[\s\S]*Set pack size \+ MRP/);
+  assert.match(preview, /Nonexistent Product[\s\S]*No matching product/);
+  assert.ok(await page.isDisabled('.mrp-import button:has-text("Apply")'), 'needs the confirmation tick');
+  await page.check('.mrp-import .check-row input');
+  await page.click('.mrp-import button:has-text("Apply 1 MRPs")');
+  await page.waitForSelector('.toast:has-text("1 MRPs saved")');
+  const p = (await api('GET', '/products?q=Pexter')).j.products.find((x) => x.brand === 'Kalyani');
+  assert.deepEqual([p.pack_size, p.mrp], ['1 L', 1999]);
+  const other = (await api('GET', '/products?q=Ozier')).j.products.find((x) => x.brand === 'Kalyani');
+  assert.equal(other.pack_size, 'Pack size on request', 'placeholder sizes are not shown as sizes');
+  assert.deepEqual(await page.problems(), []);
+  await page.context().close();
 });

@@ -61,7 +61,7 @@ before(async () => {
     cwd: ROOT,
     env: { ...process.env, PORT: String(PORT), PGLITE_DIR: 'memory://', DATABASE_URL: '', RENDER: '', SITE_URL: '', NODE_ENV: 'test', JWT_SECRET: 'y'.repeat(40),
       OWNER_NAME: 'AI Owner', OWNER_EMAIL: 'owner@ai.test', OWNER_PASSWORD: 'OwnerPass123', GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on', RATE_LIMITS: 'off',
-      ANTHROPIC_API_KEY: 'sk-test-local-stand-in', ANTHROPIC_BASE_URL: `http://127.0.0.1:${fake.address().port}`, AI_MODEL: '', AI_DAILY_LIMIT_VISITOR: '12' },
+      AI_PROVIDER: 'anthropic', GEMINI_API_KEY: '', ANTHROPIC_API_KEY: 'sk-test-local-stand-in', ANTHROPIC_BASE_URL: `http://127.0.0.1:${fake.address().port}`, AI_MODEL: '', AI_DAILY_LIMIT_VISITOR: '12' },
   });
   server.stdout.on('data', (d) => { log += d; });
   server.stderr.on('data', (d) => { log += d; });

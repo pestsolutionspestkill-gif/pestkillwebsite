@@ -108,10 +108,20 @@ operators only**:
    *My account → Shop orders*. Staff approve, reject (with a reason) or mark replaced under
    **Admin → Shop orders → Expired-product replacement requests**. Photos are private.
 
-Prices: customers see an **MRP only after staff tick "I have checked this MRP against the printed pack"**.
-Until then the product shows "Price on request" with a WhatsApp quote button and cannot be ordered online at
-that price. Changing an MRP clears the tick. The date and the staff member are recorded. An optional
-**PCO price** (≤ MRP) is shown only to approved buyers.
+Prices: customers see an MRP only when it is verified in one of three ways:
+- **Checked against the printed pack**: staff tick the box in the product drawer.
+- **Imported from a manufacturer MRP list**: Admin → Products → *Import MRP list*.
+  - Paste "Brand, Product, Pack, MRP" lines (straight from Excel).
+  - Preview, tick the confirmation, then apply.
+  - Exact packs are updated, "Standard pack" placeholders get their real size, and new pack sizes are added.
+  - Rows that don't match, or that would conflict with a running offer, are reported and not applied.
+- **Matched to a public page** showing the same product and pack with a labelled MRP.
+  - The URL and date are recorded in `backend/src/data/mrpSources.js`.
+  - 40 packs were checked this way on 2026-11-26.
+
+Everything else shows "Price on request" with a WhatsApp quote button and cannot be ordered online at that
+price. Changing an MRP clears its verification. Placeholder pack names are shown to customers as "Pack size on
+request". An optional **PCO price** (≤ MRP) is shown only to approved buyers.
 
 **PCO eligibility** (server-side, for both approval and ordering): approved status **and** a recorded licence
 validity date that has not passed. Records without a validity date do not qualify. The buyer has to re-submit.
@@ -313,9 +323,11 @@ The page is `/pestkill-ai`. It is linked from the header, the phone bottom bar (
 
 **How it is built** (`backend/src/ai/`, routes in `backend/src/routes/aiRoutes.js`):
 - `provider.js`: the model adapter.
-  - Uses the official Anthropic SDK, model `claude-opus-5-5`, with the server-side fallback on refusals.
-  - The rule block is cached.
-  - Errors are mapped to clear messages: not configured, busy, unreachable, key rejected.
+  - **Google Gemma 4** (`gemma-4-31b-it`) on the Gemini API free tier is used automatically when `GEMINI_API_KEY` is set.
+    - Google's free tier may use submitted content to improve its products. So in this mode PestKill AI never sends customers' names, addresses or phone numbers, only booking references, services and cities.
+    - The privacy policy and the AI page say so.
+  - Alternatively, Claude (`claude-opus-5-5`, paid) runs through the Anthropic SDK with `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`.
+  - Errors are mapped to clear messages: not configured, busy or free limit reached, unreachable, key rejected.
 - `knowledge.js`: verified knowledge with BM25 keyword search, English and Hindi.
   - It indexes business facts, prices, policies, the Knowledge Centre, the live catalogue (only checked MRPs), published documents, verified label dose records and technical standards.
 - `context.js`: role-scoped account data, read-only.
@@ -324,13 +336,17 @@ The page is `/pestkill-ai`. It is linked from the header, the phone bottom bar (
 - Limits: 20 requests per 10 minutes per connection, plus daily caps (25 for visitors, 80 for customers, 300 for staff), adjustable by environment variables.
 - **Admin → PestKill AI** shows the owner usage, errors and recent feedback.
 
-**Switching it on** needs approval because it is paid per use:
-1. Create an API key in the Anthropic Console.
-2. On Render, set `ANTHROPIC_API_KEY`, then redeploy.
+**Switching it on (free, Google Gemma 4)**:
+1. Sign in at https://aistudio.google.com/apikey with the business Google account.
+2. Click *Create API key*.
+3. On Render, set `GEMINI_API_KEY` to that key, then redeploy.
+   - For local testing, put the same line in `backend/.env`.
+
+Free-tier requests are rate-limited by Google. When the limit is reached, users see "busy, try again in a minute".
 Without the key, the page says AI answers are off. The estimate and verified search still work, and nothing is ever made up.
 
 **Tests**:
-- `backend/test/ai.test.js` runs the real server against a local stand-in for the model API. It covers grounding, prices, role scoping, photo validation, errors, limits and the absence of key leaks.
+- `backend/test/ai.test.js` (Claude) and `backend/test/ai-google.test.js` (Gemma) run the real server against local stand-ins for the model APIs. It covers grounding, prices, role scoping, photo validation, errors, limits and the absence of key leaks.
 - `npm run ai:eval` in `backend/` runs 12 safety and grounding checks against a configured server. It makes paid calls, so run it only after the key is set.
 
 ## Production deployment checklist
@@ -339,8 +355,7 @@ Without the key, the page says AI answers are off. The estimate and verified sea
 2. On Render, set `SITE_URL=https://pestkillsolutions.in` so canonical links and the sitemap use the real domain.
 3. Keep `JWT_SECRET` (32+ characters), `DATABASE_URL`, `OWNER_*` and mail settings as they are. Nothing new is required.
 4. After deploy, the database adds the new columns and tables automatically. Nothing is dropped or reset.
-5. In Admin → Products → *MRP to check*: tick "checked against the printed pack" for each MRP you have
-   confirmed. Until then those products show "Price on request".
+5. In Admin → Products → *Import MRP list*: paste each manufacturer's current MRP list. Until then, products without a verified MRP show "Price on request".
 6. In Admin → Licences: upload both licence copies, enter the authority and validity exactly as printed, and mark them verified.
 7. Check the PCO buyers list. Any approved buyer without a licence validity date must re-submit before ordering.
 8. Open the home page, a service page, the shop, a product, the cart and `/book` on a phone and on a desktop.

@@ -3,6 +3,7 @@
 // live product catalogue, published technical documents (titles and metadata), verified label dose
 // records and technical standards. Nothing here is generated; every chunk points back to a page.
 import db from '../db.js';
+import { mrpIsVerified } from '../routes/productRoutes.js';
 import businessConfig from '../../../frontend/src/data/businessConfig.js';
 import { RATES, GST_NOTE, SERVICE_GST_RATE } from '../../../frontend/src/data/pricing.js';
 import { GUIDES } from '../../../frontend/src/data/knowledge.js';
@@ -63,13 +64,13 @@ const staticChunks = () => {
 /** Chunks read from the database (catalogue, documents, verified doses, standards). */
 const dbChunks = async () => {
   const out = [];
-  const products = await db.all(`SELECT slug, brand, name, technical, formulation, category, pack_size, mrp, mrp_verified, usage_info, target_pests
+  const products = await db.all(`SELECT slug, brand, name, technical, formulation, category, pack_size, mrp, mrp_verified, mrp_source_url, mrp_checked_on, usage_info, target_pests
     FROM products WHERE is_active = 1 ORDER BY brand, name, id`);
   const byName = new Map();
   for (const p of products) {
     const k = `${p.brand}|${p.name}`;
     if (!byName.has(k)) byName.set(k, { ...p, packs: [] });
-    byName.get(k).packs.push(`${p.pack_size}: ${p.mrp != null && Number(p.mrp_verified) === 1 ? `MRP ${inr(p.mrp)}` : 'price on request'}`);
+    byName.get(k).packs.push(`${p.pack_size}: ${mrpIsVerified(p) ? `MRP ${inr(p.mrp)}` : 'price on request'}`);
   }
   for (const p of byName.values()) {
     out.push({ id: `product-${p.slug}`, kind: 'product', title: `${p.brand} ${p.name}`, url: `/shop/${p.slug}`, text:

@@ -20,7 +20,7 @@ const Overview = () => {
       {data && (
         <section className="panel ai-overview">
           <h3>PestKill AI: last 30 days</h3>
-          <p className="adm-muted">Provider: {data.config.provider} · Model: {data.config.model} · {data.config.configured ? 'API key set on the server' : 'Not configured: add ANTHROPIC_API_KEY on the server to switch AI answers on'}</p>
+          <p className="adm-muted">Provider: {data.config.provider} · Model: {data.config.model} · {data.config.configured ? 'API key set on the server' : 'Not configured: add GEMINI_API_KEY (Google Gemma, free) on the server to switch AI answers on'}</p>
           <div className="ai-kpis">
             <div><strong>{data.totals.calls}</strong><span>Requests</span></div>
             <div><strong>{data.totals.errors}</strong><span>Failed</span></div>
@@ -50,7 +50,7 @@ const AiAdmin = () => {
   const current = allowed.find((m) => m.key === mode) || allowed[0];
   return (
     <div className="ai-admin">
-      {!status?.configured && status && <p className="adm-state">AI answers are off until <code>ANTHROPIC_API_KEY</code> is set on the server. Verified knowledge search still works below.</p>}
+      {!status?.configured && status && <p className="adm-state">AI answers are off until <code>GEMINI_API_KEY</code> (Google Gemma, free) is set on the server. Verified knowledge search still works below.</p>}
       <div className="toolbar">
         {allowed.map(({ key, label, icon: Icon }) => (
           <button key={key} type="button" className={`btn btn-sm ${current?.key === key ? 'btn-primary' : 'btn-outline'}`} onClick={() => setMode(key)}><Icon size={14} /> {label}</button>

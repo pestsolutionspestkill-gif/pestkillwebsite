@@ -6,6 +6,7 @@ import PackShot from '../../components/PackShot';
 import { rupees, PAYMENT_LABELS, fmtEnds, PEST_OPTIONS } from '../../lib/shop';
 import { useLoad, State, Badge, fmtDate, fmtDay, label } from './shared';
 import { DocumentManager, DoseManager } from './Technical';
+import MrpImport from './MrpImport';
 
 const PACK_STYLES = ['bottle', 'jerrycan', 'gel', 'sachet', 'tub', 'box'];
 const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -170,7 +171,8 @@ const ProductDrawer = ({ product, brands, categories, onClose, onSaved, onDelete
                 <label>MRP (₹, as printed on pack)<input type="number" min="0" step="0.01" value={form.mrp} onChange={set('mrp')} placeholder="Empty = price on request" /></label>
                 <label>PCO price (₹, optional)<input type="number" min="0" step="0.01" value={form.pcoPrice} onChange={set('pcoPrice')} placeholder="Shown only to approved buyers" /></label>
               </div>
-              {p?.mrp_note && !form.mrpVerified && <p className="mrp-warn"><AlertTriangle size={15} /> MRP source: {p.mrp_note}. Check it against the pack.</p>}
+              {p?.mrp_source_url && !form.mrpVerified && <p className="mrp-ok"><BadgeCheck size={15} /> Shown to customers: matches a public listing checked {p.mrp_checked_on} (<a href={p.mrp_source_url} target="_blank" rel="noopener noreferrer">source</a>).</p>}
+              {p?.mrp != null && !p?.mrp_public && !form.mrpVerified && <p className="mrp-warn"><AlertTriangle size={15} /> Not shown to customers yet{p.mrp_note ? ` (source: ${p.mrp_note})` : ''}. Check it against the pack and tick the box.</p>}
               <label className="check-row"><input type="checkbox" checked={form.mrpVerified} onChange={set('mrpVerified')} /> I have checked this MRP against the printed pack (customers see "Price on request" until this is ticked)</label>
 
               <h4>Offer <small className="adm-muted">(shown to everyone; leave empty for no offer)</small></h4>
@@ -357,17 +359,19 @@ const BulkEditor = ({ rows, onSaved, onCancel, notify }) => {
 
 export const ShopProducts = ({ notify }) => {
   const { can } = useAuth();
-  const { data, setData, error, loading } = useLoad('/products?all=1');
+  const { data, setData, error, loading, reload } = useLoad('/products?all=1');
   const [q, setQ] = useState('');
   const [brand, setBrand] = useState('');
   const [category, setCategory] = useState('');
   const [view, setView] = useState('');
   const [bulk, setBulk] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [open, setOpen] = useState(undefined); // undefined = closed, null = new
   const products = useMemo(() => data?.products || [], [data]);
   const brands = useMemo(() => [...new Set(products.map((p) => p.brand))].sort(), [products]);
   const categories = useMemo(() => [...new Set(products.map((p) => p.category))].sort(), [products]);
-  const toCheck = products.filter((p) => p.mrp != null && !p.mrp_verified).length;
+  // MRPs not yet shown to customers: neither checked against the pack nor matched to a public page.
+  const toCheck = products.filter((p) => p.mrp != null && !p.mrp_public).length;
   const onRequest = products.filter((p) => p.mrp == null).length;
   const onOffer = products.filter((p) => p.offer).length;
   const noPhoto = products.filter((p) => !p.image_url).length;
@@ -375,7 +379,7 @@ export const ShopProducts = ({ notify }) => {
   const rows = products.filter((p) => (!brand || p.brand === brand)
     && (!category || p.category === category)
     && (!q || `${p.name} ${p.brand} ${p.technical} ${p.pack_size}`.toLowerCase().includes(q.toLowerCase()))
-    && (view !== 'check' || (p.mrp != null && !p.mrp_verified))
+    && (view !== 'check' || (p.mrp != null && !p.mrp_public))
     && (view !== 'request' || p.mrp == null)
     && (view !== 'offer' || p.offer)
     && (view !== 'nophoto' || !p.image_url)
@@ -403,6 +407,7 @@ export const ShopProducts = ({ notify }) => {
           <option value="">All products</option><option value="offer">On offer</option><option value="check">MRP to check</option><option value="request">No MRP yet</option><option value="nophoto">No photo</option><option value="hidden">Hidden</option>
         </select>
         <span className="toolbar-count">{rows.length} shown</span>
+        {can('products.edit') && !bulk && <button type="button" className="btn btn-outline btn-sm" onClick={() => setImporting(true)}><Upload size={15} /> Import MRP list</button>}
         {(can('products.edit') || can('inventory.manage')) && !bulk && <button type="button" className="btn btn-navy btn-sm" onClick={() => setBulk(true)}><Pencil size={15} /> Edit prices & offers</button>}
         {can('products.create') && !bulk && <button type="button" className="btn btn-primary btn-sm" onClick={() => setOpen(null)}><Plus size={16} /> Add product</button>}
       </div>
@@ -427,6 +432,7 @@ export const ShopProducts = ({ notify }) => {
           </div>
         )}
       </State>
+      {importing && <MrpImport notify={notify} onClose={() => setImporting(false)} onApplied={() => { setImporting(false); reload(); }} />}
       {open !== undefined && (
         <ProductDrawer key={open?.id || 'new'} product={open} brands={brands} categories={categories} notify={notify}
           onClose={() => setOpen(undefined)} onSaved={(p) => { saved(p); if (!open) setOpen(p); }}

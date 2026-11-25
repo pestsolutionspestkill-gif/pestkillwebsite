@@ -36,7 +36,7 @@ before(async () => {
   server = spawn(process.execPath, ['src/server.js'], {
     cwd: ROOT,
     env: { ...process.env, PORT: String(PORT), PGLITE_DIR: 'memory://', DATABASE_URL: '', RENDER: '', SITE_URL: '', NODE_ENV: 'test', JWT_SECRET: 'x'.repeat(40),
-      OWNER_NAME: 'Test Owner', OWNER_EMAIL: 'owner@test.local', OWNER_PASSWORD: 'OwnerPass123', GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on', RATE_LIMITS: process.env.KEEP_LIMITS ? '' : 'off', ANTHROPIC_API_KEY: '', ANTHROPIC_AUTH_TOKEN: '', ANTHROPIC_BASE_URL: '' },
+      OWNER_NAME: 'Test Owner', OWNER_EMAIL: 'owner@test.local', OWNER_PASSWORD: 'OwnerPass123', GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on', RATE_LIMITS: process.env.KEEP_LIMITS ? '' : 'off', ANTHROPIC_API_KEY: '', ANTHROPIC_AUTH_TOKEN: '', ANTHROPIC_BASE_URL: '', GEMINI_API_KEY: '', AI_PROVIDER: '' },
   });
   server.stdout.on('data', (d) => { log += d; });
   server.stderr.on('data', (d) => { log += d; });
@@ -148,9 +148,21 @@ test('shop: catalogue, photos, PCO approval, offers, stock and orders', async ()
   assert.ok(r.j.products.length >= 140);
   assert.ok(r.j.products.filter((p) => p.image_url).length >= 100);
   let premise = r.j.products.find((p) => p.slug === 'envu-premise-sc-250-ml');
-  // Unchecked MRPs (from retailer listings) are "price on request" for customers until staff check the pack.
-  assert.equal(premise.mrp, null, 'unverified MRP is not public');
-  assert.equal((await call('GET', `/products/${premise.slug}`, null, O)).j.mrp, 1245, 'staff see the stored figure');
+  // MRPs matched to a public listing (URL + date recorded) are public; others stay "price on request".
+  assert.equal(premise.mrp, 1245, 'listing-verified MRP is public');
+  const premiseStaff = (await call('GET', `/products/${premise.slug}`, null, O)).j;
+  assert.match(premiseStaff.mrp_source_url, /^https:\/\/pestobazaar\.com\/products\/premise-sc-250-ml$/);
+  assert.equal(premiseStaff.mrp_checked_on, '2026-11-26');
+  const icon = r.j.products.find((p) => p.slug === 'syngenta-icon-10-cs-100-ml');
+  assert.equal(icon.mrp, null, 'an MRP with no checked source is not public');
+  assert.equal((await call('GET', `/products/${icon.slug}`, null, O)).j.mrp, 510, 'staff see the stored figure');
+  // Changing an MRP drops its recorded source until it is checked again.
+  const agenda = r.j.products.find((p) => p.slug === 'envu-agenda-25-ec-100-ml');
+  assert.equal(agenda.mrp, 320);
+  await call('PATCH', '/products/bulk', { updates: [{ id: agenda.id, mrp: 330 }] }, O);
+  assert.equal((await call('GET', `/products/${agenda.slug}`)).j.mrp, null, 'changed MRP hidden until checked');
+  await call('PATCH', '/products/bulk', { updates: [{ id: agenda.id, mrp: 320, mrpVerified: true }] }, O);
+  assert.equal((await call('GET', `/products/${agenda.slug}`)).j.mrp, 320);
   const premiseIds = r.j.products.filter((p) => p.brand === 'Envu' && p.name === 'Premise SC').map((p) => p.id);
   r = await call('PATCH', '/products/bulk', { updates: premiseIds.map((id) => ({ id, mrpVerified: true })) }, O);
   assert.equal(r.s, 200, JSON.stringify(r.j));
@@ -665,4 +677,35 @@ test('PestKill AI without an API key: says so, never returns a made-up answer', 
   assert.equal(r.j.message, undefined, 'no answer text');
   const q = (await call('POST', '/ai/quote', { service: 'general', size: '2BHK' })).j;
   assert.deepEqual([q.subtotal.min, q.gst.min, q.total.min], [1500, 270, 1770]);
+});
+
+test('MRP import: preview, exact matches, placeholder packs, new packs, conflicts, confirmation', async () => {
+  const rows = [
+    { brand: 'Kalyani', name: 'Ozier', pack: '250 ml', mrp: '1,150' },
+    { brand: 'Kalyani', name: 'Ozier', pack: '1 L', mrp: '₹4200' },
+    { brand: 'Heranba', name: 'Reprove', pack: '100 ml', mrp: 240 },
+    { brand: 'Heranba', name: 'Imaginary Product', pack: '1 L', mrp: 100 },
+    { brand: 'Heranba', name: 'Reprove', pack: '1 L', mrp: '' },
+  ];
+  const C = await register('Mrp Viewer', 'mrpviewer@example.com');
+  assert.equal((await call('POST', '/products/mrp-import', { rows }, C)).s, 403, 'staff only');
+  let r = await call('POST', '/products/mrp-import', { rows }, O);
+  assert.equal(r.s, 200, JSON.stringify(r.j));
+  assert.equal(r.j.applied, false);
+  assert.deepEqual(r.j.plan.map((x) => x.action), ['set-pack', 'create', 'update', 'unmatched', 'invalid']);
+  assert.equal(r.j.plan[0].currentPack, 'Standard pack');
+  assert.equal((await call('POST', '/products/mrp-import', { rows, apply: true }, O)).s, 400, 'needs confirmation');
+  r = await call('POST', '/products/mrp-import', { rows, apply: true, confirm: true, source: 'Kalyani MRP list Nov 2026' }, O);
+  assert.equal(r.j.applied, true);
+  const ozier = (await call('GET', '/products?q=Ozier')).j.products.filter((p) => p.brand === 'Kalyani');
+  assert.deepEqual(ozier.map((p) => [p.pack_size, p.mrp]).sort(), [['1 L', 4200], ['250 ml', 1150]]);
+  const reprove = (await call('GET', '/products?q=Reprove')).j.products.find((p) => p.pack_size === '100 ml');
+  assert.equal(reprove.mrp, 240, 'imported MRPs are public (attested from the price list)');
+  const staff = (await call('GET', `/products/${reprove.slug}`, null, O)).j;
+  assert.match(staff.mrp_note, /Kalyani MRP list Nov 2026|MRP list/);
+  assert.equal(staff.mrp_verified, 1);
+  // An import never puts an MRP below a running offer.
+  await call('PATCH', '/products/bulk', { updates: [{ id: reprove.id, offerPrice: 200 }] }, O);
+  r = await call('POST', '/products/mrp-import', { rows: [{ brand: 'Heranba', name: 'Reprove', pack: '100 ml', mrp: 180 }] }, O);
+  assert.equal(r.j.plan[0].action, 'conflict');
 });
