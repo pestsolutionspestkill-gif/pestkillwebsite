@@ -30,10 +30,6 @@ export const POLICIES = {
         'PCO licence and GST documents are visible only to the owner and staff with buyer-verification rights.',
         'We do not sell your information. We share it only when needed to deliver a service or order (for example, a courier needs your address) or when the law requires it.',
       ]],
-      ['PestKill AI', [
-        'Questions and photos you send to PestKill AI are passed to the AI service that writes the answer. PestKill stores the text of your conversation (not your photos) so you can see it again.',
-        'The AI service we use is Google’s Gemma model through Google’s Gemini API free tier. Google may use content sent through the free tier to improve its products. For this reason PestKill AI does not send your name, address or phone number, and you should not type personal or sensitive details into it.',
-      ]],
       ['WhatsApp, phone and email', [
         'If you choose to contact us on WhatsApp, your message is handled under WhatsApp’s own terms as well as this policy.',
       ]],

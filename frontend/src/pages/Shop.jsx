@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useBuyer } from '../hooks/useBuyer';
 import PackShot from '../components/PackShot';
-import { priceInfo, rupees, quoteLink, fmtEnds, PEST_OPTIONS, pestLabel } from '../lib/shop';
+import { priceInfo, priceNote, rupees, quoteLink, fmtEnds, PEST_OPTIONS, pestLabel } from '../lib/shop';
 import './Shop.css';
 import Credentials, { LicenceLine } from '../components/Credentials';
 
@@ -56,9 +56,9 @@ export const Price = ({ product, large = false }) => {
       {info.kind === 'offer' && <span className="price-offer-tag">{info.offer.label || 'Special offer'}{info.offer.ends ? ` · till ${fmtEnds(info.offer.ends)}` : ''}</span>}
       <div className="price-row">
         <span className="price-pay">{rupees(info.pay)}</span>
-        {info.kind !== 'mrp' && <><span className="price-mrp">MRP {rupees(info.mrp)}</span><span className="price-off">{info.off}% off</span></>}
+        {info.kind !== 'mrp' && info.mrp != null && <><span className="price-mrp">MRP {rupees(info.mrp)}</span><span className="price-off">{info.off}% off</span></>}
       </div>
-      <span className="price-note">{{ pco: 'Your PCO price · ', offer: 'Offer price · ', mrp: 'MRP · ' }[info.kind]}incl. of all taxes</span>
+      <span className="price-note">{priceNote(info)}incl. of all taxes</span>
     </div>
   );
 };

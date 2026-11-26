@@ -491,20 +491,6 @@ fieldset.plain { display: contents; border: none; padding: 0; margin: 0; }
 .rep-admin { margin-top: 22px; padding: 18px; }
 .rep-admin h3 { margin: 0 0 4px; }
 
-/* PestKill AI in the console */
-.ai-admin { display: grid; gap: 14px; }
-.ai-overview { padding: 18px; }
-.ai-overview h3 { margin: 0 0 4px; }
-.ai-overview h4 { margin: 14px 0 6px; }
-.ai-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 12px 0; }
-.ai-kpis div { padding: 12px; border-radius: 12px; background: #F5F5F7; }
-.ai-kpis strong { display: block; font-size: 1.3rem; }
-.ai-kpis span { font-size: .8rem; color: #6E6E73; }
-.ai-fb { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: .86rem; }
-.ai-fb li { padding: 10px 12px; border-radius: 10px; background: #F5F5F7; border-left: 3px solid #0A7A55; }
-.ai-fb li.down { border-left-color: #B42318; }
-.ai-fb small { display: block; color: #6E6E73; margin-top: 3px; }
-
 /* MRP import */
 .mrp-import { display: grid; gap: 12px; padding: 4px 2px 20px; }
 .mrp-import textarea { width: 100%; padding: 10px 12px; border: 1px solid #D2D2D7; border-radius: 12px; font: 13px/1.5 ui-monospace, Consolas, monospace; }

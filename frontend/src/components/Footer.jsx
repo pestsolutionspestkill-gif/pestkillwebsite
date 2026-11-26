@@ -13,7 +13,6 @@ const quickLinks = [
   { label: 'Pest Library', path: '/pests' },
   { label: 'Knowledge Centre', path: '/knowledge' },
   { label: 'Technical standards', path: '/technical-standards' },
-  { label: 'PestKill AI', path: '/pestkill-ai' },
   { label: 'Dosage calculator', path: '/shop/dose-calculator' },
   { label: 'Integrated Pest Management', path: '/integrated-pest-management' },
   { label: 'About Us', path: '/about' },

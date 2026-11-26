@@ -111,7 +111,7 @@ const DosageCalculator = () => {
     const ref = referenceDose(activity, item);
     setDose({ amount_unit: unitFor(item), ...Object.fromEntries(DOSE_FIELDS[activity].map((k) => [k, ref.fields[k] ?? ''])) });
     setDoseSrc(ref.sources);
-    setAnyPackId(String(item.packs.find((p) => p.mrp != null)?.id || item.packs[0]?.id || ''));
+    setAnyPackId(String(item.packs.find((p) => !priceInfo(p).onRequest)?.id || item.packs[0]?.id || ''));
   }, [item?.key, activity]); // eslint-disable-line react-hooks/exhaustive-deps
   const resetDose = () => {
     const ref = referenceDose(activity, item);

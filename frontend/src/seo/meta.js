@@ -166,11 +166,6 @@ const STATIC = {
     description: 'Species guides for German and American cockroaches, termites, Aedes, Culex and Anopheles mosquitoes, rodents, bed bugs and more: signs, life cycle, risks and treatment.',
     crumbs: [{ name: 'Knowledge Centre', path: '/knowledge' }],
   },
-  '/pestkill-ai': {
-    title: 'PestKill AI: Identify Pests from a Photo, Diagnose & Estimate | PestKill',
-    description: 'PestKill AI, the intelligent pest management assistant: identify pests from a photo, get a preliminary assessment, estimate prices from the official list (GST shown separately) and ask in English or Hindi.',
-    crumbs: [{ name: 'PestKill AI', path: '/pestkill-ai' }],
-  },
   '/privacy-policy': { title: 'Privacy Policy | PestKill Pest Solutions', description: 'What information PestKill Pest Solutions collects through this website, how it is used, who can see it and your choices.', crumbs: [{ name: 'Privacy policy', path: '/privacy-policy' }] },
   '/terms': { title: 'Terms & Conditions | PestKill Pest Solutions', description: 'Terms for pest control services and professional product orders: service area, appointments, prices exclusive of GST, warranty, cancellation and payment.', crumbs: [{ name: 'Terms & conditions', path: '/terms' }] },
   '/shipping-delivery': { title: 'Shipping & Delivery Policy | PestKill Pest Solutions', description: 'Professional pest control products delivered across India from Jaipur. Delivery timeline and any charges are confirmed before dispatch.', crumbs: [{ name: 'Shipping & delivery', path: '/shipping-delivery' }] },

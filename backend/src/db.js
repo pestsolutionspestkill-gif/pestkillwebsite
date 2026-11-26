@@ -554,53 +554,6 @@ const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS idx_replacements_order ON replacement_requests(order_id);
 
-  -- PestKill AI. Conversations of signed-in users are tied to the account, visitors get a random key.
-  CREATE TABLE IF NOT EXISTS ai_conversations (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    anon_key TEXT,
-    mode TEXT NOT NULL DEFAULT 'assistant',
-    title TEXT,
-    created_at TIMESTAMP DEFAULT ${NOW},
-    updated_at TIMESTAMP DEFAULT ${NOW}
-  );
-  CREATE INDEX IF NOT EXISTS idx_ai_conversations_user ON ai_conversations(user_id, updated_at);
-  CREATE TABLE IF NOT EXISTS ai_messages (
-    id SERIAL PRIMARY KEY,
-    conversation_id INTEGER NOT NULL REFERENCES ai_conversations(id) ON DELETE CASCADE,
-    role TEXT NOT NULL,
-    content TEXT NOT NULL,
-    had_image INTEGER NOT NULL DEFAULT 0,
-    sources TEXT,
-    model TEXT,
-    created_at TIMESTAMP DEFAULT ${NOW}
-  );
-  CREATE INDEX IF NOT EXISTS idx_ai_messages_conversation ON ai_messages(conversation_id, id);
-  CREATE TABLE IF NOT EXISTS ai_feedback (
-    id SERIAL PRIMARY KEY,
-    message_id INTEGER NOT NULL REFERENCES ai_messages(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    rating INTEGER NOT NULL,
-    note TEXT,
-    created_at TIMESTAMP DEFAULT ${NOW},
-    UNIQUE (message_id)
-  );
-  -- One row per model call: for limits, cost tracking and monitoring.
-  CREATE TABLE IF NOT EXISTS ai_usage (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    client_key TEXT NOT NULL,
-    mode TEXT NOT NULL,
-    model TEXT,
-    input_tokens INTEGER,
-    output_tokens INTEGER,
-    cache_read_tokens INTEGER,
-    latency_ms INTEGER,
-    ok INTEGER NOT NULL DEFAULT 1,
-    error TEXT,
-    created_at TIMESTAMP DEFAULT ${NOW}
-  );
-  CREATE INDEX IF NOT EXISTS idx_ai_usage_client ON ai_usage(client_key, created_at);
   ALTER TABLE order_items ADD COLUMN IF NOT EXISTS product_name TEXT;
   ALTER TABLE order_items ADD COLUMN IF NOT EXISTS brand TEXT;
   ALTER TABLE order_items ADD COLUMN IF NOT EXISTS pack_size TEXT;

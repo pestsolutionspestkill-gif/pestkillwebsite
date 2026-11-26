@@ -45,7 +45,7 @@ const Cart = () => {
 
   const blocked = rows.filter((r) => r.info.onRequest || !r.p.in_stock);
   const total = rows.reduce((s, r) => s + (r.info.onRequest ? 0 : r.info.pay * r.qty), 0);
-  const mrpTotal = rows.reduce((s, r) => s + (r.info.onRequest ? 0 : r.info.mrp * r.qty), 0);
+  const mrpTotal = rows.reduce((s, r) => s + (r.info.onRequest ? 0 : (r.info.mrp ?? r.info.pay) * r.qty), 0);
   const count = rows.reduce((s, r) => s + r.qty, 0);
 
   const placeOrder = async (e) => {
@@ -102,7 +102,7 @@ const Cart = () => {
                     <span className="pcard-tech">{p.technical}</span>
                     {info.onRequest ? <span className="form-error">Price on request — remove this item and ask us for a quote.</span>
                       : !p.in_stock ? <span className="form-error">Out of stock — please remove.</span>
-                        : <span className="cart-unit">{rupees(info.pay)} each{info.kind !== 'mrp' && <s> MRP {rupees(info.mrp)}</s>}{info.kind === 'offer' && <em className="cart-offer"> {info.offer.label || 'Offer'}</em>}</span>}
+                        : <span className="cart-unit">{rupees(info.pay)} each{info.kind !== 'mrp' && info.mrp != null && <s> MRP {rupees(info.mrp)}</s>}{info.kind === 'offer' && <em className="cart-offer"> {info.offer.label || 'Offer'}</em>}</span>}
                     <div className="cart-line-actions">
                       <div className="qty small">
                         <button type="button" onClick={() => setQty(p.id, qty - 1)} disabled={qty <= 1} aria-label="Decrease"><Minus size={14} /></button>

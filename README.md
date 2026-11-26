@@ -69,6 +69,9 @@ takes about a minute. Data is safe in Neon either way.
 | Client | Own bookings, invoices, treatment certificates, complaints, orders and profile |
 
 Permissions are checked on the server for every request, and changes apply immediately.
+Only the owner can edit or delete an invoice (Admin → Invoices, pencil and bin icons). Totals are recalculated
+from the line items, the invoice number never changes, a deleted invoice's number is never issued again, and
+every edit and deletion is written to the audit log.
 Customers see bookings and invoices linked to their account (bookings made while signed in,
 or invoices created from those bookings).
 
@@ -118,6 +121,11 @@ Prices: customers see an MRP only when it is verified in one of three ways:
 - **Matched to a public page** showing the same product and pack with a labelled MRP.
   - The URL and date are recorded in `backend/src/data/mrpSources.js`.
   - 40 packs were checked this way on 2026-11-26.
+
+- **Matched reference price** (Admin → *Reference prices*, status *Matched*): when our own MRP is not verified,
+  the matched reference MRP is shown. A matched reference selling price below the MRP (or with no MRP) is shown
+  as the *Shop price* and charged at checkout. Changes in the register show in the shop at once; set a row back
+  to *Needs review* to take its price off the shop.
 
 Everything else shows "Price on request" with a WhatsApp quote button and cannot be ordered online at that
 price. Changing an MRP clears its verification. Placeholder pack names are shown to customers as "Pack size on
@@ -248,7 +256,8 @@ products without an MRP show "Price on request". Stock left empty means "not tra
 - **Reference prices** (Admin → *Reference prices*): 88 market prices from bharatpest.in, checked 2026-11-24.
   - Each entry stores the source URL, price/MRP, pack, date checked and match status.
   - Only exact brand + name + pack matches were linked automatically (26). The rest are *Needs review*.
-  - The table compares with our MRP and selling price and exports CSV. Editing it **never changes our prices**.
+  - The table compares with our MRP and selling price and exports CSV. It never edits the product records, but
+    a *Matched* row's MRP and price are what customers see and pay in the shop (see *PCO shop* above).
 - **Product photos**: each photo stores credit, source URL and permission note. Edit these in the product drawer,
   under the photo. Seeded catalogue photos are credited as the brand's official product image. *No photo* in
   Admin → Products lists products still missing a photo.
@@ -307,48 +316,6 @@ Run `npm test` in `backend/` to run the API tests, which cover these features.
 - **Lead forms when the server is down**: the form shows a *Send my details on WhatsApp* button the visitor taps.
   Nothing opens automatically, because phones block that. It never shows a false "received" message.
 
-## PestKill AI
-
-The page is `/pestkill-ai`. It is linked from the header, the phone bottom bar ("AI"), product pages, service pages and the explore drawer. Staff use it from **Admin → PestKill AI**.
-
-| Tool | Who | What it does |
-|---|---|---|
-| Ask | everyone | Questions about pests, services, prices, bookings, products and policies, in English or Hindi. Answers cite sources such as [S1]. |
-| Identify from photo | everyone | Photo of a pest or damage → likely pest, confidence, visible evidence, look-alikes, next step. The photo is not stored. |
-| Diagnose | everyone | A guided questionnaire → preliminary assessment, risk level and next step. Labelled as preliminary. |
-| Estimate price | everyone | Computed by `frontend/src/data/pricing.js` (the same price list the site uses), with GST at 18% shown separately. Works without AI. |
-| Account answers | signed-in customers | The customer's own bookings (grouped by property), reports, products used, warranty, orders, complaints. Nothing else. |
-| Field assistant | technicians, managers, owner | Checklists and visit reports drafted from the technician's notes, using only their assigned jobs. |
-| Business insights | owner, managers with reports access | Read-only summaries: leads to follow up, workload, complaints, stock, unpaid orders, pending approvals. |
-
-**How it is built** (`backend/src/ai/`, routes in `backend/src/routes/aiRoutes.js`):
-- `provider.js`: the model adapter.
-  - **Google Gemma 4** (`gemma-4-31b-it`) on the Gemini API free tier is used automatically when `GEMINI_API_KEY` is set.
-    - Google's free tier may use submitted content to improve its products. So in this mode PestKill AI never sends customers' names, addresses or phone numbers, only booking references, services and cities.
-    - The privacy policy and the AI page say so.
-  - Alternatively, Claude (`claude-opus-5-5`, paid) runs through the Anthropic SDK with `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`.
-  - Errors are mapped to clear messages: not configured, busy or free limit reached, unreachable, key rejected.
-- `knowledge.js`: verified knowledge with BM25 keyword search, English and Hindi.
-  - It indexes business facts, prices, policies, the Knowledge Centre, the live catalogue (only checked MRPs), published documents, verified label dose records and technical standards.
-- `context.js`: role-scoped account data, read-only.
-- `prompt.js`: the rules. Never state doses, rates, re-entry times, approvals, warranties or prices that are not in a verified source. Identification is provisional. No local-office claims.
-- Conversations, feedback (helpful / not helpful) and per-call usage (tokens, latency, errors) are stored. Visitors' conversations are reachable only with a random key held in their browser.
-- Limits: 20 requests per 10 minutes per connection, plus daily caps (25 for visitors, 80 for customers, 300 for staff), adjustable by environment variables.
-- **Admin → PestKill AI** shows the owner usage, errors and recent feedback.
-
-**Switching it on (free, Google Gemma 4)**:
-1. Sign in at https://aistudio.google.com/apikey with the business Google account.
-2. Click *Create API key*.
-3. On Render, set `GEMINI_API_KEY` to that key, then redeploy.
-   - For local testing, put the same line in `backend/.env`.
-
-Free-tier requests are rate-limited by Google. When the limit is reached, users see "busy, try again in a minute".
-Without the key, the page says AI answers are off. The estimate and verified search still work, and nothing is ever made up.
-
-**Tests**:
-- `backend/test/ai.test.js` (Claude) and `backend/test/ai-google.test.js` (Gemma) run the real server against local stand-ins for the model APIs. It covers grounding, prices, role scoping, photo validation, errors, limits and the absence of key leaks.
-- `npm run ai:eval` in `backend/` runs 12 safety and grounding checks against a configured server. It makes paid calls, so run it only after the key is set.
-
 ## Production deployment checklist
 
 1. Review the branch `release/production-readiness` and merge it to `main` only after approval.
@@ -359,7 +326,6 @@ Without the key, the page says AI answers are off. The estimate and verified sea
 6. In Admin → Licences: upload both licence copies, enter the authority and validity exactly as printed, and mark them verified.
 7. Check the PCO buyers list. Any approved buyer without a licence validity date must re-submit before ordering.
 8. Open the home page, a service page, the shop, a product, the cart and `/book` on a phone and on a desktop.
-9. PestKill AI: after approval, set `ANTHROPIC_API_KEY` on Render, redeploy, then run `npm run ai:eval` in `backend/` against the live URL and read any FAIL lines.
 
 ## Quality checks
 

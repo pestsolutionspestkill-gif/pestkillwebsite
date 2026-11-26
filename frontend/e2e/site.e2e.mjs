@@ -27,7 +27,7 @@ before(async () => {
     cwd: backendDir,
     env: { ...process.env, PORT: String(PORT), PGLITE_DIR: 'memory://', DATABASE_URL: '', NODE_ENV: 'test', RATE_LIMITS: 'off', SITE_URL: '',
       JWT_SECRET: 'e'.repeat(40), OWNER_NAME: 'E2E Owner', OWNER_EMAIL: OWNER.email, OWNER_PASSWORD: OWNER.password,
-      GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on', ANTHROPIC_API_KEY: '', ANTHROPIC_AUTH_TOKEN: '', ANTHROPIC_BASE_URL: '', GEMINI_API_KEY: '', AI_PROVIDER: '' },
+      GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on' },
   });
   server.stdout.on('data', (d) => { log += d; });
   server.stderr.on('data', (d) => { log += d; });
@@ -70,7 +70,7 @@ const api = async (method, p, body, token) => {
 
 const PUBLIC_PAGES = ['/', '/pest-control/jaipur', '/termite-control', '/services', '/book', '/shop', '/shop/pest/termite',
   '/shop/envu-premise-sc-1-l', '/pest-identifier', '/contact', '/about', '/blog', '/locations', '/login', '/register', '/pco-account', '/technical-standards',
-  '/privacy-policy', '/terms', '/shipping-delivery', '/replacement-policy', '/disclaimer', '/pestkill-ai'];
+  '/privacy-policy', '/terms', '/shipping-delivery', '/replacement-policy', '/disclaimer'];
 
 test('public pages load with content, no console errors and no CSP violations', async () => {
   const page = await openPage();
@@ -298,7 +298,7 @@ test('journey 1: termite slide → service → dosage calculator with a verified
   assert.match(totals, /1,426\s*L/, 'diluted solution 1426 L');
   assert.match(totals, /2,852\s*ml/, 'product 2852 ml');
   assert.match(totals, /Packs of 1 L\s*3/, 'three 1 L packs');
-  assert.match(totals, /₹13,890/, 'cost from the listed MRP');
+  assert.match(totals, /₹11,700/, 'cost from the shop price (3 × ₹3,900 reference price for Premise SC 1 L)');
   await page.click('.dc-units button:has-text("Imperial")');
   assert.match(await page.textContent('.dc-derived'), /sq ft/);
   await api('DELETE', `/doses/${rec.id}`, null, O);
@@ -428,7 +428,7 @@ test('explore drawer: Escape and outside click close it; professional roles show
 });
 
 test('responsive: no sideways scrolling from 360 px to 1440 px', async () => {
-  const pages = ['/', '/pestkill-ai', '/shop', '/shop/envu-premise-sc-1-l', '/shop/dose-calculator', '/knowledge/aedes-mosquito', '/pest-control/jaipur', '/contact', '/book'];
+  const pages = ['/', '/shop', '/shop/envu-premise-sc-1-l', '/shop/dose-calculator', '/knowledge/aedes-mosquito', '/pest-control/jaipur', '/contact', '/book'];
   const issues = [];
   for (const width of [360, 375, 390, 414, 768, 1024, 1440]) {
     const ctx = await browser.newContext({ viewport: { width, height: 860 }, isMobile: width < 768 });
@@ -817,74 +817,24 @@ test('prices and claims: official rates with GST note; unverified claims are gon
   await page.context().close();
 });
 
-/* ---------- PestKill AI (no API key in the test environment) ---------- */
-test('PestKill AI page: honest offline state, official estimates, verified search, entry points', async () => {
+/* ---------- PestKill AI is off the site ---------- */
+test('PestKill AI is not on the site: no links, old address goes home, no API', async () => {
   const page = await openPage();
-  await page.goto(`${BASE}/pestkill-ai`);
-  await page.waitForSelector('.pkai-status .off');
-  assert.match(await page.textContent('.pkai-status'), /not switched on yet/);
-
-  // Estimate tool: computed from the shared official price list, GST shown separately.
-  await page.click('.pkai-tabs button:has-text("Estimate price")');
-  await page.waitForSelector('.pkai-estimate');
-  let est = await page.textContent('.pkai-estimate');
-  assert.match(est, /₹1,500[\s\S]*GST @ 18%[\s\S]*₹270[\s\S]*₹1,770/);
-  await page.selectOption('.pkai-quote label:has-text("Service") select', 'termite_pre');
-  await page.fill('.pkai-quote label:has-text("Area") input', '1000');
-  est = await page.textContent('.pkai-estimate');
-  assert.match(est, /₹12,000 – ₹15,000[\s\S]*₹14,160 – ₹17,700/);
-  await page.selectOption('.pkai-quote label:has-text("Service") select', 'general');
-  await page.selectOption('.pkai-quote label:has-text("Property") select', 'business');
-  assert.match(await page.textContent('.pkai-estimate'), /quoted after inspection/);
-  assert.equal(await page.$('.pkai-quote button:has-text("Ask PestKill AI")'), null, 'no AI button while AI is off');
-
-  // Ask: without AI, answers come only from verified knowledge search, clearly labelled.
-  await page.click('.pkai-tabs button:has-text("Ask")');
-  await page.fill('.ai-composer textarea', 'expired product replacement');
-  await page.click('.ai-send');
-  await page.waitForSelector('.ai-msg.search');
-  assert.match(await page.textContent('.ai-msg.search'), /Verified knowledge search \(AI answers are off\)[\s\S]*Product replacement policy/);
-  assert.equal(await page.$('.ai-msg.assistant:not(.search)'), null, 'no AI-styled answer was invented');
-
-  // Hindi
-  await page.click('.pkai-lang button:has-text("हिन्दी")');
-  assert.equal(await page.getAttribute('.ai-composer textarea', 'placeholder'), 'अपना सवाल लिखें…');
-
-  // Entry points
   await page.goto(`${BASE}/`);
-  await page.click('.nav-link.nav-ai');
-  await page.waitForURL('**/pestkill-ai');
+  assert.equal(await page.$('a[href^="/pestkill-ai"]'), null, 'no link in the header or footer');
+  const res = await page.goto(`${BASE}/pestkill-ai`);
+  assert.equal(new URL(page.url()).pathname, '/', 'old address redirects to the home page');
+  assert.equal(res.status(), 200);
   await page.goto(`${BASE}/shop/envu-premise-sc-1-l`);
-  await page.click('.ask-ai');
-  await page.waitForURL(/\/pestkill-ai\?product=envu-premise-sc-1-l/);
-  assert.deepEqual(await page.problems(), []);
+  await page.waitForSelector('.pd-info');
+  assert.equal(await page.$('a[href^="/pestkill-ai"]'), null, 'no link on product pages');
   await page.context().close();
-
   const phone = await openPage({ mobile: true });
   await phone.goto(`${BASE}/`);
-  await phone.click('.bottom-nav a[href="/pestkill-ai"]');
-  await phone.waitForURL('**/pestkill-ai');
-  const over = await phone.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  assert.equal(over, 0, 'no sideways scrolling on phones');
+  assert.ok(await phone.$('.bottom-nav a[href="/knowledge"]'), 'bottom bar shows Guides again');
+  assert.equal(await phone.$('.bottom-nav a[href="/pestkill-ai"]'), null);
   await phone.context().close();
-});
-
-test('PestKill AI in the console: owner gets insights and usage; customers cannot', async () => {
-  const page = await openPage();
-  await page.goto(`${BASE}/login`);
-  await page.fill('#email', OWNER.email);
-  await page.fill('#password', OWNER.password);
-  await page.click('form button[type="submit"]');
-  await page.waitForURL('**/admin**');
-  await page.click('.admin-side button:has-text("PestKill AI")');
-  await page.waitForSelector('.ai-admin .toolbar button:has-text("Business insights")');
-  assert.ok(await page.$('.ai-admin .toolbar button:has-text("Field assistant")'));
-  await page.waitForSelector('.ai-overview');
-  assert.match(await page.textContent('.ai-overview'), /Not configured: add GEMINI_API_KEY/);
-  assert.deepEqual(await page.problems(), []);
-  await page.context().close();
-  const r = await api('POST', '/ai/chat', { mode: 'insights', message: 'leads' });
-  assert.equal(r.s, 401);
+  assert.equal((await api('POST', '/ai/chat', { message: 'hello' })).s, 404);
 });
 
 test('MRP import: owner pastes a price list, previews, confirms; customers see the MRP and real pack size', async () => {

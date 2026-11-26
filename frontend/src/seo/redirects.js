@@ -8,5 +8,7 @@ export const REDIRECTS = {
   '/services/cockroach-control': '/cockroach-control',
   '/services/rodent-control': '/rodent-control',
   '/services/bed-bugs': '/bed-bug-treatment',
+  // PestKill AI was taken off the site; old links go to the home page.
+  '/pestkill-ai': '/',
   ...Object.fromEntries(OLD_CITY_PAGES.map((s) => [`/${s}`, `/pest-control/${s}`])),
 };

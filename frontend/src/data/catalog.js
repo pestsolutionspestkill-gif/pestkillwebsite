@@ -12,7 +12,7 @@ import {
    Official rates. Change a price here and every page, the booking
    wizard and the FAQs pick it up.
 ------------------------------------------------------------------- */
-// Official service prices live in ./pricing.js (shared with the server and PestKill AI).
+// Official service prices live in ./pricing.js (shared with the server).
 import { RATES, GST_NOTE } from './pricing';
 export { RATES, GST_NOTE };
 

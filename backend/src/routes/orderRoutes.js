@@ -2,7 +2,7 @@ import express from 'express';
 import db, { audit, NOW } from '../db.js';
 import { auth, requirePermission, can, ah } from '../middleware/rbac.js';
 import { str, phone, oneOf, intId, ValidationError } from '../utils/validate.js';
-import { isApprovedBuyer, bestPrice } from './productRoutes.js';
+import { isApprovedBuyer, bestPrice, refCols } from './productRoutes.js';
 
 const router = express.Router();
 const STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -54,7 +54,8 @@ router.post('/', auth, ah(async (req, res) => {
     let count = 0;
     const lines = [];
     for (const [productId, qty] of wanted) {
-      const p = await t.get('SELECT id, name, brand, pack_size, mrp, mrp_verified, mrp_source_url, mrp_checked_on, pco_price, offer_price, offer_ends, stock, is_active FROM products WHERE id = ? FOR UPDATE', productId);
+      const p = await t.get(`SELECT p.id, p.name, p.brand, p.pack_size, p.mrp, p.mrp_verified, p.mrp_source_url, p.mrp_checked_on, p.pco_price, p.offer_price, p.offer_ends, p.stock, p.is_active,
+        ${refCols('p')} FROM products p WHERE p.id = ? FOR UPDATE OF p`, productId);
       if (!p || !p.is_active) throw new ValidationError('A product in your cart is no longer available.');
       const price = bestPrice(p, { pco: true });
       if (price == null) throw new ValidationError(`${p.name} (${p.pack_size}) is price-on-request. Remove it and ask us for a quote.`);

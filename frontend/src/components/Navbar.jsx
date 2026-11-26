@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Phone, MessageCircle, Menu, X, ChevronDown, ArrowRight, Search, Clock, BadgeCheck, CalendarCheck, ShoppingCart, Store, Sparkles } from 'lucide-react';
+  Phone, MessageCircle, Menu, X, ChevronDown, ArrowRight, Search, Clock, BadgeCheck, CalendarCheck, ShoppingCart, Store } from 'lucide-react';
 import businessConfig from '../data/businessConfig';
 import { services, serviceGroups, sectors, pests } from '../data/catalog';
 import SearchPalette from './SearchPalette';
@@ -207,7 +207,6 @@ const Navbar = () => {
               </button>
             ))}
             <Link to="/shop" className={`nav-link ${location.pathname.startsWith('/shop') || location.pathname === '/pco-account' ? 'active' : ''}`} onMouseEnter={() => setOpenMenu(null)}>PCO Shop</Link>
-            <Link to="/pestkill-ai" className={`nav-link nav-ai ${location.pathname === '/pestkill-ai' ? 'active' : ''}`} onMouseEnter={() => setOpenMenu(null)}><Sparkles size={14} /> PestKill AI</Link>
           </nav>
 
           <div className="nav-actions">
@@ -240,7 +239,6 @@ const Navbar = () => {
           <Link to="/business" className={isBusiness ? 'active' : ''}>For Business</Link>
         </div>
         <Link to="/shop" className="mobile-shop"><Store size={20} /><span><strong>PCO Shop</strong><small>Envu, Syngenta, Heranba, Arbuda, Kalyani</small></span><ArrowRight size={18} /></Link>
-        <Link to="/pestkill-ai" className="mobile-shop mobile-ai"><Sparkles size={20} /><span><strong>PestKill AI</strong><small>Identify a pest from a photo, diagnose, estimate</small></span><ArrowRight size={18} /></Link>
         <button type="button" className="mobile-search" onClick={() => { setMobileOpen(false); setSearchOpen(true); }}><Search size={18} /> Search services, pests, cities</button>
         {[
           { id: 'services', label: 'Services', items: services.map((s) => ({ name: s.name, path: s.path })) },

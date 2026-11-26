@@ -143,18 +143,22 @@ export const mountWebsite = async (app, distDir) => {
   /* ---------- Pages ---------- */
   // Product page head: "Brand Name Pack Price" titles and Product structured data.
   const productHead = async (data, meta, site) => {
-    const extra = await db.get('SELECT mrp_verified, stock FROM products WHERE id = ?', data.id);
+    const extra = await db.get('SELECT stock FROM products WHERE id = ?', data.id);
     const name = [data.brand, data.name, data.pack_size].filter(Boolean).join(' ');
-    const price = data.offer?.price ?? data.mrp;
-    const description = `${name}${data.technical ? ` (${data.technical})` : ''}${price != null ? `: MRP ₹${Number(data.mrp).toLocaleString('en-IN')}` : ''}. Uses, safety, dose and FAQs in Hinglish. Genuine sealed packs for licensed PCOs, dispatched from Jaipur.`.slice(0, 160);
+    // The price a customer pays in the shop: checked MRP, matched reference price or offer.
+    const prices = [data.shop_mrp, data.sale_price, data.offer?.price].filter((v) => v != null);
+    const price = prices.length ? Math.min(...prices) : null;
+    const rs = (v) => `₹${Number(v).toLocaleString('en-IN')}`;
+    const priceText = price == null ? '' : data.shop_mrp != null && price === data.shop_mrp ? `: MRP ${rs(price)}` : `: ${rs(price)}`;
+    const description = `${name}${data.technical ? ` (${data.technical})` : ''}${priceText}. Uses, safety, dose and FAQs in Hinglish. Genuine sealed packs for licensed PCOs, dispatched from Jaipur.`.slice(0, 160);
     const image = data.image_url ? `${site}${data.image_url}` : `${site}/images/brand/pestkill-emblem.png`;
     const product = {
       '@context': 'https://schema.org', '@type': 'Product', name, description, image, sku: data.slug,
       ...(data.brand ? { brand: { '@type': 'Brand', name: data.brand } } : {}),
       ...(data.category ? { category: data.category } : {}),
     };
-    // Prices go into structured data only once the MRP has been checked against the pack.
-    if (data.mrp != null && extra?.mrp_verified) {
+    // Structured data carries the same price the shop shows (none for "price on request").
+    if (price != null) {
       product.offers = {
         '@type': 'Offer', priceCurrency: 'INR', price: price, url: `${site}/shop/${data.slug}`,
         availability: extra.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',

@@ -2,16 +2,26 @@ import businessConfig from '../data/businessConfig';
 
 export const rupees = (n) => `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
-// What the buyer pays: the lowest of MRP (inclusive of taxes), a running offer, and the PCO price
-// (sent by the server only to approved buyers).
+// What the buyer pays: the lowest of the shop MRP (inclusive of taxes), the shop price from the
+// reference price register, a running offer, and the PCO price (sent only to approved buyers).
+// The server works out the order total the same way (bestPrice in productRoutes.js).
 export const priceInfo = (p) => {
-  if (p.mrp == null) return { onRequest: true };
-  const offer = p.offer && p.offer.price < p.mrp ? p.offer : null;
-  const pco = p.pco_price != null && p.pco_price < p.mrp ? p.pco_price : null;
-  const pay = Math.min(p.mrp, offer ? offer.price : Infinity, pco ?? Infinity);
-  const kind = pay === p.mrp ? 'mrp' : pco != null && pco === pay ? 'pco' : 'offer';
-  return { pay, mrp: p.mrp, off: pay < p.mrp ? Math.round((1 - pay / p.mrp) * 100) : 0, kind, offer, pcoPrice: kind === 'pco' };
+  const mrp = p.shop_mrp !== undefined ? p.shop_mrp : p.mrp;
+  const below = (v) => v != null && (mrp == null || v < mrp);
+  const options = [
+    mrp != null && ['mrp', mrp],
+    below(p.sale_price) && ['sale', p.sale_price],
+    p.offer && below(p.offer.price) && ['offer', p.offer.price],
+    below(p.pco_price) && ['pco', p.pco_price],
+  ].filter(Boolean);
+  if (!options.length) return { onRequest: true };
+  // Lowest price wins; on a tie the earlier kind in the list is kept.
+  const [kind, pay] = options.reduce((best, o) => (o[1] < best[1] ? o : best));
+  return { pay, mrp, off: mrp != null && pay < mrp ? Math.round((1 - pay / mrp) * 100) : 0, kind, offer: kind === 'offer' ? p.offer : null, pcoPrice: kind === 'pco' };
 };
+
+// Wording beside a price.
+export const priceNote = (info) => ({ pco: 'Your PCO price · ', offer: 'Offer price · ', sale: info.mrp != null ? 'Shop price · ' : 'Price · ', mrp: 'MRP · ' }[info.kind]);
 
 export const fmtEnds = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '');
 

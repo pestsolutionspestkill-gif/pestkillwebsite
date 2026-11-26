@@ -36,7 +36,7 @@ before(async () => {
   server = spawn(process.execPath, ['src/server.js'], {
     cwd: ROOT,
     env: { ...process.env, PORT: String(PORT), PGLITE_DIR: 'memory://', DATABASE_URL: '', RENDER: '', SITE_URL: '', NODE_ENV: 'test', JWT_SECRET: 'x'.repeat(40),
-      OWNER_NAME: 'Test Owner', OWNER_EMAIL: 'owner@test.local', OWNER_PASSWORD: 'OwnerPass123', GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on', RATE_LIMITS: process.env.KEEP_LIMITS ? '' : 'off', ANTHROPIC_API_KEY: '', ANTHROPIC_AUTH_TOKEN: '', ANTHROPIC_BASE_URL: '', GEMINI_API_KEY: '', AI_PROVIDER: '' },
+      OWNER_NAME: 'Test Owner', OWNER_EMAIL: 'owner@test.local', OWNER_PASSWORD: 'OwnerPass123', GMAIL_USER: '', GMAIL_APP_PASSWORD: '', SMTP_USER: '', SMTP_PASS: '', EMAIL_OTP: 'on', RATE_LIMITS: process.env.KEEP_LIMITS ? '' : 'off' },
   });
   server.stdout.on('data', (d) => { log += d; });
   server.stderr.on('data', (d) => { log += d; });
@@ -598,7 +598,102 @@ test('standards register and reference prices', async () => {
   const before = (await call('GET', '/products?q=Premise')).j.products.find((p) => p.pack_size === '1 L').mrp;
   const r = await call('PATCH', `/reference-prices/${premise.id}`, { displayedPrice: 3800 }, O);
   assert.equal(r.j.displayed_price, 3800);
-  assert.equal((await call('GET', '/products?q=Premise')).j.products.find((p) => p.pack_size === '1 L').mrp, before, 'our own price is never changed');
+  const premise1l = (await call('GET', '/products?q=Premise')).j.products.find((p) => p.pack_size === '1 L');
+  assert.equal(premise1l.mrp, before, 'our own MRP is never changed');
+  assert.equal(premise1l.sale_price, 3800, 'the shop shows the matched reference price at once');
+});
+
+test('shop prices come from matched reference prices: list, product page, cart sorting and orders', async () => {
+  let r = await call('POST', '/products', { name: 'Refprice Test SC', brand: 'Envu', packSize: '1 L', category: 'General Pest Control', technical: 'Test 1% SC' }, O);
+  assert.equal(r.s, 201, JSON.stringify(r.j));
+  const id = r.j.id;
+  const slug = r.j.slug;
+  let p = (await call('GET', `/products/${slug}`)).j;
+  assert.deepEqual([p.mrp, p.shop_mrp, p.sale_price], [null, null, null], 'no price anywhere: price on request');
+
+  const refs = (await call('GET', '/reference-prices', null, O)).j;
+  const ref = refs.find((x) => x.match_status === 'review');
+  r = await call('PATCH', `/reference-prices/${ref.id}`, { productId: id, matchStatus: 'matched', displayedMrp: 900, displayedPrice: 800 }, O);
+  assert.equal(r.s, 200, JSON.stringify(r.j));
+  p = (await call('GET', `/products/${slug}`)).j;
+  assert.deepEqual([p.mrp, p.shop_mrp, p.sale_price], [900, 900, 800], 'reference MRP and price shown');
+  const listed = (await call('GET', '/products?q=Refprice')).j.products[0];
+  assert.deepEqual([listed.shop_mrp, listed.sale_price], [900, 800]);
+  assert.equal((await call('GET', `/products/${slug}`, null, O)).j.mrp, null, 'the product editor keeps our own (empty) MRP');
+
+  // Only the price, no MRP.
+  await call('PATCH', `/reference-prices/${ref.id}`, { displayedMrp: null }, O);
+  p = (await call('GET', `/products/${slug}`)).j;
+  assert.deepEqual([p.shop_mrp, p.sale_price], [null, 800]);
+
+  // A price at or above the MRP is not a shop price.
+  await call('PATCH', `/reference-prices/${ref.id}`, { displayedMrp: 800, displayedPrice: 850 }, O);
+  p = (await call('GET', `/products/${slug}`)).j;
+  assert.deepEqual([p.shop_mrp, p.sale_price], [800, null]);
+
+  // Price sorting uses what the customer pays.
+  await call('PATCH', `/reference-prices/${ref.id}`, { displayedMrp: 900, displayedPrice: 800 }, O);
+  const sorted = (await call('GET', '/products?brand=Envu&sort=price-asc')).j.products;
+  const pays = sorted.map((x) => Math.min(...[x.shop_mrp, x.sale_price, x.offer?.price].filter((v) => v != null))).filter(Number.isFinite);
+  assert.deepEqual(pays, [...pays].sort((a, b) => a - b), 'ascending by paid price');
+  assert.ok(sorted.findIndex((x) => x.id === id) < sorted.findIndex((x) => x.shop_mrp == null && x.sale_price == null && !x.offer), 'priced before on-request');
+
+  // An approved PCO buyer is charged the shop price.
+  const P = (await call('POST', '/users/login', { email: 'pco@example.com', password: 'Passw0rd!x' })).j.token;
+  r = await call('POST', '/orders', { items: [{ productId: id, quantity: 2 }], address: 'Shop 4, MI Road', city: 'Jaipur' }, P);
+  assert.equal(r.s, 201, JSON.stringify(r.j));
+  assert.equal(r.j.total, 1600, 'charged at the reference price');
+
+  // Unlinking the reference takes the price away again.
+  await call('PATCH', `/reference-prices/${ref.id}`, { matchStatus: 'review' }, O);
+  p = (await call('GET', `/products/${slug}`)).j;
+  assert.deepEqual([p.shop_mrp, p.sale_price], [null, null]);
+});
+
+test('invoices: only the owner edits and deletes; totals recalculated; numbers never reused', async () => {
+  let r = await call('POST', '/invoices', { customerName: 'Edit Customer', customerPhone: '9829012121', gstRate: 18, items: [{ description: 'Termite treatment', qty: 100, unit: 'sq.ft.', rate: 10 }] }, O);
+  assert.equal(r.s, 201);
+  const inv = r.j;
+  assert.equal(inv.total, 1180);
+
+  const M = await register('Invoice Manager', 'invmanager@example.com');
+  const mId = (await call('GET', '/admin/users?q=invmanager@example.com', null, O)).j[0].id;
+  await call('PATCH', `/admin/users/${mId}`, { role: 'manager' }, O);
+  await call('PUT', `/admin/managers/${mId}/permissions`, { permissions: ['invoices.manage'] }, O);
+  const edit = { customerName: 'Edited Customer', customerPhone: '9829012121', customerGstin: '08aaaaa0000a1z5', gstRate: 5, notes: 'Corrected',
+    items: [{ description: 'Termite treatment', qty: 200, unit: 'sq.ft.', rate: 10 }, { description: 'Gel bait', qty: 2, rate: 250 }], status: 'paid', issuedOn: '2026-11-01' };
+  assert.equal((await call('PUT', `/invoices/${inv.id}`, edit, M)).s, 403, 'managers cannot edit');
+  assert.equal((await call('DELETE', `/invoices/${inv.id}`, null, M)).s, 403, 'managers cannot delete');
+  assert.equal((await call('GET', '/invoices', null, M)).s, 200, 'managers still see invoices');
+
+  r = await call('PUT', `/invoices/${inv.id}`, edit, O);
+  assert.equal(r.s, 200, JSON.stringify(r.j));
+  assert.equal(r.j.number, inv.number, 'number unchanged');
+  assert.deepEqual([r.j.customer_name, r.j.customer_gstin, r.j.subtotal, r.j.gst_rate, r.j.gst_amount, r.j.total, r.j.status, r.j.items.length],
+    ['Edited Customer', '08AAAAA0000A1Z5', 2500, 5, 125, 2625, 'paid', 2]);
+  assert.ok(r.j.paid_at, 'paid date set');
+  assert.match(r.j.issued_at, /^2026-1[01]-\d\d/);
+  const day = new Date(new Date(`${r.j.issued_at.replace(' ', 'T')}Z`).getTime() + 5.5 * 3600e3).toISOString().slice(0, 10);
+  assert.equal(day, '2026-11-01', 'invoice date in the Indian calendar');
+  assert.equal((await call('PUT', `/invoices/${inv.id}`, { ...edit, issuedOn: '2999-01-01' }, O)).s, 400, 'no future dates');
+  assert.equal((await call('PUT', `/invoices/${inv.id}`, { ...edit, items: [] }, O)).s, 400);
+  r = await call('PUT', `/invoices/${inv.id}`, { ...edit, status: 'unpaid' }, O);
+  assert.equal(r.j.paid_at, null, 'paid date cleared');
+  assert.equal((await call('GET', `/invoices/${inv.id}`, null, O)).j.total, 2625);
+
+  // Delete the newest invoice: its number is not given to the next one.
+  r = await call('POST', '/invoices', { customerName: 'Last Customer', customerPhone: '9829013131', items: [{ description: 'Service', qty: 1, rate: 500 }] }, O);
+  const last = r.j;
+  r = await call('DELETE', `/invoices/${last.id}`, null, O);
+  assert.equal(r.s, 200);
+  assert.equal((await call('GET', `/invoices/${last.id}`, null, O)).s, 404);
+  assert.equal((await call('DELETE', `/invoices/${last.id}`, null, O)).s, 404);
+  r = await call('POST', '/invoices', { customerName: 'Next Customer', customerPhone: '9829014141', items: [{ description: 'Service', qty: 1, rate: 500 }] }, O);
+  const n = (x) => Number(x.split('-').pop());
+  assert.equal(n(r.j.number), n(last.number) + 1, 'deleted number skipped');
+  const log = (await call('GET', '/admin/audit', null, O)).j;
+  assert.ok(log.some((a) => a.action === 'invoice.delete' && a.target_id === last.number), 'deletion is audited');
+  assert.ok(log.some((a) => a.action === 'invoice.edit' && a.target_id === inv.number), 'edit is audited');
 });
 
 test('shop: formulation filter and missing-photo list', async () => {
@@ -665,18 +760,6 @@ test('PCO eligibility needs an unexpired licence date, in approval as in orderin
   assert.equal(r.s, 400, 'a validity date is required');
   const me = (await call('GET', '/buyers/me', null, P)).j;
   assert.ok(!me || me.status !== 'approved');
-});
-
-test('PestKill AI without an API key: says so, never returns a made-up answer', async () => {
-  const st = (await call('GET', '/ai/status')).j;
-  assert.equal(st.configured, false);
-  assert.equal(st.model, null);
-  const r = await call('POST', '/ai/chat', { message: 'How much is 2BHK pest control?' });
-  assert.equal(r.s, 503);
-  assert.equal(r.j.code, 'AI_NOT_CONFIGURED');
-  assert.equal(r.j.message, undefined, 'no answer text');
-  const q = (await call('POST', '/ai/quote', { service: 'general', size: '2BHK' })).j;
-  assert.deepEqual([q.subtotal.min, q.gst.min, q.total.min], [1500, 270, 1770]);
 });
 
 test('MRP import: preview, exact matches, placeholder packs, new packs, conflicts, confirmation', async () => {

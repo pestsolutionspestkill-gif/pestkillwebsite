@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
 import businessConfig from '../data/businessConfig';
-import { AlertTriangle, CheckCircle, Phone, MessageCircle, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Phone, MessageCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import { extraServices } from '../data/extraServices';
 import { getService } from '../data/catalog';
 import { serviceMedia, creditLine } from '../data/media';
@@ -336,7 +336,6 @@ const ServiceDetail = () => {
               <div className="sd-quote-links">
                 <a href={`tel:${phoneNumber}`}><Phone size={16} /> Call now</a>
                 <a href={wa}><MessageCircle size={16} /> WhatsApp</a>
-                <Link to={`/pestkill-ai?page=${encodeURIComponent(`Service: ${service.name}`)}`}><Sparkles size={16} /> Ask PestKill AI</Link>
               </div>
             </div>
             <div className="sd-quote-form">

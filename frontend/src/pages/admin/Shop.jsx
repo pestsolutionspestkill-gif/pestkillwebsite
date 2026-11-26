@@ -3,7 +3,7 @@ import { Search, Plus, X, Upload, Trash2, AlertTriangle, CheckCircle, Phone, Map
 import { api, openPrivateFile } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import PackShot from '../../components/PackShot';
-import { rupees, PAYMENT_LABELS, fmtEnds, PEST_OPTIONS } from '../../lib/shop';
+import { rupees, priceInfo, PAYMENT_LABELS, fmtEnds, PEST_OPTIONS } from '../../lib/shop';
 import { useLoad, State, Badge, fmtDate, fmtDay, label } from './shared';
 import { DocumentManager, DoseManager } from './Technical';
 import MrpImport from './MrpImport';
@@ -375,6 +375,13 @@ export const ShopProducts = ({ notify }) => {
   const onRequest = products.filter((p) => p.mrp == null).length;
   const onOffer = products.filter((p) => p.offer).length;
   const noPhoto = products.filter((p) => !p.image_url).length;
+  // What a customer pays (no PCO price), and where that figure comes from.
+  const customerPrice = (p) => {
+    const info = priceInfo({ ...p, pco_price: null });
+    if (info.onRequest) return <span className="adm-muted">On request</span>;
+    const from = info.kind === 'sale' ? 'Reference price' : info.kind === 'offer' ? 'Offer' : p.mrp_public ? 'Our MRP' : 'Reference MRP';
+    return <><strong>{rupees(info.pay)}</strong><small>{from}</small></>;
+  };
 
   const rows = products.filter((p) => (!brand || p.brand === brand)
     && (!category || p.category === category)
@@ -415,13 +422,14 @@ export const ShopProducts = ({ notify }) => {
         {bulk ? <BulkEditor rows={rows} onSaved={saved} onCancel={() => setBulk(false)} notify={notify} /> : (
           <div className="table-wrap">
             <table className="adm-table">
-              <thead><tr><th /><th>Product</th><th>Pack</th><th>MRP</th><th>Offer</th><th>PCO price</th><th>Stock</th><th>Status</th></tr></thead>
+              <thead><tr><th /><th>Product</th><th>Pack</th><th>MRP</th><th>Customer price</th><th>Offer</th><th>PCO price</th><th>Stock</th><th>Status</th></tr></thead>
               <tbody>{rows.map((p) => (
                 <tr key={p.id} onClick={() => setOpen(p)}>
                   <td className="prod-thumb"><PackShot product={p} /></td>
                   <td><strong>{p.name}</strong><small>{p.brand} · {p.technical}</small></td>
                   <td className="nowrap">{p.pack_size}</td>
-                  <td className="nowrap">{p.mrp == null ? <span className="adm-muted">Not set</span> : <>{rupees(p.mrp)} {p.mrp_verified ? <CheckCircle size={13} className="ok-ic" /> : <span className="chip-warn">Check</span>}</>}</td>
+                  <td className="nowrap">{p.mrp == null ? <span className="adm-muted">Not set</span> : <>{rupees(p.mrp)} {p.mrp_public ? <CheckCircle size={13} className="ok-ic" /> : <span className="chip-warn">Check</span>}</>}</td>
+                  <td className="nowrap">{customerPrice(p)}</td>
                   <td className="nowrap">{p.offer ? <><strong className="offer-txt">{rupees(p.offer.price)}</strong><small>{p.offer.label || 'Offer'}{p.offer.ends ? ` · till ${fmtEnds(p.offer.ends)}` : ''}</small></> : p.offer_price != null ? <span className="adm-muted">Ended</span> : '—'}</td>
                   <td className="nowrap">{p.pco_price != null ? rupees(p.pco_price) : '—'}</td>
                   <td>{p.stock == null ? <span className="adm-muted">Not tracked</span> : p.stock}</td>

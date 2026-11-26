@@ -298,6 +298,3 @@ textarea.form-input { resize: vertical; min-height: 120px; }
 .form-error p, .book-error p { margin: 0; }
 .wa-fallback { margin-top: 10px; background: #1F9D55; }
 
-/* "Ask PestKill AI" entry links */
-.ask-ai { display: inline-flex; align-items: center; gap: 8px; margin: 14px 0 6px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--emerald-100); background: var(--emerald-50); color: var(--emerald-700); font-weight: 600; font-size: .9rem; text-decoration: none; }
-.ask-ai:hover { border-color: var(--emerald-500); }

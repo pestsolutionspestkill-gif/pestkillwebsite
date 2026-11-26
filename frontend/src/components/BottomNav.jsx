@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Store, Compass, Sparkles, Phone } from 'lucide-react';
+import { Home, Store, Compass, BookOpen, Phone } from 'lucide-react';
 import { openExplore } from './ExploreDrawer';
 import businessConfig from '../data/businessConfig';
 import './BottomNav.css';
@@ -10,7 +10,7 @@ const BottomNav = () => (
     <NavLink to="/" end><Home size={20} /><span>Home</span></NavLink>
     <NavLink to="/shop"><Store size={20} /><span>Shop</span></NavLink>
     <button type="button" className="bn-explore" onClick={() => openExplore('brand')} aria-haspopup="dialog"><Compass size={22} /><span>Explore</span></button>
-    <NavLink to="/pestkill-ai"><Sparkles size={20} /><span>AI</span></NavLink>
+    <NavLink to="/knowledge"><BookOpen size={20} /><span>Guides</span></NavLink>
     <a href={`tel:${businessConfig.phoneNumber}`}><Phone size={20} /><span>Call</span></a>
   </nav>
 );

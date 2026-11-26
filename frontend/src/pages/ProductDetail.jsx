@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { refineHead } from '../seo/RouteSeo';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ChevronRight, Minus, Plus, ShieldAlert, BadgeCheck, ReceiptText, Truck, Zap, MessageCircle, Sparkles } from 'lucide-react';
+import { ChevronRight, Minus, Plus, ShieldAlert, BadgeCheck, ReceiptText, Truck, Zap, MessageCircle } from 'lucide-react';
 import businessConfig from '../data/businessConfig';
 import { api } from '../lib/api';
 import { usePreloaded } from '../lib/preload';
@@ -80,7 +80,7 @@ const ProductDetail = () => {
                   {p.variants.map((v) => (
                     <Link key={v.id} to={`/shop/${v.slug}`} className={v.id === p.id ? 'active' : ''}>
                       <strong>{v.pack_size}</strong>
-                      <span>{v.mrp != null ? rupees(v.mrp) : 'On request'}</span>
+                      <span>{v.price != null ? rupees(v.price) : 'On request'}</span>
                     </Link>
                   ))}
                 </div>
@@ -129,7 +129,6 @@ const ProductDetail = () => {
             </div>
             <LicenceLine kind="sale" />
 
-            <Link className="ask-ai" to={`/pestkill-ai?product=${encodeURIComponent(p.slug)}&page=${encodeURIComponent(`Product: ${p.brand} ${p.name} ${p.pack_size}`)}`}><Sparkles size={16} /> Ask PestKill AI about {p.name}: documents, packs, PCO buying</Link>
             <ProductExtras product={p} />
           </div>
         </div>
@@ -143,7 +142,7 @@ const ProductDetail = () => {
                 <Link key={e.id} to={`/shop/${e.slug}`}>
                   <span className="pcard-brand">{e.brand}</span>
                   <strong>{e.name}</strong>
-                  <span>{e.pack_size} · {e.mrp != null ? `MRP ${rupees(e.mrp)}` : 'Price on request'}</span>
+                  <span>{e.pack_size} · {e.price == null ? 'Price on request' : e.price === e.mrp ? `MRP ${rupees(e.price)}` : rupees(e.price)}</span>
                 </Link>
               ))}
             </div>

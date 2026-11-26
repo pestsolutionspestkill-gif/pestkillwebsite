@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ChevronRight, ChevronDown, MessageCircle, Calculator, FileText, BadgeCheck, MapPin, ArrowRight } from 'lucide-react';
 import { api } from '../lib/api';
+import { priceInfo } from '../lib/shop';
 import { usePreloaded } from '../lib/preload';
 import { PEST_LANDING, BRAND_LANDING, landingApiPath } from '../data/shopLanding';
 import { CITIES, cityPath } from '../data/rajasthan';
@@ -35,8 +36,8 @@ const ShopLanding = ({ kind }) => {
   const title = kind === 'pest' ? info.name : `${info.name} Pest Control Products`;
   const products = data?.products || [];
   const brands = [...new Set(products.map((p) => p.brand))];
-  const priced = products.filter((p) => p.mrp != null);
-  const low = priced.length ? Math.min(...priced.map((p) => p.offer?.price ?? p.mrp)) : null;
+  const priced = products.map(priceInfo).filter((i) => !i.onRequest);
+  const low = priced.length ? Math.min(...priced.map((i) => i.pay)) : null;
   const otherPests = Object.entries(PEST_LANDING).filter(([k]) => !(kind === 'pest' && k === key));
   const otherBrands = Object.entries(BRAND_LANDING).filter(([k]) => !(kind === 'brand' && k === key));
 

@@ -1,16 +1,28 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, X, Printer, Trash2 } from 'lucide-react';
+import { Plus, Search, X, Printer, Trash2, Pencil } from 'lucide-react';
 import { api } from '../../lib/api';
-import { useLoad, State, Badge, fmtDay, inr } from './shared';
+import { useAuth } from '../../context/AuthContext';
+import { useLoad, State, Badge, fmtDay, inr, parseDate } from './shared';
 
 const emptyItem = { description: '', qty: 1, unit: 'nos', rate: '' };
+// Invoice date in the Indian calendar (YYYY-MM-DD) for the date field.
+const istDay = (s) => (s ? new Date(parseDate(s).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10) : '');
+const today = () => new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
 
-export const InvoiceForm = ({ lead, onClose, onCreated, notify }) => {
-  const [form, setForm] = useState({
+// Create an invoice (from a booking or blank), or, with `invoice`, edit one (owner only).
+export const InvoiceForm = ({ lead, invoice, onClose, onCreated, onSaved, notify }) => {
+  const editing = Boolean(invoice);
+  const [form, setForm] = useState(editing ? {
+    customerName: invoice.customer_name || '', customerPhone: invoice.customer_phone || '', customerEmail: invoice.customer_email || '',
+    customerAddress: invoice.customer_address || '', customerGstin: invoice.customer_gstin || '', gstRate: invoice.gst_rate, notes: invoice.notes || '',
+    status: invoice.status, issuedOn: istDay(invoice.issued_at),
+  } : {
     customerName: lead?.name || '', customerPhone: lead?.phone || '', customerEmail: lead?.email || '',
     customerAddress: [lead?.address, lead?.city].filter(Boolean).join(', '), customerGstin: '', gstRate: 18, notes: '',
   });
-  const [items, setItems] = useState([lead ? { description: lead.service || 'Pest control service', qty: lead.area_sqft || 1, unit: lead.area_sqft ? 'sq.ft.' : 'nos', rate: lead.area_sqft ? '' : (lead.amount || '') } : { ...emptyItem }]);
+  const [items, setItems] = useState(editing
+    ? invoice.items.map((it) => ({ description: it.description, qty: it.qty, unit: it.unit || 'nos', rate: it.rate }))
+    : [lead ? { description: lead.service || 'Pest control service', qty: lead.area_sqft || 1, unit: lead.area_sqft ? 'sq.ft.' : 'nos', rate: lead.area_sqft ? '' : (lead.amount || '') } : { ...emptyItem }]);
   const [busy, setBusy] = useState(false);
 
   const subtotal = items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.rate) || 0), 0);
@@ -21,9 +33,15 @@ export const InvoiceForm = ({ lead, onClose, onCreated, notify }) => {
     e.preventDefault();
     setBusy(true);
     try {
-      const inv = await api('/invoices', { method: 'POST', body: { ...form, leadId: lead?.id, gstRate: Number(form.gstRate), items } });
-      notify(`Invoice ${inv.number} created`);
-      onCreated(inv);
+      if (editing) {
+        const inv = await api(`/invoices/${invoice.id}`, { method: 'PUT', body: { ...form, gstRate: Number(form.gstRate), items } });
+        notify(`Invoice ${inv.number} updated`);
+        onSaved(inv);
+      } else {
+        const inv = await api('/invoices', { method: 'POST', body: { ...form, leadId: lead?.id, gstRate: Number(form.gstRate), items } });
+        notify(`Invoice ${inv.number} created`);
+        onCreated(inv);
+      }
     } catch (err) { notify(err.message, 'error'); }
     setBusy(false);
   };
@@ -32,7 +50,7 @@ export const InvoiceForm = ({ lead, onClose, onCreated, notify }) => {
     <div className="drawer-scrim" onMouseDown={onClose}>
       <aside className="drawer wide" onMouseDown={(e) => e.stopPropagation()} data-lenis-prevent>
         <header className="drawer-head">
-          <div><span className="mono">{lead ? lead.ref : 'New invoice'}</span><h3>Create invoice</h3></div>
+          <div><span className="mono">{editing ? invoice.number : lead ? lead.ref : 'New invoice'}</span><h3>{editing ? 'Edit invoice' : 'Create invoice'}</h3></div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </header>
         <form className="inv-form" onSubmit={submit}>
@@ -42,6 +60,12 @@ export const InvoiceForm = ({ lead, onClose, onCreated, notify }) => {
             <label>Email<input type="email" value={form.customerEmail} onChange={(e) => setForm({ ...form, customerEmail: e.target.value })} /></label>
             <label>Customer GSTIN <small>(optional)</small><input value={form.customerGstin} onChange={(e) => setForm({ ...form, customerGstin: e.target.value })} /></label>
             <label className="span-2">Billing address<input value={form.customerAddress} onChange={(e) => setForm({ ...form, customerAddress: e.target.value })} /></label>
+            {editing && <>
+              <label>Invoice date<input type="date" value={form.issuedOn} max={today()} onChange={(e) => setForm({ ...form, issuedOn: e.target.value })} required /></label>
+              <label>Status<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                <option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="void">Void</option>
+              </select></label>
+            </>}
           </div>
 
           <h4>Line items</h4>
@@ -64,13 +88,13 @@ export const InvoiceForm = ({ lead, onClose, onCreated, notify }) => {
             <label>Notes<textarea rows="2" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Warranty terms, payment details…" /></label>
             <dl className="inv-totals">
               <div><dt>Subtotal</dt><dd>{inr(subtotal)}</dd></div>
-              <div><dt>GST <select value={form.gstRate} onChange={(e) => setForm({ ...form, gstRate: e.target.value })}>{[18, 12, 5, 0].map((r) => <option key={r} value={r}>{r}%</option>)}</select></dt><dd>{inr(gst)}</dd></div>
+              <div><dt>GST <select value={form.gstRate} onChange={(e) => setForm({ ...form, gstRate: e.target.value })}>{[18, 12, 5, 0].map((r) => <option key={r} value={r}>{r}%</option>)}{editing && ![18, 12, 5, 0].includes(Number(form.gstRate)) && <option value={form.gstRate}>{form.gstRate}%</option>}</select></dt><dd>{inr(gst)}</dd></div>
               <div className="grand"><dt>Total</dt><dd>{inr(subtotal + gst)}</dd></div>
             </dl>
           </div>
           <div className="drawer-foot">
             <button type="button" className="btn btn-outline btn-sm" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>{busy ? 'Creating…' : 'Create invoice'}</button>
+            <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>{editing ? (busy ? 'Saving…' : 'Save changes') : (busy ? 'Creating…' : 'Create invoice')}</button>
           </div>
         </form>
       </aside>
@@ -79,6 +103,9 @@ export const InvoiceForm = ({ lead, onClose, onCreated, notify }) => {
 };
 
 const Invoices = ({ notify, prefillLead, clearPrefill }) => {
+  const { user } = useAuth();
+  const isOwner = user?.role === 'owner';
+  const [editing, setEditing] = useState(null);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [query, setQuery] = useState('');
@@ -94,6 +121,15 @@ const Invoices = ({ notify, prefillLead, clearPrefill }) => {
       const updated = await api(`/invoices/${inv.id}`, { method: 'PATCH', body: { status: s } });
       setData((rows) => rows.map((r) => (r.id === inv.id ? updated : r)));
       notify(`Invoice marked ${s}`);
+    } catch (e) { notify(e.message, 'error'); }
+  };
+
+  const remove = async (inv) => {
+    if (!window.confirm(`Delete invoice ${inv.number} (${inv.customer_name}, ${inr(inv.total)}) permanently?\n\nThis cannot be undone. The number ${inv.number} will not be used again.`)) return;
+    try {
+      const r = await api(`/invoices/${inv.id}`, { method: 'DELETE' });
+      setData((rows) => rows.filter((x) => x.id !== inv.id));
+      notify(r.message);
     } catch (e) { notify(e.message, 'error'); }
   };
 
@@ -125,6 +161,8 @@ const Invoices = ({ notify, prefillLead, clearPrefill }) => {
                   <a className="icon-btn" href={`/print/invoice/${inv.id}`} target="_blank" rel="noopener noreferrer" title="Print / PDF"><Printer size={15} /></a>
                   {inv.status === 'unpaid' && <button type="button" className="text-btn" onClick={() => setStatusFor(inv, 'paid')}>Mark paid</button>}
                   {inv.status !== 'void' && <button type="button" className="text-btn danger" onClick={() => setStatusFor(inv, 'void')}>Void</button>}
+                  {isOwner && <button type="button" className="icon-btn" onClick={() => setEditing(inv)} title="Edit invoice" aria-label={`Edit invoice ${inv.number}`}><Pencil size={15} /></button>}
+                  {isOwner && <button type="button" className="icon-btn danger" onClick={() => remove(inv)} title="Delete invoice" aria-label={`Delete invoice ${inv.number}`}><Trash2 size={15} /></button>}
                 </td>
               </tr>
             ))}</tbody>
@@ -132,6 +170,7 @@ const Invoices = ({ notify, prefillLead, clearPrefill }) => {
         </div>
       </State>
       {creating && <InvoiceForm lead={prefillLead} notify={notify} onClose={close} onCreated={(inv) => { setData((rows) => [inv, ...(rows || [])]); close(); }} />}
+      {editing && <InvoiceForm key={editing.id} invoice={editing} notify={notify} onClose={() => setEditing(null)} onSaved={(inv) => { setData((rows) => rows.map((r) => (r.id === inv.id ? inv : r))); setEditing(null); }} />}
     </>
   );
 };

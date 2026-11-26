@@ -5,7 +5,7 @@
 import express from 'express';
 import db, { audit, NOW } from '../db.js';
 import { requirePermission, ah } from '../middleware/rbac.js';
-import { mrpIsVerified } from './productRoutes.js';
+import { bestPrice, refCols } from './productRoutes.js';
 import { str, intId, oneOf, ValidationError } from '../utils/validate.js';
 
 const router = express.Router();
@@ -85,15 +85,13 @@ router.get('/calculator', ah(async (req, res) => {
   for (const r of rows) {
     const p = await db.get('SELECT id, slug, name, brand, technical, formulation FROM products WHERE id = ?', r.product_id);
     // Pack sizes of the same product, with prices where an MRP or running offer exists.
-    const packs = await db.all(`SELECT id, slug, pack_size, mrp, mrp_verified, mrp_source_url, mrp_checked_on, offer_price, offer_ends FROM products
-      WHERE brand = ? AND name = ? AND is_active = 1 ORDER BY mrp ASC NULLS LAST, id`, p.brand, p.name);
-    const today = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
+    const packs = await db.all(`SELECT p.id, p.slug, p.pack_size, p.mrp, p.mrp_verified, p.mrp_source_url, p.mrp_checked_on, p.offer_price, p.offer_ends, ${refCols('p')} FROM products p
+      WHERE p.brand = ? AND p.name = ? AND p.is_active = 1 ORDER BY p.mrp ASC NULLS LAST, p.id`, p.brand, p.name);
     out.push({
       ...shape(r),
       product: p,
-      packs: packs.map((x) => ({ id: x.id, slug: x.slug, pack_size: x.pack_size,
-        // Only pack-verified MRPs are shown to customers.
-        price: !mrpIsVerified(x) ? null : x.offer_price != null && x.offer_price < x.mrp && (!x.offer_ends || x.offer_ends >= today) ? x.offer_price : x.mrp })),
+      // Same price as the shop (checked MRP, matched reference price or running offer).
+      packs: packs.map((x) => ({ id: x.id, slug: x.slug, pack_size: x.pack_size, price: bestPrice(x, { pco: false }) })),
     });
   }
   const pending = (await db.get("SELECT COUNT(*)::int n FROM dose_records WHERE activity = ? AND status <> 'verified'", activity)).n;

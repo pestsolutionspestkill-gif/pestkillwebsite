@@ -10,11 +10,9 @@
     "create-owner": "node src/scripts/createOwner.js",
     "migrate-sqlite": "node src/scripts/migrateFromSqlite.js",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
-    "lint": "eslint src test scripts",
-    "ai:eval": "node scripts/ai-eval.mjs"
+    "lint": "eslint src test scripts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.14.0",
     "@electric-sql/pglite": "^0.5.17",
     "bcryptjs": "^2.4.3",
     "compression": "^1.8.2",
